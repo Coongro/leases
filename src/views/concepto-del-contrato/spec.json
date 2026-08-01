@@ -63,7 +63,8 @@
           ],
           "validations": [
             "required"
-          ]
+          ],
+          "help": "«Descuento» resta del total en vez de sumar: es la forma de cargar una bonificación."
         },
         {
           "id": "f_label",
@@ -82,12 +83,13 @@
           "kind": "field",
           "fieldType": "money",
           "name": "amount",
-          "label": "Importe por mes",
+          "label": "Importe",
           "placeholder": "Ej: 18000",
           "width": "half",
           "validations": [
             "required"
-          ]
+          ],
+          "help": "Es el importe de CADA período en que corresponda, no el total."
         }
       ]
     },
@@ -95,9 +97,19 @@
       "id": "sec_vig",
       "kind": "container",
       "ctype": "card",
-      "label": "Desde cuándo y hasta cuándo",
+      "label": "En qué períodos se cobra",
       "icon": "CalendarRange",
       "children": [
+        {
+          "id": "cal_unica",
+          "kind": "component",
+          "comp": "Callout",
+          "props": {
+            "tone": "neutral",
+            "title": "Para cobrarlo una sola vez",
+            "text": "Poné el MISMO período en los dos campos. Ej: 2026-09 y 2026-09 cobra el concepto solo en septiembre — sirve para una rotura que paga el inquilino, una multa o un ajuste puntual. Dejándolos vacíos se cobra todos los meses mientras dure el contrato."
+          }
+        },
         {
           "id": "f_from",
           "kind": "field",

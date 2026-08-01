@@ -39,31 +39,31 @@ export interface ExpiryAlert {
 }
 
 /**
- * Días de anticipación por tipo. Salen de cuánto tarda en la práctica resolver cada
- * cosa, no de un número redondo: el seguro se renueva con una llamada, el ascensor
- * necesita coordinar una visita, y un contrato que vence hay que empezar a renegociarlo
- * dos meses antes o el inquilino ya se está mudando.
+ * Días de anticipación de lo que vence en ESTE plugin.
+ *
+ * Los de certificados no están acá: son de `properties`, que es su dueño, y el
+ * repositorio los suma antes de llamar a la detección. Tenerlos dos veces es lo que
+ * hacía que la ficha de la propiedad dijera «Vigente» y esta lista «Por vencer» sobre
+ * el mismo certificado.
  */
-export const DEFAULT_HORIZONS: Record<string, number> = {
-  // Certificados
-  matafuegos: 30,
-  gas: 45,
-  ascensor: 60,
-  electricidad: 45,
-  seguro: 30,
-  otro: 30,
-  // Contratos y garantías
+export const LEASE_HORIZONS: Record<string, number> = {
+  /** Fin de plazo: un contrato hay que empezar a renegociarlo dos meses antes o el
+   * inquilino ya se está mudando. */
   plazo: 60,
+  /** Póliza de caución. */
   seguro_caucion: 45,
 };
 
 const HORIZONTE_POR_DEFECTO = 30;
 
+/** El mapa completo de umbrales: los de este plugin más los que aporte quien llama. */
+export type Horizons = Record<string, number>;
+
 /** Cuántos días antes se empieza a avisar de algo de este tipo. */
-export function horizonFor(subtype: string, override?: number | null): number {
+export function horizonFor(subtype: string, horizons: Horizons, override?: number | null): number {
   const propio = Number(override);
   if (Number.isFinite(propio) && propio > 0) return propio;
-  return DEFAULT_HORIZONS[subtype] ?? HORIZONTE_POR_DEFECTO;
+  return horizons[subtype] ?? HORIZONTE_POR_DEFECTO;
 }
 
 /** Días entre dos DateKeys. Negativo = la primera ya pasó. */
@@ -82,13 +82,14 @@ export function evaluate(
   expiresAt: string | null | undefined,
   subtype: string,
   today: string,
+  horizons: Horizons,
   override?: number | null
 ): AlertLevel | null {
   if (!expiresAt || !/^\d{4}-\d{2}-\d{2}$/.test(expiresAt)) return null;
   const dias = daysBetween(today, expiresAt);
   if (Number.isNaN(dias)) return null;
   if (dias < 0) return 'vencido';
-  return dias <= horizonFor(subtype, override) ? 'por_vencer' : null;
+  return dias <= horizonFor(subtype, horizons, override) ? 'por_vencer' : null;
 }
 
 /**
@@ -164,16 +165,23 @@ export function detectExpiries({
   leases = [],
   guarantees = [],
   today,
+  horizons,
 }: {
   certificates?: CertificateInput[];
   leases?: LeaseInput[];
   guarantees?: GuaranteeInput[];
   today: string;
+  /**
+   * Umbrales por tipo. Llega de afuera —y no se importa acá— porque los de
+   * certificados son de `properties`: importarlos ataría esta regla, que tiene que
+   * poder probarse sola, al plugin de al lado.
+   */
+  horizons: Horizons;
 }): ExpiryAlert[] {
   const alertas: ExpiryAlert[] = [];
 
   for (const c of certificates) {
-    const level = evaluate(c.expires_at, c.type, today, c.alert_days);
+    const level = evaluate(c.expires_at, c.type, today, horizons, c.alert_days);
     if (!level) continue;
     alertas.push({
       kind: 'certificado',
@@ -190,7 +198,7 @@ export function detectExpiries({
 
   for (const l of leases) {
     if (!CONTRATOS_VIVOS.has(String(l.state))) continue;
-    const level = evaluate(l.end_date, 'plazo', today);
+    const level = evaluate(l.end_date, 'plazo', today, horizons);
     if (!level) continue;
     alertas.push({
       kind: 'contrato',
@@ -210,7 +218,7 @@ export function detectExpiries({
 
   for (const g of guarantees) {
     // Solo la caución tiene fecha propia; un garante o un depósito no vencen.
-    const level = evaluate(g.insurance_expiry, g.type, today);
+    const level = evaluate(g.insurance_expiry, g.type, today, horizons);
     if (!level) continue;
     alertas.push({
       kind: 'garantia',

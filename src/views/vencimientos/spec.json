@@ -212,9 +212,7 @@
             "action": {
               "id": "serverAction",
               "label": "Ya lo sé",
-              "target": "leases.expiries.acknowledge",
-              "confirm": "Deja de figurar en la lista. Si el vencimiento cambia —porque se renovó y volvió a vencer— vuelve a aparecer solo.",
-              "successToast": "Listo, no se avisa más de esto"
+              "target": "leases.expiries.acknowledge"
             }
           }
         ],
@@ -245,7 +243,8 @@
         "effect": "write",
         "confirmation": "always",
         "preconditions": [
-          "Solo recalcula la lista: no modifica certificados ni contratos."
+          "Solo recalcula la lista: no modifica certificados ni contratos.",
+          "El acuse de una fila es la otra acción del mismo hook: leases.expiries.acknowledge."
         ]
       }
     ]

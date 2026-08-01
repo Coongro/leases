@@ -198,7 +198,7 @@ export function ConceptoDelContratoView() {
                 h(
                   UI.Label,
                   { htmlFor: 'amount', style: { display: 'block', marginBottom: '6px' } },
-                  'Importe por mes',
+                  'Importe',
                   h('span', { style: { color: 'var(--cg-danger)' } }, ' *')
                 ),
                 h(
@@ -245,7 +245,7 @@ export function ConceptoDelContratoView() {
         { 'data-cg-block-id': 'sec_vig', style: { display: 'contents' } },
         h(
           UI.FormSection,
-          { icon: 'CalendarRange', title: 'Desde cuándo y hasta cuándo' },
+          { icon: 'CalendarRange', title: 'En qué períodos se cobra' },
           h(
             'div',
             {
@@ -256,6 +256,40 @@ export function ConceptoDelContratoView() {
                 alignItems: 'stretch',
               },
             },
+            h(
+              'div',
+              { 'data-cg-block-id': 'cal_unica', style: { display: 'contents' } },
+              h(
+                'div',
+                {
+                  style: {
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '10px',
+                    padding: '12px 14px',
+                    borderRadius: '10px',
+                    background: 'var(--cg-bg-main)',
+                    border: '1px solid var(--cg-border)',
+                    color: 'var(--cg-text-secondary)',
+                  },
+                },
+                null,
+                h(
+                  'div',
+                  { style: { minWidth: 0 } },
+                  h(
+                    'div',
+                    { style: { fontWeight: 600, fontSize: '13.5px', marginBottom: '2px' } },
+                    'Para cobrarlo una sola vez'
+                  ),
+                  h(
+                    'div',
+                    { style: { fontSize: '13px', lineHeight: 1.5 } },
+                    'Poné el MISMO período en los dos campos. Ej: 2026-09 y 2026-09 cobra el concepto solo en septiembre — sirve para una rotura que paga el inquilino, una multa o un ajuste puntual. Dejándolos vacíos se cobra todos los meses mientras dure el contrato.'
+                  )
+                )
+              )
+            ),
             h(
               'div',
               { style: { display: 'flex', gap: '14px', alignItems: 'flex-start' } },

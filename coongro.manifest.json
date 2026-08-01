@@ -738,7 +738,7 @@
                 "amount": {
                   "type": "string",
                   "pattern": "^-?\\d+(?:\\.\\d+)?$",
-                  "description": "Importe por mes"
+                  "description": "Importe"
                 },
                 "valid_from": {
                   "type": "string",
@@ -829,7 +829,7 @@
                 "amount": {
                   "type": "string",
                   "pattern": "^-?\\d+(?:\\.\\d+)?$",
-                  "description": "Importe por mes"
+                  "description": "Importe"
                 },
                 "valid_from": {
                   "type": "string",
@@ -2089,6 +2089,11 @@
                   "pattern": "^-?\\d+(?:\\.\\d+)?$",
                   "description": "Expensas a cargo del inquilino"
                 },
+                "admin_fee_percent": {
+                  "type": "string",
+                  "pattern": "^-?\\d+(?:\\.\\d+)?$",
+                  "description": "Honorario de administración (%)"
+                },
                 "adjustment_index": {
                   "type": "string",
                   "enum": ["ICL", "IPC", "casa_propia", "fijo", "otro"],
@@ -3029,6 +3034,11 @@
                   "pattern": "^-?\\d+(?:\\.\\d+)?$",
                   "description": "Expensas a cargo del inquilino"
                 },
+                "admin_fee_percent": {
+                  "type": "string",
+                  "pattern": "^-?\\d+(?:\\.\\d+)?$",
+                  "description": "Honorario de administración (%)"
+                },
                 "adjustment_index": {
                   "type": "string",
                   "enum": ["ICL", "IPC", "casa_propia", "fijo", "otro"],
@@ -3538,6 +3548,11 @@
                   "pattern": "^-?\\d+(?:\\.\\d+)?$",
                   "description": "Expensas a cargo del inquilino"
                 },
+                "admin_fee_percent": {
+                  "type": "string",
+                  "pattern": "^-?\\d+(?:\\.\\d+)?$",
+                  "description": "Honorario de administración (%)"
+                },
                 "adjustment_index": {
                   "type": "string",
                   "enum": ["ICL", "IPC", "casa_propia", "fijo", "otro"],
@@ -3878,6 +3893,11 @@
                   "type": "string",
                   "pattern": "^-?\\d+(?:\\.\\d+)?$",
                   "description": "Expensas a cargo del inquilino"
+                },
+                "admin_fee_percent": {
+                  "type": "string",
+                  "pattern": "^-?\\d+(?:\\.\\d+)?$",
+                  "description": "Honorario de administración (%)"
                 },
                 "adjustment_index": {
                   "type": "string",
@@ -4220,7 +4240,7 @@
         "id": "leases.expiries.acknowledge",
         "action": "leases.expiries.acknowledge",
         "title": "Ya lo sé",
-        "description": "Deja de figurar en la lista. Si el vencimiento cambia —porque se renovó y volvió a vencer— vuelve a aparecer solo.",
+        "description": "Ejecuta Ya lo sé para el cliente.",
         "effect": "write",
         "confirmation": "always",
         "inputSchema": {
@@ -4275,6 +4295,67 @@
             }
           ],
           "identifierKey": "id"
+        },
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.expiries.pendingCount",
+        "action": "leases.expiries.pendingCount",
+        "title": "Vencimientos",
+        "description": "Vencimientos: capacidad declarada por el Builder.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "collection",
+          "fields": [
+            {
+              "key": "level",
+              "name": "level",
+              "label": "Estado",
+              "format": "text",
+              "values": [
+                { "value": "vencido", "label": "Vencido" },
+                { "value": "por_vencer", "label": "Por vencer" }
+              ]
+            },
+            {
+              "key": "kind",
+              "name": "kind",
+              "label": "Qué vence",
+              "format": "text",
+              "values": [
+                { "value": "certificado", "label": "Certificado" },
+                { "value": "contrato", "label": "Contrato" },
+                { "value": "garantia", "label": "Garantía" }
+              ]
+            },
+            {
+              "key": "label",
+              "name": "label",
+              "label": "Detalle",
+              "format": "text"
+            },
+            {
+              "key": "message",
+              "name": "message",
+              "label": "Cuándo",
+              "format": "text"
+            },
+            {
+              "key": "expires_at",
+              "name": "expiresAt",
+              "label": "Vence",
+              "format": "date"
+            }
+          ],
+          "identifierKey": "id",
+          "defaultLimit": 20,
+          "maxLimit": 50
         },
         "generatedBy": "builder"
       }

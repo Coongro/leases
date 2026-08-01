@@ -130,7 +130,7 @@ export function useConceptoDelContratoView() {
       values['amount'] === '' ||
       values['amount'] === false
     )
-      errs['amount'] = '«Importe por mes» es requerido';
+      errs['amount'] = '«Importe» es requerido';
     return errs;
   }, [values]);
 

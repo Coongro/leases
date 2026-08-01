@@ -173,6 +173,17 @@
           "placeholder": "Ej: 68000"
         },
         {
+          "id": "f_admin_fee",
+          "kind": "field",
+          "name": "admin_fee_percent",
+          "fieldType": "number",
+          "label": "Honorario de administración (%)",
+          "width": "half",
+          "validations": [],
+          "placeholder": "Ej: 8",
+          "help": "Qué porcentaje del alquiler le queda a la administración. Es un dato del contrato: si no se carga acá, después no hay con qué liquidarle al propietario."
+        },
+        {
           "id": "f_index",
           "kind": "field",
           "name": "adjustment_index",

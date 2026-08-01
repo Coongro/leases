@@ -1,4 +1,5 @@
 import type { ModuleDatabaseAPI } from '@coongro/plugin-sdk';
+import { CERTIFICATE_HORIZONS } from '@coongro/properties';
 import {
   BuildingRepository,
   CertificateRepository,
@@ -9,7 +10,7 @@ import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import { expiryAlertTable } from '../schema/expiry-alert.js';
 import type { ExpiryAlertRow, NewExpiryAlertRow } from '../schema/expiry-alert.js';
 import { guaranteeTable } from '../schema/guarantee.js';
-import { detectExpiries, type ExpiryAlert } from '../services/expiry-alerts.js';
+import { detectExpiries, LEASE_HORIZONS, type ExpiryAlert } from '../services/expiry-alerts.js';
 
 import { LeaseRepository } from './lease.repository.js';
 
@@ -80,6 +81,10 @@ export class ExpiryAlertRepository {
 
     const detectadas = detectExpiries({
       today: fecha,
+      // Los umbrales de los certificados los pone su dueño; los del contrato y la
+      // caución, este plugin. Así la ficha de la propiedad y esta lista no pueden
+      // discrepar sobre el mismo certificado.
+      horizons: { ...CERTIFICATE_HORIZONS, ...LEASE_HORIZONS },
       certificates: certificados.map((c) => ({
         id: String(c.id),
         type: String(c.type),

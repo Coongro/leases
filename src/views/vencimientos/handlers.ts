@@ -70,6 +70,12 @@ export const customHandlers: CustomHandlers = {
     if (actionId === 'leases.expiries.acknowledge') {
       if (!record?.id) return;
       await execute('leases.expiries.acknowledge', { id: String(record.id) });
+      // El aviso desaparece de la lista, y eso solo ya se ve. El toast está para
+      // contar lo que NO se ve: que no se perdió nada y que vuelve si cambia la fecha.
+      toast?.info(
+        'Listo, no se avisa más de esto',
+        'Si el vencimiento cambia porque se renovó, vuelve a aparecer.'
+      );
       reload?.();
       return;
     }
