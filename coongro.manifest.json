@@ -1,0 +1,1119 @@
+{
+  "id": "leases",
+  "version": "0.2.3",
+  "apiVersion": "2.0",
+  "runtime": "eager",
+  "displayName": "Contratos",
+  "assets": {
+    "styles": [
+      "./dist/assets/tailwind.css",
+      "./dist/assets/fontawesome/css/all.min.css"
+    ]
+  },
+  "contributes": {
+    "menus": [
+      {
+        "path": "Panel",
+        "order": 10,
+        "viewId": "leases.dashboard-alquileres-fidelidad.open",
+        "icon": "LayoutDashboard"
+      },
+      {
+        "path": "Inquilinos",
+        "order": 20,
+        "viewId": "leases.inquilinos.open",
+        "icon": "Users"
+      },
+      {
+        "path": "Contratos",
+        "order": 30,
+        "viewId": "leases.contratos.open",
+        "icon": "FileText"
+      },
+      {
+        "path": "Cobranzas",
+        "order": 40,
+        "viewId": "leases.cobranzas-fidelidad.open",
+        "icon": "ReceiptText"
+      },
+      {
+        "path": "Actualizaciones",
+        "order": 50,
+        "viewId": "leases.actualizaciones.open",
+        "icon": "TrendingUp"
+      }
+    ],
+    "views": [
+      {
+        "id": "leases.contrato.open",
+        "title": "Contrato",
+        "component": "./dist/views/contrato/index.js",
+        "export": "ContratoView"
+      },
+      {
+        "id": "leases.contratos.open",
+        "title": "Contratos",
+        "component": "./dist/views/contratos/index.js",
+        "export": "ContratosView"
+      },
+      {
+        "id": "leases.ficha-de-contrato.open",
+        "title": "Ficha de contrato",
+        "component": "./dist/views/ficha-de-contrato/index.js",
+        "export": "FichaDeContratoView"
+      },
+      {
+        "id": "leases.cobranzas-fidelidad.open",
+        "title": "Cobranzas",
+        "component": "./dist/views/cobranzas-fidelidad/index.js",
+        "export": "CobranzasFidelidadView"
+      },
+      {
+        "id": "leases.actualizaciones.open",
+        "title": "Actualizaciones",
+        "component": "./dist/views/actualizaciones/index.js",
+        "export": "ActualizacionesView"
+      },
+      {
+        "id": "leases.inquilino.open",
+        "title": "Inquilino",
+        "component": "./dist/views/inquilino/index.js",
+        "export": "InquilinoView"
+      },
+      {
+        "id": "leases.inquilinos.open",
+        "title": "Inquilinos",
+        "component": "./dist/views/inquilinos/index.js",
+        "export": "InquilinosView"
+      },
+      {
+        "id": "leases.dashboard-alquileres-fidelidad.open",
+        "title": "Panel de alquileres",
+        "component": "./dist/views/dashboard-alquileres-fidelidad/index.js",
+        "export": "DashboardAlquileresFidelidadView"
+      },
+      {
+        "id": "leases.renovar-contrato.open",
+        "title": "Renovar contrato",
+        "component": "./dist/views/renovar-contrato/index.js",
+        "export": "RenovarContratoView"
+      },
+      {
+        "id": "leases.rescindir-contrato.open",
+        "title": "Rescindir contrato",
+        "component": "./dist/views/rescindir-contrato/index.js",
+        "export": "RescindirContratoView"
+      },
+      {
+        "id": "leases.ficha-de-inquilino.open",
+        "title": "Ficha de inquilino",
+        "component": "./dist/views/ficha-de-inquilino/index.js",
+        "export": "FichaDeInquilinoView"
+      }
+    ],
+    "repositories": [
+      {
+        "module": "./dist/repositories/lease.repository.js",
+        "export": "LeaseRepository",
+        "prefix": "leases.contracts"
+      },
+      {
+        "module": "./dist/repositories/lease-tenant.repository.js",
+        "export": "LeaseTenantRepository",
+        "prefix": "leases.coTenants"
+      },
+      {
+        "module": "./dist/repositories/guarantee.repository.js",
+        "export": "GuaranteeRepository",
+        "prefix": "leases.guarantees"
+      },
+      {
+        "module": "./dist/repositories/index-adjustment.repository.js",
+        "export": "IndexAdjustmentRepository",
+        "prefix": "leases.adjustments"
+      },
+      {
+        "module": "./dist/repositories/notice-log.repository.js",
+        "export": "NoticeLogRepository",
+        "prefix": "leases.notices"
+      },
+      {
+        "module": "./dist/repositories/lease-charge.repository.js",
+        "export": "LeaseChargeRepository",
+        "prefix": "leases.charges"
+      }
+    ],
+    "settings": {
+      "groups": [
+        {
+          "id": "leases",
+          "label": "leases",
+          "order": 50
+        }
+      ],
+      "pages": [
+        {
+          "id": "leases.contratos",
+          "group": "leases",
+          "label": "Contratos",
+          "icon": "FileText",
+          "order": 10
+        },
+        {
+          "id": "leases.cobranza",
+          "group": "leases",
+          "label": "Cobranza",
+          "icon": "ReceiptText",
+          "order": 20
+        }
+      ],
+      "sections": [
+        {
+          "id": "leases.cobranza.generacion-de-los-cargos-del-mes",
+          "page": "leases.cobranza",
+          "label": "Generación de los cargos del mes",
+          "order": 10,
+          "items": [
+            {
+              "key": "leases.charges.generation",
+              "type": "enum",
+              "label": "Cómo se generan",
+              "description": "«A mano»: vos apretás el botón en Cobranzas cuando querés. «Avisarme»: el sistema te recuerda al inicio del mes y generás vos. «Sola»: se generan al empezar el mes sin preguntar. Generándolos dos veces nunca se duplican, así que la diferencia real es cuánta iniciativa querés que tome el sistema.",
+              "default": "manual",
+              "options": [
+                {
+                  "value": "manual",
+                  "label": "A mano"
+                },
+                {
+                  "value": "ask",
+                  "label": "Avisarme y genero yo"
+                },
+                {
+                  "value": "auto",
+                  "label": "Que se generen solas"
+                }
+              ],
+              "tags": [
+                "leases",
+                "charges",
+                "generation",
+                "cómo",
+                "generan"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "leases.cobranza.mora",
+          "page": "leases.cobranza",
+          "label": "Mora",
+          "order": 20,
+          "items": [
+            {
+              "key": "leases.lateFee.graceDays",
+              "type": "number",
+              "label": "Días de gracia",
+              "description": "Cuántos días después del vencimiento se puede pagar sin punitorio. Un pago que entra el lunes por un vencimiento del sábado no siempre es una mora: con 0 el interés corre desde el día siguiente.",
+              "default": 0,
+              "min": 0,
+              "max": 30,
+              "tags": [
+                "leases",
+                "latefee",
+                "gracedays",
+                "días",
+                "gracia"
+              ]
+            },
+            {
+              "key": "leases.lateFee.apply",
+              "type": "enum",
+              "label": "Cómo se cobra el punitorio",
+              "description": "El punitorio nunca se agrega en silencio. «Proponer» lo calcula y espera tu confirmación antes de sumarlo a la cuenta; «no calcular» lo deja fuera del sistema, para quien lo arregla hablando.",
+              "default": "propose",
+              "options": [
+                {
+                  "value": "propose",
+                  "label": "Proponer y confirmo yo"
+                },
+                {
+                  "value": "off",
+                  "label": "No calcular punitorios"
+                }
+              ],
+              "tags": [
+                "leases",
+                "latefee",
+                "apply",
+                "cómo",
+                "cobra",
+                "punitorio"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "leases.contratos.valores-por-defecto-de-un-contrato-nuevo",
+          "page": "leases.contratos",
+          "label": "Valores por defecto de un contrato nuevo",
+          "order": 10,
+          "items": [
+            {
+              "key": "leases.contracts.defaultCurrency",
+              "type": "enum",
+              "label": "Moneda",
+              "description": "En qué moneda se pactan tus alquileres habitualmente. Es solo el valor con el que arranca el formulario: cada contrato puede firmarse en la otra.",
+              "default": "ARS",
+              "options": [
+                {
+                  "value": "ARS",
+                  "label": "Pesos (ARS)"
+                },
+                {
+                  "value": "USD",
+                  "label": "Dólares (USD)"
+                }
+              ],
+              "tags": [
+                "leases",
+                "contracts",
+                "defaultcurrency",
+                "moneda"
+              ]
+            },
+            {
+              "key": "leases.contracts.defaultDueDay",
+              "type": "number",
+              "label": "Día de vencimiento",
+              "description": "Qué día del mes vencen tus alquileres. Cada propietario tiene su costumbre — el 1, el 5, el 10 — y repetirla en cada contrato es tiempo perdido.",
+              "default": 10,
+              "min": 1,
+              "max": 31,
+              "tags": [
+                "leases",
+                "contracts",
+                "defaultdueday",
+                "día",
+                "vencimiento"
+              ]
+            },
+            {
+              "key": "leases.contracts.defaultDueDayType",
+              "type": "enum",
+              "label": "Cómo se cuenta ese día",
+              "description": "«Día fijo» vence siempre la misma fecha, caiga como caiga. «Día hábil» corre el vencimiento cuando cae fin de semana o feriado — se usa cuando el pago entra por transferencia y el banco tiene que estar abierto.",
+              "default": "fixed",
+              "options": [
+                {
+                  "value": "fixed",
+                  "label": "Día fijo del mes"
+                },
+                {
+                  "value": "business",
+                  "label": "Día hábil"
+                }
+              ],
+              "tags": [
+                "leases",
+                "contracts",
+                "defaultduedaytype",
+                "cómo",
+                "cuenta",
+                "ese",
+                "día"
+              ]
+            },
+            {
+              "key": "leases.contracts.defaultAdjustmentIndex",
+              "type": "enum",
+              "label": "Índice de actualización",
+              "description": "Con qué índice actualizás los alquileres. Desde la Ley 27.551 el ICL del BCRA es el más usado, pero se pacta libremente.",
+              "default": "ICL",
+              "options": [
+                {
+                  "value": "ICL",
+                  "label": "ICL (BCRA)"
+                },
+                {
+                  "value": "IPC",
+                  "label": "IPC (INDEC)"
+                },
+                {
+                  "value": "casa_propia",
+                  "label": "Casa Propia"
+                },
+                {
+                  "value": "fijo",
+                  "label": "Escalonado fijo"
+                }
+              ],
+              "tags": [
+                "leases",
+                "contracts",
+                "defaultadjustmentindex",
+                "índice",
+                "actualización"
+              ]
+            },
+            {
+              "key": "leases.contracts.defaultAdjustmentMonths",
+              "type": "enum",
+              "label": "Cada cuánto se actualiza",
+              "description": "Cada cuántos meses se recalcula el alquiler. Ya no lo fija la ley: se pacta en el contrato.",
+              "default": "6",
+              "options": [
+                {
+                  "value": "3",
+                  "label": "3 meses"
+                },
+                {
+                  "value": "4",
+                  "label": "4 meses"
+                },
+                {
+                  "value": "6",
+                  "label": "6 meses"
+                },
+                {
+                  "value": "12",
+                  "label": "12 meses"
+                }
+              ],
+              "tags": [
+                "leases",
+                "contracts",
+                "defaultadjustmentmonths",
+                "cada",
+                "cuánto",
+                "actualiza"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "leases.contratos.contratos-en-dolares",
+          "page": "leases.contratos",
+          "label": "Contratos en dólares",
+          "order": 15,
+          "items": [
+            {
+              "key": "leases.contracts.usdHouse",
+              "type": "enum",
+              "label": "Con qué dólar se convierte",
+              "description": "Un contrato pactado en dólares se cobra en pesos: el cargo se convierte con esta cotización el día que se emite, y queda asentado con qué valor y de qué fecha se hizo la cuenta. Elegí la que dice el contrato — si dice «dólar oficial», poné oficial.",
+              "default": "oficial",
+              "options": [
+                {
+                  "value": "oficial",
+                  "label": "Oficial"
+                },
+                {
+                  "value": "blue",
+                  "label": "Blue"
+                },
+                {
+                  "value": "bolsa",
+                  "label": "MEP (bolsa)"
+                },
+                {
+                  "value": "contadoconliqui",
+                  "label": "Contado con liqui"
+                },
+                {
+                  "value": "mayorista",
+                  "label": "Mayorista"
+                }
+              ],
+              "tags": [
+                "leases",
+                "contracts",
+                "usdhouse",
+                "qué",
+                "dólar",
+                "convierte"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "leases.contratos.avisos",
+          "page": "leases.contratos",
+          "label": "Avisos",
+          "order": 20,
+          "items": [
+            {
+              "key": "leases.contracts.expiryWarningDays",
+              "type": "number",
+              "label": "Marcar «por vencer» con esta anticipación",
+              "description": "Cuántos días antes del final un contrato aparece como próximo a vencer. Es el tiempo que te dejás para negociar la renovación o buscar un inquilino nuevo: por debajo de 60 días se llega justo.",
+              "default": 60,
+              "min": 15,
+              "max": 365,
+              "tags": [
+                "leases",
+                "contracts",
+                "expirywarningdays",
+                "marcar",
+                "vencer",
+                "esta",
+                "anticipación"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "scheduledTasks": [
+      {
+        "id": "adjustments",
+        "cron": "0 7 * * *",
+        "handler": "./dist/tasks/adjustments.js",
+        "export": "adjustments",
+        "scope": "tenant"
+      }
+    ],
+    "copilotCapabilities": [
+      {
+        "id": "leases.contracts.list",
+        "action": "leases.contracts.list",
+        "generatedBy": "builder",
+        "title": "Listar Contratos",
+        "description": "Obtiene Contratos disponibles para el cliente actual.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "description": "Cantidad de resultados a devolver. Default 20; máximo 50."
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Cantidad de resultados a saltear para pedir la página siguiente."
+            }
+          },
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "collection",
+          "fields": [
+            {
+              "key": "unit",
+              "name": "unit",
+              "label": "Unidad",
+              "format": "text"
+            },
+            {
+              "key": "property",
+              "name": "property",
+              "label": "Propiedad",
+              "format": "text"
+            },
+            {
+              "key": "tenant",
+              "name": "tenant",
+              "label": "Inquilino",
+              "format": "text"
+            },
+            {
+              "key": "start_date",
+              "name": "startDate",
+              "label": "Desde",
+              "format": "date"
+            },
+            {
+              "key": "end_date",
+              "name": "endDate",
+              "label": "Hasta",
+              "format": "date"
+            },
+            {
+              "key": "rent_amount",
+              "name": "rentAmount",
+              "label": "Alquiler vigente",
+              "format": "money"
+            },
+            {
+              "key": "adjustment_index",
+              "name": "adjustmentIndex",
+              "label": "Ajuste",
+              "format": "text",
+              "values": [
+                {
+                  "value": "ICL",
+                  "label": "ICL"
+                },
+                {
+                  "value": "IPC",
+                  "label": "IPC"
+                },
+                {
+                  "value": "casa_propia",
+                  "label": "Casa Propia"
+                }
+              ]
+            },
+            {
+              "key": "state",
+              "name": "state",
+              "label": "Estado",
+              "format": "text",
+              "values": [
+                {
+                  "value": "vigente",
+                  "label": "Vigente"
+                },
+                {
+                  "value": "por_comenzar",
+                  "label": "Por comenzar"
+                },
+                {
+                  "value": "por_vencer",
+                  "label": "Por vencer"
+                },
+                {
+                  "value": "terminado",
+                  "label": "Terminado"
+                },
+                {
+                  "value": "renovado",
+                  "label": "Renovado"
+                },
+                {
+                  "value": "rescindido",
+                  "label": "Rescindido"
+                },
+                {
+                  "value": "borrador",
+                  "label": "Borrador"
+                }
+              ]
+            }
+          ],
+          "identifierKey": "id",
+          "defaultLimit": 20,
+          "maxLimit": 50
+        }
+      },
+      {
+        "id": "leases.contracts.getById",
+        "action": "leases.contracts.getById",
+        "generatedBy": "builder",
+        "title": "Consultar Contrato",
+        "description": "Obtiene un registro de Contrato por su ID.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID"
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "record",
+          "fields": [
+            {
+              "key": "unit",
+              "name": "unit",
+              "label": "Unidad",
+              "format": "text"
+            },
+            {
+              "key": "property",
+              "name": "property",
+              "label": "Propiedad",
+              "format": "text"
+            },
+            {
+              "key": "tenant",
+              "name": "tenant",
+              "label": "Inquilino",
+              "format": "text"
+            },
+            {
+              "key": "start_date",
+              "name": "startDate",
+              "label": "Desde",
+              "format": "date"
+            },
+            {
+              "key": "end_date",
+              "name": "endDate",
+              "label": "Hasta",
+              "format": "date"
+            },
+            {
+              "key": "rent_amount",
+              "name": "rentAmount",
+              "label": "Alquiler vigente",
+              "format": "money"
+            },
+            {
+              "key": "adjustment_index",
+              "name": "adjustmentIndex",
+              "label": "Ajuste",
+              "format": "text",
+              "values": [
+                {
+                  "value": "ICL",
+                  "label": "ICL"
+                },
+                {
+                  "value": "IPC",
+                  "label": "IPC"
+                },
+                {
+                  "value": "casa_propia",
+                  "label": "Casa Propia"
+                }
+              ]
+            },
+            {
+              "key": "state",
+              "name": "state",
+              "label": "Estado",
+              "format": "text",
+              "values": [
+                {
+                  "value": "vigente",
+                  "label": "Vigente"
+                },
+                {
+                  "value": "por_comenzar",
+                  "label": "Por comenzar"
+                },
+                {
+                  "value": "por_vencer",
+                  "label": "Por vencer"
+                },
+                {
+                  "value": "terminado",
+                  "label": "Terminado"
+                },
+                {
+                  "value": "renovado",
+                  "label": "Renovado"
+                },
+                {
+                  "value": "rescindido",
+                  "label": "Rescindido"
+                },
+                {
+                  "value": "borrador",
+                  "label": "Borrador"
+                }
+              ]
+            }
+          ],
+          "identifierKey": "id"
+        }
+      },
+      {
+        "id": "leases.adjustments.list",
+        "action": "leases.adjustments.list",
+        "generatedBy": "builder",
+        "title": "Listar Actualizaciones",
+        "description": "Obtiene Actualizaciones disponibles para el cliente actual.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "description": "Cantidad de resultados a devolver. Default 20; máximo 50."
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Cantidad de resultados a saltear para pedir la página siguiente."
+            }
+          },
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "collection",
+          "fields": [
+            {
+              "key": "unit",
+              "name": "unit",
+              "label": "Unidad",
+              "format": "text"
+            },
+            {
+              "key": "property",
+              "name": "property",
+              "label": "Propiedad",
+              "format": "text"
+            },
+            {
+              "key": "tenant",
+              "name": "tenant",
+              "label": "Inquilino",
+              "format": "text"
+            },
+            {
+              "key": "index_code",
+              "name": "indexCode",
+              "label": "Índice",
+              "format": "text"
+            },
+            {
+              "key": "rate_percent",
+              "name": "ratePercent",
+              "label": "Variación",
+              "format": "number",
+              "suffix": "%"
+            },
+            {
+              "key": "previous_rent",
+              "name": "previousRent",
+              "label": "Alquiler actual",
+              "format": "money"
+            },
+            {
+              "key": "new_rent",
+              "name": "newRent",
+              "label": "Nuevo alquiler",
+              "format": "money"
+            },
+            {
+              "key": "effective_date",
+              "name": "effectiveDate",
+              "label": "Rige desde",
+              "format": "date"
+            },
+            {
+              "key": "status",
+              "name": "status",
+              "label": "Estado",
+              "format": "text",
+              "values": [
+                {
+                  "value": "pending",
+                  "label": "Pendiente"
+                },
+                {
+                  "value": "applied",
+                  "label": "Aplicada"
+                },
+                {
+                  "value": "cancelled",
+                  "label": "Cancelada"
+                }
+              ]
+            }
+          ],
+          "identifierKey": "id",
+          "defaultLimit": 20,
+          "maxLimit": 50
+        }
+      },
+      {
+        "id": "leases.adjustments.getById",
+        "action": "leases.adjustments.getById",
+        "generatedBy": "builder",
+        "title": "Consultar Actualización",
+        "description": "Obtiene un registro de Actualización por su ID.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID"
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "record",
+          "fields": [
+            {
+              "key": "unit",
+              "name": "unit",
+              "label": "Unidad",
+              "format": "text"
+            },
+            {
+              "key": "property",
+              "name": "property",
+              "label": "Propiedad",
+              "format": "text"
+            },
+            {
+              "key": "tenant",
+              "name": "tenant",
+              "label": "Inquilino",
+              "format": "text"
+            },
+            {
+              "key": "index_code",
+              "name": "indexCode",
+              "label": "Índice",
+              "format": "text"
+            },
+            {
+              "key": "rate_percent",
+              "name": "ratePercent",
+              "label": "Variación",
+              "format": "number",
+              "suffix": "%"
+            },
+            {
+              "key": "previous_rent",
+              "name": "previousRent",
+              "label": "Alquiler actual",
+              "format": "money"
+            },
+            {
+              "key": "new_rent",
+              "name": "newRent",
+              "label": "Nuevo alquiler",
+              "format": "money"
+            },
+            {
+              "key": "effective_date",
+              "name": "effectiveDate",
+              "label": "Rige desde",
+              "format": "date"
+            },
+            {
+              "key": "status",
+              "name": "status",
+              "label": "Estado",
+              "format": "text",
+              "values": [
+                {
+                  "value": "pending",
+                  "label": "Pendiente"
+                },
+                {
+                  "value": "applied",
+                  "label": "Aplicada"
+                },
+                {
+                  "value": "cancelled",
+                  "label": "Cancelada"
+                }
+              ]
+            }
+          ],
+          "identifierKey": "id"
+        }
+      },
+      {
+        "id": "leases.adjustments.apply",
+        "action": "leases.adjustments.apply",
+        "title": "Aplicar",
+        "description": "¿Confirmás la actualización? El alquiler del contrato pasa a valer el monto nuevo desde su fecha.",
+        "effect": "write",
+        "confirmation": "always",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID"
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "record",
+          "fields": [
+            {
+              "key": "unit",
+              "name": "unit",
+              "label": "Unidad",
+              "format": "text"
+            },
+            {
+              "key": "property",
+              "name": "property",
+              "label": "Propiedad",
+              "format": "text"
+            },
+            {
+              "key": "tenant",
+              "name": "tenant",
+              "label": "Inquilino",
+              "format": "text"
+            },
+            {
+              "key": "index_code",
+              "name": "indexCode",
+              "label": "Índice",
+              "format": "text"
+            },
+            {
+              "key": "rate_percent",
+              "name": "ratePercent",
+              "label": "Variación",
+              "format": "number",
+              "suffix": "%"
+            },
+            {
+              "key": "previous_rent",
+              "name": "previousRent",
+              "label": "Alquiler actual",
+              "format": "money"
+            },
+            {
+              "key": "new_rent",
+              "name": "newRent",
+              "label": "Nuevo alquiler",
+              "format": "money"
+            },
+            {
+              "key": "effective_date",
+              "name": "effectiveDate",
+              "label": "Rige desde",
+              "format": "date"
+            },
+            {
+              "key": "status",
+              "name": "status",
+              "label": "Estado",
+              "format": "text",
+              "values": [
+                {
+                  "value": "pending",
+                  "label": "Pendiente"
+                },
+                {
+                  "value": "applied",
+                  "label": "Aplicada"
+                },
+                {
+                  "value": "cancelled",
+                  "label": "Cancelada"
+                }
+              ]
+            }
+          ],
+          "identifierKey": "id"
+        },
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.adjustments.cancel",
+        "action": "leases.adjustments.cancel",
+        "title": "Cancelar",
+        "description": "¿Descartás esta actualización? El alquiler queda como estaba.",
+        "effect": "destructive",
+        "confirmation": "always",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID"
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "record",
+          "fields": [
+            {
+              "key": "unit",
+              "name": "unit",
+              "label": "Unidad",
+              "format": "text"
+            },
+            {
+              "key": "property",
+              "name": "property",
+              "label": "Propiedad",
+              "format": "text"
+            },
+            {
+              "key": "tenant",
+              "name": "tenant",
+              "label": "Inquilino",
+              "format": "text"
+            },
+            {
+              "key": "index_code",
+              "name": "indexCode",
+              "label": "Índice",
+              "format": "text"
+            },
+            {
+              "key": "rate_percent",
+              "name": "ratePercent",
+              "label": "Variación",
+              "format": "number",
+              "suffix": "%"
+            },
+            {
+              "key": "previous_rent",
+              "name": "previousRent",
+              "label": "Alquiler actual",
+              "format": "money"
+            },
+            {
+              "key": "new_rent",
+              "name": "newRent",
+              "label": "Nuevo alquiler",
+              "format": "money"
+            },
+            {
+              "key": "effective_date",
+              "name": "effectiveDate",
+              "label": "Rige desde",
+              "format": "date"
+            },
+            {
+              "key": "status",
+              "name": "status",
+              "label": "Estado",
+              "format": "text",
+              "values": [
+                {
+                  "value": "pending",
+                  "label": "Pendiente"
+                },
+                {
+                  "value": "applied",
+                  "label": "Aplicada"
+                },
+                {
+                  "value": "cancelled",
+                  "label": "Cancelada"
+                }
+              ]
+            }
+          ],
+          "identifierKey": "id"
+        },
+        "generatedBy": "builder"
+      }
+    ]
+  },
+  "initView": "leases.dashboard-alquileres-fidelidad.open",
+  "entry": "./dist/server.js"
+}

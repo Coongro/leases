@@ -1,0 +1,138 @@
+{
+  "specVersion": 1,
+  "kind": "blank",
+  "title": "Inquilinos",
+  "blocks": [
+    {
+      "id": "ph",
+      "kind": "component",
+      "comp": "PageHeader",
+      "props": {
+        "kicker": "ALQUILERES",
+        "title": "Inquilinos",
+        "subtitle": "Quiénes alquilan hoy y quiénes alquilaron antes.",
+        "actionLabel": "Nuevo inquilino",
+        "action": {
+          "id": "openForm",
+          "label": "Nuevo inquilino",
+          "target": "leases.inquilino.open"
+        }
+      }
+    },
+    {
+      "id": "tbl",
+      "kind": "component",
+      "comp": "DataTable",
+      "props": {
+        "view": "list",
+        "imageCol": "photo_url",
+        "imageLayout": "avatar",
+        "subtitle": "document",
+        "pageSize": "20",
+        "columns": [
+          {
+            "key": "name",
+            "label": "Inquilino"
+          },
+          {
+            "key": "document",
+            "label": "Documento",
+            "display": "mono",
+            "emptyLabel": "Sin documento"
+          },
+          {
+            "key": "current_property",
+            "label": "Alquila",
+            "emptyLabel": "—"
+          },
+          {
+            "key": "current_unit",
+            "label": "Unidad",
+            "emptyLabel": "—"
+          },
+          {
+            "key": "is_current",
+            "label": "Estado",
+            "display": "pill",
+            "values": [
+              {
+                "value": "true",
+                "label": "Con contrato vigente",
+                "tone": "success",
+                "icon": "CircleCheck"
+              },
+              {
+                "value": "false",
+                "label": "Sin contrato",
+                "tone": "outline",
+                "icon": "CircleSlash"
+              }
+            ]
+          },
+          {
+            "key": "phone",
+            "label": "Teléfono",
+            "visible": false,
+            "emptyLabel": "—"
+          },
+          {
+            "key": "email",
+            "label": "Email",
+            "visible": false,
+            "emptyLabel": "—"
+          },
+          {
+            "key": "leases_count",
+            "label": "Contratos",
+            "visible": false,
+            "display": "mono"
+          },
+          {
+            "key": "photo_url",
+            "label": "Foto",
+            "visible": false
+          }
+        ],
+        "cells": [
+          [
+            "Ana María Ruiz",
+            "CUIT 27-11402887-3",
+            "Belgrano 1240",
+            "1°B",
+            "true",
+            "341 555-1234",
+            "ana.ruiz@gmail.com",
+            "1",
+            ""
+          ]
+        ],
+        "filters": [
+          {
+            "column": "is_current",
+            "label": "Estado",
+            "kind": "select",
+            "options": []
+          }
+        ],
+        "actions": [
+          {
+            "label": "Editar",
+            "icon": "Pencil",
+            "action": {
+              "id": "openForm",
+              "label": "Editar",
+              "target": "leases.inquilino.open"
+            }
+          }
+        ],
+        "emptyTitle": "Todavía no hay inquilinos",
+        "emptySub": "Aparecen acá cuando firmás el primer contrato.",
+        "rowAction": {
+          "id": "navigate",
+          "label": "Ver ficha",
+          "target": "leases.ficha-de-inquilino.open"
+        }
+      }
+    }
+  ]
+}

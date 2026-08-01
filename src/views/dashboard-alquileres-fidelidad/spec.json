@@ -1,0 +1,446 @@
+{
+  "specVersion": 1,
+  "kind": "blank",
+  "title": "Panel de alquileres",
+  "blocks": [
+    {
+      "id": "ph",
+      "kind": "component",
+      "comp": "PageHeader",
+      "props": {
+        "kicker": "ALQUILERES",
+        "title": "Panel",
+        "subtitle": "Cómo viene el mes."
+      }
+    },
+    {
+      "id": "row_kpi",
+      "kind": "container",
+      "ctype": "columns",
+      "alias": "Fila KPI",
+      "cols": [
+        {
+          "fr": 0.25,
+          "children": [
+            {
+              "id": "k1",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Ocupación",
+                "value": "80%",
+                "sub": "8 de 10 unidades ocupadas",
+                "icon": "House",
+                "tone": "neutral"
+              }
+            }
+          ]
+        },
+        {
+          "fr": 0.25,
+          "children": [
+            {
+              "id": "k2",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Contratos activos",
+                "value": "8",
+                "sub": "1 vence en 47 días",
+                "icon": "ScrollText",
+                "tone": "neutral"
+              }
+            }
+          ]
+        },
+        {
+          "fr": 0.25,
+          "children": [
+            {
+              "id": "k3",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Deuda pendiente",
+                "value": "$1.285.000",
+                "sub": "3 cargos sin saldar",
+                "icon": "Wallet",
+                "tone": "warning"
+              }
+            }
+          ]
+        },
+        {
+          "fr": 0.25,
+          "children": [
+            {
+              "id": "k4",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Vencido",
+                "value": "$505.000",
+                "sub": "Salta 870 · 1°C, 24 días",
+                "icon": "TriangleAlert",
+                "tone": "danger"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "periodo",
+      "kind": "component",
+      "comp": "PeriodPicker",
+      "alias": "Período del panel",
+      "props": {
+        "granularity": "month",
+        "resettable": true
+      }
+    },
+    {
+      "id": "row_charts",
+      "kind": "container",
+      "ctype": "columns",
+      "alias": "Gráficos",
+      "cols": [
+        {
+          "fr": 0.58,
+          "children": [
+            {
+              "id": "sec_anio",
+              "kind": "container",
+              "ctype": "section",
+              "label": "El año: cobrado contra impago",
+              "icon": "ChartColumn",
+              "children": [
+                {
+                  "id": "chart_anio",
+                  "kind": "component",
+                  "comp": "BarChart",
+                  "props": {
+                    "orientation": "horizontal",
+                    "palette": "teal",
+                    "prefix": "$",
+                    "stackMode": "diverge",
+                    "frame": true,
+                    "series": [
+                      {
+                        "label": "Ene",
+                        "value": 0
+                      },
+                      {
+                        "label": "Feb",
+                        "value": 0
+                      },
+                      {
+                        "label": "Mar",
+                        "value": 0
+                      },
+                      {
+                        "label": "Abr",
+                        "value": 0
+                      },
+                      {
+                        "label": "May",
+                        "value": 0
+                      },
+                      {
+                        "label": "Jun",
+                        "value": 0
+                      },
+                      {
+                        "label": "Jul",
+                        "value": 0
+                      }
+                    ],
+                    "stacks": [
+                      {
+                        "key": "paid",
+                        "label": "Cobrado",
+                        "values": "1050000, 1180000, 1210000, 1305000, 1340000, 1420000, 1465000"
+                      },
+                      {
+                        "key": "unpaid",
+                        "label": "Impago",
+                        "values": "210000, 160000, 90000, 140000, 95000, 60000, 505000"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "fr": 0.42,
+          "children": [
+            {
+              "id": "sec_mes",
+              "kind": "container",
+              "ctype": "section",
+              "label": "Cobranza del mes",
+              "icon": "ChartPie",
+              "children": [
+                {
+                  "id": "chart_mes",
+                  "kind": "component",
+                  "comp": "DonutChart",
+                  "props": {
+                    "series": [
+                      {
+                        "label": "Cobrado",
+                        "value": 1465000,
+                        "color": "var(--cg-teal)"
+                      },
+                      {
+                        "label": "Por cobrar",
+                        "value": 780000,
+                        "color": "var(--cg-gold)"
+                      },
+                      {
+                        "label": "Vencido",
+                        "value": 505000,
+                        "color": "var(--cg-danger)"
+                      }
+                    ],
+                    "palette": "mixed",
+                    "size": 140,
+                    "frame": true,
+                    "legend": true,
+                    "centerLabel": "facturado"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "row_cards",
+      "kind": "container",
+      "ctype": "columns",
+      "alias": "Resumen",
+      "cols": [
+        {
+          "fr": 0.55,
+          "children": [
+            {
+              "id": "c_mes",
+              "kind": "container",
+              "ctype": "card",
+              "label": "El mes en curso",
+              "icon": "CalendarRange",
+              "children": [
+                {
+                  "id": "kv_mes",
+                  "kind": "component",
+                  "comp": "KeyValue",
+                  "props": {
+                    "rows": [
+                      {
+                        "k": "Facturado",
+                        "v": "$2.750.000",
+                        "mono": true,
+                        "icon": "ReceiptText"
+                      },
+                      {
+                        "k": "Cobrado",
+                        "v": "$1.465.000",
+                        "mono": true,
+                        "tone": "success",
+                        "icon": "CircleCheck"
+                      },
+                      {
+                        "k": "Por cobrar",
+                        "v": "$780.000",
+                        "mono": true,
+                        "icon": "Clock"
+                      },
+                      {
+                        "k": "Saldo del mes",
+                        "v": "$1.285.000",
+                        "mono": true,
+                        "total": true,
+                        "icon": "Wallet"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "fr": 0.45,
+          "children": [
+            {
+              "id": "c_cartera",
+              "kind": "container",
+              "ctype": "card",
+              "label": "Cartera",
+              "icon": "Building2",
+              "children": [
+                {
+                  "id": "kv_cartera",
+                  "kind": "component",
+                  "comp": "KeyValue",
+                  "props": {
+                    "rows": [
+                      {
+                        "k": "Propiedades",
+                        "v": "4",
+                        "mono": true,
+                        "icon": "Building2"
+                      },
+                      {
+                        "k": "Unidades",
+                        "v": "10",
+                        "mono": true,
+                        "icon": "Grid3x3"
+                      },
+                      {
+                        "k": "Ocupadas",
+                        "v": "8",
+                        "mono": true,
+                        "tone": "success",
+                        "icon": "UserCheck"
+                      },
+                      {
+                        "k": "Vacantes",
+                        "v": "2",
+                        "mono": true,
+                        "icon": "DoorOpen"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "row_listas",
+      "kind": "container",
+      "ctype": "columns",
+      "alias": "Listas cortas",
+      "cols": [
+        {
+          "fr": 0.5,
+          "children": [
+            {
+              "id": "sec_venc",
+              "kind": "container",
+              "ctype": "section",
+              "label": "Contratos por vencer",
+              "icon": "CalendarClock",
+              "children": [
+                {
+                  "id": "tbl_venc",
+                  "kind": "component",
+                  "comp": "DataTable",
+                  "props": {
+                    "view": "list",
+                    "subtitle": "unit",
+                    "pageSize": "10",
+                    "columns": [
+                      {
+                        "key": "tenant",
+                        "label": "Inquilino"
+                      },
+                      {
+                        "key": "unit",
+                        "label": "Unidad"
+                      },
+                      {
+                        "key": "end_date",
+                        "label": "Termina",
+                        "format": "date"
+                      }
+                    ],
+                    "cells": [
+                      [
+                        "Nicolás Vera",
+                        "Salta 870 · 1°C",
+                        "2026-09-14"
+                      ],
+                      [
+                        "Diego Sosa",
+                        "Belgrano 1240 · 2°A",
+                        "2026-10-31"
+                      ]
+                    ],
+                    "filters": [],
+                    "actions": [],
+                    "emptyTitle": "Ningún contrato vence en los próximos 60 días",
+                    "emptySub": "Acá vas a ver los que se acerquen al final del plazo."
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "fr": 0.5,
+          "children": [
+            {
+              "id": "sec_aj",
+              "kind": "container",
+              "ctype": "section",
+              "label": "Actualizaciones pendientes",
+              "icon": "TrendingUp",
+              "children": [
+                {
+                  "id": "tbl_aj",
+                  "kind": "component",
+                  "comp": "DataTable",
+                  "props": {
+                    "view": "list",
+                    "subtitle": "index",
+                    "pageSize": "10",
+                    "columns": [
+                      {
+                        "key": "unit",
+                        "label": "Unidad"
+                      },
+                      {
+                        "key": "index",
+                        "label": "Índice"
+                      },
+                      {
+                        "key": "new_rent",
+                        "label": "Nuevo alquiler",
+                        "display": "mono",
+                        "format": "money"
+                      }
+                    ],
+                    "cells": [
+                      [
+                        "Belgrano 1240 · 3°B",
+                        "ICL · +18,4%",
+                        "574000"
+                      ],
+                      [
+                        "Moreno 55 · Local",
+                        "IPC · +18,4%",
+                        "923000"
+                      ]
+                    ],
+                    "filters": [],
+                    "actions": [],
+                    "emptyTitle": "No hay actualizaciones esperando",
+                    "emptySub": "Cuando un contrato cumpla su período, la actualización aparece acá para que la confirmes."
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

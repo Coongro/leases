@@ -1,0 +1,13 @@
+name: Release
+
+on:
+  push:
+    branches: [staging]
+
+jobs:
+  release:
+    uses: Coongro/plugin-ci/.github/workflows/plugin-release.yml@main
+    secrets: inherit
+    permissions:
+      contents: write
+      pull-requests: write

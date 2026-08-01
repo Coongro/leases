@@ -1,0 +1,78 @@
+{
+  "specVersion": 1,
+  "kind": "panel",
+  "title": "Rescindir contrato",
+  "blocks": [
+    {
+      "id": "aviso",
+      "kind": "component",
+      "comp": "Callout",
+      "props": {
+        "tone": "warning",
+        "title": "El contrato deja de generar cargos",
+        "text": "Se guarda la fecha real de fin. El plazo pactado no se modifica: la diferencia entre ambos es lo que fundamenta la multa por rescisión anticipada, si el contrato la prevé."
+      }
+    },
+    {
+      "id": "s1",
+      "kind": "container",
+      "ctype": "card",
+      "label": "La rescisión",
+      "icon": "Ban",
+      "children": [
+        {
+          "id": "f_date",
+          "kind": "field",
+          "name": "terminationDate",
+          "fieldType": "date",
+          "label": "Último día del contrato",
+          "validations": [
+            "required"
+          ]
+        },
+        {
+          "id": "f_reason",
+          "kind": "field",
+          "name": "reason",
+          "fieldType": "enum",
+          "label": "Motivo",
+          "validations": [
+            "required"
+          ],
+          "options": [
+            {
+              "value": "inquilino",
+              "label": "El inquilino se va antes"
+            },
+            {
+              "value": "propietario",
+              "label": "Decisión del propietario"
+            },
+            {
+              "value": "mutuo_acuerdo",
+              "label": "De común acuerdo"
+            },
+            {
+              "value": "incumplimiento",
+              "label": "Por incumplimiento"
+            }
+          ]
+        },
+        {
+          "id": "f_notes",
+          "kind": "field",
+          "name": "notes",
+          "fieldType": "text",
+          "label": "Detalle",
+          "validations": [],
+          "placeholder": "Ej: entregó las llaves el 20/07, se descuenta la multa del depósito"
+        }
+      ]
+    }
+  ],
+  "data": {
+    "submitLabel": "Rescindir contrato",
+    "successTitle": "Contrato rescindido",
+    "successMessage": "Se guardó la fecha de fin. Deja de generar cargos."
+  }
+}

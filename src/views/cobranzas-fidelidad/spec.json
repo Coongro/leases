@@ -1,0 +1,289 @@
+{
+  "specVersion": 1,
+  "kind": "blank",
+  "title": "Cobranzas",
+  "blocks": [
+    {
+      "id": "ph",
+      "kind": "component",
+      "comp": "PageHeader",
+      "props": {
+        "kicker": "ALQUILERES",
+        "title": "Cobranzas",
+        "subtitle": "Los cargos del período y cómo viene la cobranza.",
+        "actionLabel": "Generar cargos del mes",
+        "action": {
+          "id": "serverAction",
+          "label": "Generar cargos del mes",
+          "target": "leases.contracts.list",
+          "confirm": "Se generan los cargos de todos los contratos vigentes del período. Si ya estaban generados, no se duplican."
+        }
+      }
+    },
+    {
+      "id": "row_kpi",
+      "kind": "container",
+      "ctype": "columns",
+      "alias": "Totales del período",
+      "cols": [
+        {
+          "fr": 0.25,
+          "children": [
+            {
+              "id": "k1",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Facturado",
+                "value": "$0",
+                "sub": "sin cargos",
+                "icon": "ReceiptText",
+                "tone": "neutral"
+              }
+            }
+          ]
+        },
+        {
+          "fr": 0.25,
+          "children": [
+            {
+              "id": "k2",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Cobrado",
+                "value": "$0",
+                "sub": "sin cobros",
+                "icon": "TrendingUp",
+                "tone": "success"
+              }
+            }
+          ]
+        },
+        {
+          "fr": 0.25,
+          "children": [
+            {
+              "id": "k3",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Por cobrar",
+                "value": "$0",
+                "sub": "aún no vencido",
+                "icon": "TrendingDown",
+                "tone": "warning"
+              }
+            }
+          ]
+        },
+        {
+          "fr": 0.25,
+          "children": [
+            {
+              "id": "k4",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Vencido",
+                "value": "$0",
+                "sub": "sin atrasos",
+                "icon": "TriangleAlert",
+                "tone": "danger"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "periodo",
+      "kind": "component",
+      "comp": "PeriodPicker",
+      "alias": "Período",
+      "props": {
+        "granularity": "month",
+        "resettable": true
+      }
+    },
+    {
+      "id": "tbl",
+      "kind": "component",
+      "comp": "DataTable",
+      "props": {
+        "view": "table",
+        "density": "compact",
+        "mobile": "cards",
+        "pageSize": "20",
+        "subtitle": "property",
+        "expandable": true,
+        "columns": [
+          {
+            "key": "unit",
+            "label": "Unidad",
+            "emptyLabel": "—"
+          },
+          {
+            "key": "property",
+            "label": "Propiedad",
+            "emptyLabel": "—"
+          },
+          {
+            "key": "tenant",
+            "label": "Inquilino",
+            "emptyLabel": "—"
+          },
+          {
+            "key": "due_date",
+            "label": "Vence",
+            "format": "date"
+          },
+          {
+            "key": "total_due",
+            "label": "A pagar",
+            "display": "mono",
+            "format": "money"
+          },
+          {
+            "key": "paid",
+            "label": "Cobrado",
+            "display": "mono",
+            "format": "money"
+          },
+          {
+            "key": "balance",
+            "label": "Saldo",
+            "display": "mono",
+            "format": "money"
+          },
+          {
+            "key": "status",
+            "label": "Estado",
+            "display": "pill",
+            "values": [
+              {
+                "value": "open",
+                "label": "Emitido",
+                "tone": "outline",
+                "icon": "FileText"
+              },
+              {
+                "value": "partial",
+                "label": "Parcial",
+                "tone": "warning",
+                "icon": "CirclePercent"
+              },
+              {
+                "value": "paid",
+                "label": "Pagado",
+                "tone": "success",
+                "icon": "CircleCheck"
+              },
+              {
+                "value": "overdue",
+                "label": "Vencido",
+                "tone": "danger",
+                "icon": "TriangleAlert"
+              }
+            ]
+          },
+          {
+            "key": "rent",
+            "label": "Alquiler",
+            "visible": false,
+            "display": "mono",
+            "format": "money"
+          },
+          {
+            "key": "expenses",
+            "label": "Expensas",
+            "visible": false,
+            "display": "mono",
+            "format": "money"
+          },
+          {
+            "key": "late_fee",
+            "label": "Punitorio",
+            "visible": false,
+            "display": "mono",
+            "format": "money",
+            "emptyLabel": "Sin punitorio"
+          },
+          {
+            "key": "late_fee_detail",
+            "label": "Cálculo del punitorio",
+            "visible": false,
+            "emptyLabel": "—"
+          },
+          {
+            "key": "late_fee_state",
+            "label": "Punitorio (estado)",
+            "visible": false,
+            "internal": true
+          }
+        ],
+        "cells": [
+          [
+            "3°B",
+            "Belgrano 1240",
+            "Martina Ruiz",
+            "2026-08-05",
+            "485000",
+            "485000",
+            "0",
+            "paid",
+            "420000",
+            "65000"
+          ],
+          [
+            "2°A",
+            "Belgrano 1240",
+            "Diego Sosa",
+            "2026-08-05",
+            "460000",
+            "200000",
+            "260000",
+            "partial",
+            "400000",
+            "60000"
+          ],
+          [
+            "1°C",
+            "Salta 870",
+            "Nicolás Vera",
+            "2026-07-10",
+            "505000",
+            "0",
+            "505000",
+            "overdue",
+            "435000",
+            "70000"
+          ]
+        ],
+        "filters": [
+          {
+            "column": "status",
+            "label": "Estado",
+            "kind": "select",
+            "options": []
+          }
+        ],
+        "actions": [
+          {
+            "label": "Cobrar punitorio",
+            "icon": "AlarmClock",
+            "action": {
+              "id": "serverAction",
+              "label": "Cobrar punitorio",
+              "target": "leases.lateFee.charge"
+            },
+            "showWhenColumn": "late_fee_state",
+            "showWhenValues": "proponer"
+          }
+        ],
+        "emptyTitle": "Todavía no hay cargos de este mes",
+        "emptySub": "Generá los cargos del mes desde el botón de arriba."
+      }
+    }
+  ]
+}

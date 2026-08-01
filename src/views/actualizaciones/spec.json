@@ -1,0 +1,260 @@
+{
+  "specVersion": 1,
+  "kind": "blank",
+  "title": "Actualizaciones",
+  "data": {
+    "repositoryPrefix": "leases.adjustments"
+  },
+  "blocks": [
+    {
+      "id": "ph",
+      "kind": "component",
+      "comp": "PageHeader",
+      "props": {
+        "kicker": "ALQUILERES",
+        "title": "Actualizaciones",
+        "subtitle": "Los aumentos por índice que el sistema calcula y vos confirmás.",
+        "actionLabel": "Buscar actualizaciones",
+        "action": {
+          "id": "serverAction",
+          "label": "Buscar actualizaciones",
+          "target": "leases.adjustments.list",
+          "confirm": "Se revisan los contratos que cumplieron su período y se calcula el factor del índice. No se cambia ningún alquiler: cada actualización queda pendiente para que la confirmes."
+        }
+      }
+    },
+    {
+      "id": "row_kpi",
+      "kind": "container",
+      "ctype": "columns",
+      "alias": "Resumen",
+      "cols": [
+        {
+          "fr": 0.34,
+          "children": [
+            {
+              "id": "k1",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Pendientes",
+                "value": "0",
+                "sub": "esperan tu confirmación",
+                "icon": "TrendingUp",
+                "tone": "warning"
+              }
+            }
+          ]
+        },
+        {
+          "fr": 0.33,
+          "children": [
+            {
+              "id": "k2",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Impacto mensual",
+                "value": "$0",
+                "sub": "si aplicás todas",
+                "icon": "Calculator",
+                "tone": "neutral"
+              }
+            }
+          ]
+        },
+        {
+          "fr": 0.33,
+          "children": [
+            {
+              "id": "k3",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Índice ICL",
+                "value": "—",
+                "sub": "último valor del BCRA",
+                "icon": "RefreshCw",
+                "tone": "success"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tbl",
+      "kind": "component",
+      "comp": "DataTable",
+      "props": {
+        "view": "table",
+        "density": "compact",
+        "mobile": "cards",
+        "pageSize": "20",
+        "subtitle": "property",
+        "expandable": true,
+        "columns": [
+          {
+            "key": "unit",
+            "label": "Unidad",
+            "emptyLabel": "—"
+          },
+          {
+            "key": "property",
+            "label": "Propiedad",
+            "emptyLabel": "—"
+          },
+          {
+            "key": "tenant",
+            "label": "Inquilino",
+            "emptyLabel": "—"
+          },
+          {
+            "key": "index_code",
+            "label": "Índice",
+            "display": "pill",
+            "tone": "outline"
+          },
+          {
+            "key": "rate_percent",
+            "label": "Variación",
+            "display": "mono",
+            "suffix": "%"
+          },
+          {
+            "key": "previous_rent",
+            "label": "Alquiler actual",
+            "display": "mono",
+            "format": "money"
+          },
+          {
+            "key": "new_rent",
+            "label": "Nuevo alquiler",
+            "display": "mono",
+            "format": "money"
+          },
+          {
+            "key": "effective_date",
+            "label": "Rige desde",
+            "format": "date"
+          },
+          {
+            "key": "status",
+            "label": "Estado",
+            "display": "pill",
+            "values": [
+              {
+                "value": "pending",
+                "label": "Pendiente",
+                "tone": "warning",
+                "icon": "Clock"
+              },
+              {
+                "value": "applied",
+                "label": "Aplicada",
+                "tone": "success",
+                "icon": "CircleCheck"
+              },
+              {
+                "value": "cancelled",
+                "label": "Cancelada",
+                "tone": "outline",
+                "icon": "CircleSlash"
+              }
+            ]
+          },
+          {
+            "key": "index_value_from",
+            "label": "Índice base",
+            "visible": false,
+            "display": "mono"
+          },
+          {
+            "key": "index_value_to",
+            "label": "Índice al ajuste",
+            "visible": false,
+            "display": "mono"
+          },
+          {
+            "key": "base_date",
+            "label": "Fecha base",
+            "visible": false,
+            "format": "date"
+          }
+        ],
+        "cells": [
+          [
+            "3°B",
+            "Belgrano 1240",
+            "Martina Ruiz",
+            "ICL",
+            "18,4",
+            "485000",
+            "574000",
+            "2026-09-01",
+            "pending",
+            "29,52",
+            "34,93",
+            "2026-03-01"
+          ],
+          [
+            "2°A",
+            "Belgrano 1240",
+            "Diego Sosa",
+            "ICL",
+            "22,4",
+            "376000",
+            "460000",
+            "2026-03-01",
+            "applied",
+            "24,12",
+            "29,52",
+            "2025-09-01"
+          ]
+        ],
+        "filters": [
+          {
+            "column": "status",
+            "label": "Estado",
+            "kind": "select",
+            "options": [],
+            "default": "pending"
+          },
+          {
+            "column": "index_code",
+            "label": "Índice",
+            "kind": "select",
+            "options": []
+          }
+        ],
+        "actions": [
+          {
+            "label": "Aplicar",
+            "icon": "Check",
+            "action": {
+              "id": "serverAction",
+              "label": "Aplicar",
+              "target": "leases.adjustments.apply",
+              "confirm": "¿Confirmás la actualización? El alquiler del contrato pasa a valer el monto nuevo desde su fecha.",
+              "successToast": "Actualización aplicada"
+            }
+          },
+          {
+            "label": "Cancelar",
+            "variant": "destructive",
+            "icon": "X",
+            "action": {
+              "id": "serverAction",
+              "label": "Cancelar",
+              "target": "leases.adjustments.cancel",
+              "confirm": "¿Descartás esta actualización? El alquiler queda como estaba.",
+              "successToast": "Actualización cancelada"
+            }
+          }
+        ],
+        "emptyTitle": "No hay actualizaciones esperando",
+        "emptySub": "Cuando un contrato cumpla su período, la actualización aparece acá con el factor ya calculado."
+      }
+    }
+  ]
+}

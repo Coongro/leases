@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1785378076700,
+      "tag": "0000_happy_smasher",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785383194523,
+      "tag": "0001_cultured_crystal",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785384963482,
+      "tag": "0002_lazy_longshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785561008516,
+      "tag": "0003_classy_mariko_yashida",
+      "breakpoints": true
+    }
+  ]
+}

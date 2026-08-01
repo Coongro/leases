@@ -1,0 +1,380 @@
+{
+  "specVersion": 1,
+  "kind": "form",
+  "title": "Contrato",
+  "data": {
+    "repositoryPrefix": "leases.contracts"
+  },
+  "blocks": [
+    {
+      "id": "s1",
+      "kind": "container",
+      "ctype": "card",
+      "label": "Las partes",
+      "icon": "Users",
+      "children": [
+        {
+          "id": "f_unit",
+          "kind": "field",
+          "name": "unit_id",
+          "fieldType": "ref",
+          "label": "Unidad",
+          "refEntity": "properties.units",
+          "validations": [
+            "required"
+          ]
+        },
+        {
+          "id": "f_tenant",
+          "kind": "field",
+          "name": "tenant_contact_id",
+          "fieldType": "ref",
+          "label": "Inquilino",
+          "refEntity": "contacts",
+          "validations": [
+            "required"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "kind": "container",
+      "ctype": "card",
+      "label": "Plazo",
+      "icon": "CalendarRange",
+      "children": [
+        {
+          "id": "f_kind",
+          "kind": "field",
+          "name": "contract_type",
+          "fieldType": "enum",
+          "label": "Tipo de contrato",
+          "width": "half",
+          "validations": [
+            "required"
+          ],
+          "options": [
+            {
+              "value": "determinado",
+              "label": "Plazo determinado"
+            },
+            {
+              "value": "indeterminado",
+              "label": "Plazo indeterminado"
+            }
+          ]
+        },
+        {
+          "id": "f_from",
+          "kind": "field",
+          "name": "start_date",
+          "fieldType": "date",
+          "label": "Desde",
+          "width": "half",
+          "validations": [
+            "required"
+          ]
+        },
+        {
+          "id": "f_to",
+          "kind": "field",
+          "name": "end_date",
+          "fieldType": "date",
+          "label": "Hasta",
+          "width": "half",
+          "validations": [
+            "required"
+          ]
+        },
+        {
+          "id": "f_due_day",
+          "kind": "field",
+          "name": "due_day",
+          "fieldType": "number",
+          "label": "Día de vencimiento",
+          "width": "half",
+          "validations": [
+            "required"
+          ],
+          "placeholder": "Ej: 10"
+        },
+        {
+          "id": "f_due_type",
+          "kind": "field",
+          "name": "due_day_type",
+          "fieldType": "enum",
+          "label": "Contar el día como",
+          "width": "half",
+          "validations": [
+            "required"
+          ],
+          "options": [
+            {
+              "value": "fixed",
+              "label": "Día fijo del mes"
+            },
+            {
+              "value": "business",
+              "label": "Día hábil"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "kind": "container",
+      "ctype": "card",
+      "label": "Valor y actualización",
+      "icon": "TrendingUp",
+      "children": [
+        {
+          "id": "f_currency",
+          "kind": "field",
+          "name": "currency",
+          "fieldType": "enum",
+          "label": "Moneda",
+          "width": "half",
+          "validations": [
+            "required"
+          ],
+          "options": [
+            {
+              "value": "ARS",
+              "label": "Pesos (ARS)"
+            },
+            {
+              "value": "USD",
+              "label": "Dólares (USD)"
+            }
+          ]
+        },
+        {
+          "id": "f_rent",
+          "kind": "field",
+          "name": "rent_amount",
+          "fieldType": "money",
+          "label": "Alquiler inicial",
+          "width": "half",
+          "validations": [
+            "required"
+          ],
+          "placeholder": "Ej: 485000"
+        },
+        {
+          "id": "f_expenses",
+          "kind": "field",
+          "name": "expenses_amount",
+          "fieldType": "money",
+          "label": "Expensas a cargo del inquilino",
+          "width": "half",
+          "validations": [],
+          "placeholder": "Ej: 68000"
+        },
+        {
+          "id": "f_index",
+          "kind": "field",
+          "name": "adjustment_index",
+          "fieldType": "enum",
+          "label": "Índice de actualización",
+          "width": "half",
+          "validations": [
+            "required"
+          ],
+          "options": [
+            {
+              "value": "ICL",
+              "label": "ICL (BCRA)"
+            },
+            {
+              "value": "IPC",
+              "label": "IPC (INDEC)"
+            },
+            {
+              "value": "casa_propia",
+              "label": "Casa Propia"
+            },
+            {
+              "value": "fijo",
+              "label": "Escalonado fijo"
+            },
+            {
+              "value": "otro",
+              "label": "Otro"
+            }
+          ]
+        },
+        {
+          "id": "f_period",
+          "kind": "field",
+          "name": "adjustment_months",
+          "fieldType": "enum",
+          "label": "Se actualiza cada",
+          "width": "half",
+          "validations": [
+            "required"
+          ],
+          "options": [
+            {
+              "value": "3",
+              "label": "3 meses"
+            },
+            {
+              "value": "4",
+              "label": "4 meses"
+            },
+            {
+              "value": "6",
+              "label": "6 meses"
+            },
+            {
+              "value": "12",
+              "label": "12 meses"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "kind": "container",
+      "ctype": "card",
+      "label": "Garantía",
+      "icon": "ShieldCheck",
+      "children": [
+        {
+          "id": "f_guarantee_type",
+          "kind": "field",
+          "name": "guarantee_type",
+          "fieldType": "enum",
+          "label": "Tipo de garantía",
+          "width": "half",
+          "validations": [
+            "required"
+          ],
+          "options": [
+            {
+              "value": "garante_propietario",
+              "label": "Garante propietario"
+            },
+            {
+              "value": "garante_recibo_sueldo",
+              "label": "Garante con recibo de sueldo"
+            },
+            {
+              "value": "deposito",
+              "label": "Depósito en garantía"
+            },
+            {
+              "value": "seguro_caucion",
+              "label": "Seguro de caución"
+            }
+          ]
+        },
+        {
+          "id": "f_guarantor",
+          "kind": "field",
+          "name": "guarantor_contact_id",
+          "fieldType": "ref",
+          "label": "Garante",
+          "refEntity": "contacts",
+          "width": "half",
+          "validations": []
+        },
+        {
+          "id": "f_guarantee_notes",
+          "kind": "field",
+          "name": "guarantee_notes",
+          "fieldType": "text",
+          "label": "Detalle de la garantía",
+          "validations": [],
+          "placeholder": "Ej: póliza 4471102, vence 30/09/2027"
+        }
+      ]
+    },
+    {
+      "id": "s5",
+      "kind": "container",
+      "ctype": "card",
+      "label": "Depósito",
+      "icon": "Wallet",
+      "children": [
+        {
+          "id": "f_deposit",
+          "kind": "field",
+          "name": "deposit_amount",
+          "fieldType": "money",
+          "label": "Monto del depósito",
+          "width": "half",
+          "validations": [],
+          "placeholder": "Ej: 485000"
+        },
+        {
+          "id": "f_deposit_status",
+          "kind": "field",
+          "name": "deposit_status",
+          "fieldType": "enum",
+          "label": "Estado",
+          "width": "half",
+          "validations": [],
+          "options": [
+            {
+              "value": "pendiente",
+              "label": "Pendiente"
+            },
+            {
+              "value": "recibido",
+              "label": "Recibido"
+            },
+            {
+              "value": "parcial",
+              "label": "Recibido parcial"
+            },
+            {
+              "value": "devuelto",
+              "label": "Devuelto"
+            },
+            {
+              "value": "retenido_alquiler",
+              "label": "Retenido por alquileres"
+            },
+            {
+              "value": "retenido_reparaciones",
+              "label": "Retenido por reparaciones"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s6",
+      "kind": "container",
+      "ctype": "card",
+      "label": "Incumplimientos",
+      "icon": "TriangleAlert",
+      "children": [
+        {
+          "id": "f_late_fee",
+          "kind": "field",
+          "name": "late_fee_percent",
+          "fieldType": "number",
+          "label": "Punitorio diario por mora (%)",
+          "width": "half",
+          "validations": [],
+          "placeholder": "Ej: 0.5"
+        },
+        {
+          "id": "f_penalty",
+          "kind": "field",
+          "name": "penalty_months",
+          "fieldType": "number",
+          "label": "Multa por rescisión anticipada (meses)",
+          "width": "half",
+          "validations": [],
+          "placeholder": "Ej: 1"
+        }
+      ]
+    }
+  ]
+}

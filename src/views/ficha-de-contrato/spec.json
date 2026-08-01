@@ -1,0 +1,383 @@
+{
+  "specVersion": 1,
+  "kind": "blank",
+  "title": "Ficha de contrato",
+  "blocks": [
+    {
+      "id": "hdr",
+      "kind": "container",
+      "ctype": "header",
+      "alias": "Encabezado",
+      "back": true,
+      "avatar": "Contrato",
+      "name": "Belgrano 1240 · 3°B",
+      "sub": "Martina Ruiz · del 01/09/2025 al 31/08/2028",
+      "badge": {
+        "text": "Vigente",
+        "tone": "success"
+      },
+      "actions": [
+        {
+          "label": "Renovar",
+          "variant": "secondary",
+          "action": {
+            "id": "openForm",
+            "label": "Renovar",
+            "target": "leases.renovar-contrato.open"
+          }
+        },
+        {
+          "label": "Rescindir",
+          "variant": "secondary",
+          "action": {
+            "id": "openForm",
+            "label": "Rescindir",
+            "target": "leases.rescindir-contrato.open"
+          }
+        }
+      ],
+      "children": []
+    },
+    {
+      "id": "row_kpi",
+      "kind": "container",
+      "ctype": "columns",
+      "alias": "Resumen",
+      "cols": [
+        {
+          "fr": 0.25,
+          "children": [
+            {
+              "id": "k1",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Alquiler vigente",
+                "value": "$485.000",
+                "sub": "Desde la última actualización",
+                "icon": "Wallet",
+                "tone": "neutral"
+              }
+            }
+          ]
+        },
+        {
+          "fr": 0.25,
+          "children": [
+            {
+              "id": "k2",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Próxima actualización",
+                "value": "01/09/2026",
+                "sub": "ICL, cada 6 meses",
+                "icon": "TrendingUp",
+                "tone": "warning"
+              }
+            }
+          ]
+        },
+        {
+          "fr": 0.25,
+          "children": [
+            {
+              "id": "k3",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Saldo del inquilino",
+                "value": "$0",
+                "sub": "Al día",
+                "icon": "CircleCheck",
+                "tone": "success"
+              }
+            }
+          ]
+        },
+        {
+          "fr": 0.25,
+          "children": [
+            {
+              "id": "k4",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Termina en",
+                "value": "2 años",
+                "sub": "31/08/2028",
+                "icon": "CalendarClock",
+                "tone": "neutral"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "row_main",
+      "kind": "container",
+      "ctype": "columns",
+      "alias": "Cuerpo",
+      "cols": [
+        {
+          "fr": 0.62,
+          "children": [
+            {
+              "id": "sec_ajustes",
+              "kind": "container",
+              "ctype": "section",
+              "label": "Historial de actualizaciones",
+              "icon": "TrendingUp",
+              "children": [
+                {
+                  "id": "tbl_ajustes",
+                  "kind": "component",
+                  "comp": "DataTable",
+                  "props": {
+                    "view": "table",
+                    "density": "compact",
+                    "pageSize": "10",
+                    "columns": [
+                      {
+                        "key": "date",
+                        "label": "Fecha",
+                        "format": "date"
+                      },
+                      {
+                        "key": "index",
+                        "label": "Índice"
+                      },
+                      {
+                        "key": "rate",
+                        "label": "Variación",
+                        "display": "mono",
+                        "suffix": "%"
+                      },
+                      {
+                        "key": "previous_rent",
+                        "label": "Anterior",
+                        "display": "mono",
+                        "format": "money"
+                      },
+                      {
+                        "key": "new_rent",
+                        "label": "Nuevo",
+                        "display": "mono",
+                        "format": "money"
+                      },
+                      {
+                        "key": "status",
+                        "label": "Estado",
+                        "display": "pill",
+                        "values": [
+                          {
+                            "value": "applied",
+                            "label": "Aplicada",
+                            "tone": "success"
+                          },
+                          {
+                            "value": "pending",
+                            "label": "Pendiente",
+                            "tone": "warning"
+                          },
+                          {
+                            "value": "cancelled",
+                            "label": "Cancelada",
+                            "tone": "outline"
+                          }
+                        ]
+                      }
+                    ],
+                    "cells": [
+                      [
+                        "2026-03-01",
+                        "ICL",
+                        "22,4",
+                        "396000",
+                        "485000",
+                        "applied"
+                      ]
+                    ],
+                    "filters": [],
+                    "actions": [],
+                    "emptyTitle": "Sin actualizaciones todavía",
+                    "emptySub": "La primera aparece cuando el contrato cumpla su período."
+                  }
+                }
+              ]
+            },
+            {
+              "id": "sec_cargos",
+              "kind": "container",
+              "ctype": "section",
+              "label": "Cargos del contrato",
+              "icon": "ReceiptText",
+              "children": [
+                {
+                  "id": "tbl_cargos",
+                  "kind": "component",
+                  "comp": "DataTable",
+                  "props": {
+                    "view": "table",
+                    "density": "compact",
+                    "pageSize": "10",
+                    "columns": [
+                      {
+                        "key": "period",
+                        "label": "Período"
+                      },
+                      {
+                        "key": "due_date",
+                        "label": "Vence",
+                        "format": "date"
+                      },
+                      {
+                        "key": "total",
+                        "label": "A pagar",
+                        "display": "mono",
+                        "format": "money"
+                      },
+                      {
+                        "key": "paid",
+                        "label": "Cobrado",
+                        "display": "mono",
+                        "format": "money"
+                      },
+                      {
+                        "key": "status",
+                        "label": "Estado",
+                        "display": "pill",
+                        "values": [
+                          {
+                            "value": "paid",
+                            "label": "Pagado",
+                            "tone": "success"
+                          },
+                          {
+                            "value": "partial",
+                            "label": "Parcial",
+                            "tone": "warning"
+                          },
+                          {
+                            "value": "overdue",
+                            "label": "Vencido",
+                            "tone": "danger"
+                          },
+                          {
+                            "value": "open",
+                            "label": "Emitido",
+                            "tone": "outline"
+                          }
+                        ]
+                      }
+                    ],
+                    "cells": [
+                      [
+                        "Julio 2026",
+                        "2026-07-05",
+                        "485000",
+                        "485000",
+                        "paid"
+                      ]
+                    ],
+                    "filters": [],
+                    "actions": [],
+                    "emptyTitle": "Sin cargos generados",
+                    "emptySub": "Generá el mes desde Cobranzas."
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "fr": 0.38,
+          "children": [
+            {
+              "id": "c_cond",
+              "kind": "container",
+              "ctype": "card",
+              "label": "Condiciones",
+              "icon": "ScrollText",
+              "children": [
+                {
+                  "id": "kv_cond",
+                  "kind": "component",
+                  "comp": "KeyValue",
+                  "props": {
+                    "rows": [
+                      {
+                        "k": "Moneda",
+                        "v": "Pesos (ARS)"
+                      },
+                      {
+                        "k": "Alquiler inicial",
+                        "v": "$333.000",
+                        "mono": true
+                      },
+                      {
+                        "k": "Expensas",
+                        "v": "$65.000",
+                        "mono": true
+                      },
+                      {
+                        "k": "Vence el",
+                        "v": "5 de cada mes"
+                      },
+                      {
+                        "k": "Punitorio",
+                        "v": "0,5% diario",
+                        "mono": true
+                      },
+                      {
+                        "k": "Multa rescisión",
+                        "v": "1,5 meses"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "c_gar",
+              "kind": "container",
+              "ctype": "card",
+              "label": "Garantía y depósito",
+              "icon": "ShieldCheck",
+              "children": [
+                {
+                  "id": "kv_gar",
+                  "kind": "component",
+                  "comp": "KeyValue",
+                  "props": {
+                    "rows": [
+                      {
+                        "k": "Tipo",
+                        "v": "Garante propietario"
+                      },
+                      {
+                        "k": "Garante",
+                        "v": "Ana María Ruiz"
+                      },
+                      {
+                        "k": "Depósito",
+                        "v": "$420.000",
+                        "mono": true
+                      },
+                      {
+                        "k": "Estado",
+                        "v": "Recibido",
+                        "tone": "success"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

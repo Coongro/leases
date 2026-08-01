@@ -1,0 +1,414 @@
+{
+  "specVersion": 1,
+  "kind": "blank",
+  "title": "Ficha de inquilino",
+  "blocks": [
+    {
+      "id": "hdr",
+      "kind": "container",
+      "ctype": "header",
+      "alias": "Encabezado",
+      "back": true,
+      "avatar": "Ana María Ruiz",
+      "name": "Ana María Ruiz",
+      "sub": "DNI 28.345.129 · Belgrano 1240 · 1°B",
+      "badge": {
+        "text": "Con contrato vigente",
+        "tone": "success"
+      },
+      "actions": [
+        {
+          "label": "Editar datos",
+          "variant": "secondary",
+          "action": {
+            "id": "openForm",
+            "label": "Editar datos",
+            "target": "leases.inquilino.open"
+          }
+        }
+      ],
+      "children": []
+    },
+    {
+      "id": "row_kpi",
+      "kind": "container",
+      "ctype": "columns",
+      "alias": "Resumen",
+      "cols": [
+        {
+          "fr": 0.34,
+          "children": [
+            {
+              "id": "k1",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Alquiler vigente",
+                "value": "$586.612",
+                "sub": "Belgrano 1240 · 1°B",
+                "icon": "House",
+                "tone": "neutral"
+              }
+            }
+          ]
+        },
+        {
+          "fr": 0.33,
+          "children": [
+            {
+              "id": "k2",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Saldo",
+                "value": "$658.612",
+                "sub": "1 cargo sin saldar",
+                "icon": "Wallet",
+                "tone": "warning"
+              }
+            }
+          ]
+        },
+        {
+          "fr": 0.33,
+          "children": [
+            {
+              "id": "k3",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Antigüedad",
+                "value": "11 meses",
+                "sub": "desde el 01/08/2025",
+                "icon": "CalendarClock",
+                "tone": "neutral"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "row_main",
+      "kind": "container",
+      "ctype": "columns",
+      "alias": "Cuerpo",
+      "cols": [
+        {
+          "fr": 0.62,
+          "children": [
+            {
+              "id": "sec_contratos",
+              "kind": "container",
+              "ctype": "section",
+              "label": "Contratos",
+              "icon": "ScrollText",
+              "children": [
+                {
+                  "id": "tbl_contratos",
+                  "kind": "component",
+                  "comp": "DataTable",
+                  "props": {
+                    "view": "table",
+                    "density": "compact",
+                    "pageSize": "10",
+                    "rowAction": {
+                      "id": "navigate",
+                      "label": "Ver contrato",
+                      "target": "leases.ficha-de-contrato.open"
+                    },
+                    "columns": [
+                      {
+                        "key": "unit",
+                        "label": "Unidad",
+                        "emptyLabel": "Sin unidad"
+                      },
+                      {
+                        "key": "property",
+                        "label": "Propiedad",
+                        "emptyLabel": "—"
+                      },
+                      {
+                        "key": "start_date",
+                        "label": "Desde",
+                        "format": "date"
+                      },
+                      {
+                        "key": "end_date",
+                        "label": "Hasta",
+                        "format": "date"
+                      },
+                      {
+                        "key": "rent_amount",
+                        "label": "Alquiler",
+                        "display": "mono",
+                        "format": "money"
+                      },
+                      {
+                        "key": "state",
+                        "label": "Estado",
+                        "display": "pill",
+                        "values": [
+                          {
+                            "value": "vigente",
+                            "label": "Vigente",
+                            "tone": "success",
+                            "icon": "CircleCheck"
+                          },
+                          {
+                            "value": "por_comenzar",
+                            "label": "Por comenzar",
+                            "tone": "neutral",
+                            "icon": "CalendarPlus"
+                          },
+                          {
+                            "value": "por_vencer",
+                            "label": "Por vencer",
+                            "tone": "warning",
+                            "icon": "CalendarClock"
+                          },
+                          {
+                            "value": "terminado",
+                            "label": "Terminado",
+                            "tone": "outline",
+                            "icon": "CircleSlash"
+                          },
+                          {
+                            "value": "renovado",
+                            "label": "Renovado",
+                            "tone": "outline",
+                            "icon": "RefreshCw"
+                          },
+                          {
+                            "value": "rescindido",
+                            "label": "Rescindido",
+                            "tone": "outline",
+                            "icon": "Ban"
+                          },
+                          {
+                            "value": "borrador",
+                            "label": "Borrador",
+                            "tone": "neutral",
+                            "icon": "FileEdit"
+                          }
+                        ]
+                      }
+                    ],
+                    "cells": [
+                      [
+                        "1°B",
+                        "Belgrano 1240",
+                        "2025-08-01",
+                        "2028-07-31",
+                        "586612",
+                        "vigente"
+                      ]
+                    ],
+                    "filters": [],
+                    "actions": [],
+                    "emptyTitle": "Todavía no firmó ningún contrato",
+                    "emptySub": "Cuando alquile una unidad, el contrato aparece acá."
+                  }
+                }
+              ]
+            },
+            {
+              "id": "sec_cargos",
+              "kind": "container",
+              "ctype": "section",
+              "label": "Cuenta corriente",
+              "icon": "ReceiptText",
+              "children": [
+                {
+                  "id": "tbl_cargos",
+                  "kind": "component",
+                  "comp": "DataTable",
+                  "props": {
+                    "view": "table",
+                    "density": "compact",
+                    "pageSize": "20",
+                    "columns": [
+                      {
+                        "key": "period",
+                        "label": "Período"
+                      },
+                      {
+                        "key": "unit",
+                        "label": "Unidad",
+                        "emptyLabel": "—"
+                      },
+                      {
+                        "key": "due_date",
+                        "label": "Vence",
+                        "format": "date"
+                      },
+                      {
+                        "key": "total_due",
+                        "label": "A pagar",
+                        "display": "mono",
+                        "format": "money"
+                      },
+                      {
+                        "key": "paid",
+                        "label": "Cobrado",
+                        "display": "mono",
+                        "format": "money"
+                      },
+                      {
+                        "key": "balance",
+                        "label": "Saldo",
+                        "display": "mono",
+                        "format": "money"
+                      },
+                      {
+                        "key": "status",
+                        "label": "Estado",
+                        "display": "pill",
+                        "values": [
+                          {
+                            "value": "open",
+                            "label": "Emitido",
+                            "tone": "outline",
+                            "icon": "FileText"
+                          },
+                          {
+                            "value": "partial",
+                            "label": "Parcial",
+                            "tone": "warning",
+                            "icon": "CirclePercent"
+                          },
+                          {
+                            "value": "paid",
+                            "label": "Pagado",
+                            "tone": "success",
+                            "icon": "CircleCheck"
+                          },
+                          {
+                            "value": "overdue",
+                            "label": "Vencido",
+                            "tone": "danger",
+                            "icon": "TriangleAlert"
+                          }
+                        ]
+                      }
+                    ],
+                    "cells": [
+                      [
+                        "2026-07",
+                        "1°B",
+                        "2026-07-10",
+                        "658612",
+                        "0",
+                        "658612",
+                        "overdue"
+                      ],
+                      [
+                        "2026-08",
+                        "1°B",
+                        "2026-08-10",
+                        "592000",
+                        "0",
+                        "592000",
+                        "open"
+                      ]
+                    ],
+                    "filters": [],
+                    "actions": [],
+                    "emptyTitle": "Sin cargos todavía",
+                    "emptySub": "Los cargos aparecen a medida que se generan los meses."
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "fr": 0.38,
+          "children": [
+            {
+              "id": "c_datos",
+              "kind": "container",
+              "ctype": "card",
+              "label": "Datos de contacto",
+              "icon": "IdCard",
+              "children": [
+                {
+                  "id": "kv_datos",
+                  "kind": "component",
+                  "comp": "KeyValue",
+                  "props": {
+                    "rows": [
+                      {
+                        "k": "Documento",
+                        "v": "DNI 28.345.129",
+                        "mono": true,
+                        "icon": "IdCard"
+                      },
+                      {
+                        "k": "Teléfono",
+                        "v": "11 5555-1234",
+                        "icon": "Phone"
+                      },
+                      {
+                        "k": "Email",
+                        "v": "ana.ruiz@mail.com",
+                        "icon": "Mail"
+                      },
+                      {
+                        "k": "Domicilio",
+                        "v": "Belgrano 1240, 1°B",
+                        "icon": "MapPin"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "c_hist",
+              "kind": "container",
+              "ctype": "card",
+              "label": "Historial",
+              "icon": "History",
+              "children": [
+                {
+                  "id": "kv_hist",
+                  "kind": "component",
+                  "comp": "KeyValue",
+                  "props": {
+                    "rows": [
+                      {
+                        "k": "Contratos firmados",
+                        "v": "1",
+                        "mono": true,
+                        "icon": "ScrollText"
+                      },
+                      {
+                        "k": "Primer contrato",
+                        "v": "01/08/2025",
+                        "icon": "CalendarPlus"
+                      },
+                      {
+                        "k": "Cargos emitidos",
+                        "v": "2",
+                        "mono": true,
+                        "icon": "ReceiptText"
+                      },
+                      {
+                        "k": "Total cobrado",
+                        "v": "$0",
+                        "mono": true,
+                        "total": true,
+                        "icon": "CircleCheck"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

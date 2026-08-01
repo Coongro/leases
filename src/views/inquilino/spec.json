@@ -1,0 +1,415 @@
+{
+  "specVersion": 1,
+  "kind": "form",
+  "title": "Inquilino",
+  "blocks": [
+    {
+      "id": "s1",
+      "kind": "container",
+      "ctype": "card",
+      "label": "Quién alquila",
+      "icon": "User",
+      "children": [
+        {
+          "id": "f_kind",
+          "kind": "field",
+          "name": "kind",
+          "fieldType": "enum",
+          "label": "Tipo",
+          "width": "half",
+          "validations": [
+            "required"
+          ],
+          "options": [
+            {
+              "value": "persona",
+              "label": "Persona",
+              "icon": "User"
+            },
+            {
+              "value": "empresa",
+              "label": "Empresa",
+              "icon": "Building2"
+            }
+          ],
+          "default": "persona"
+        },
+        {
+          "id": "f_name",
+          "kind": "field",
+          "name": "name",
+          "fieldType": "text",
+          "label": "Nombre y apellido o razón social",
+          "width": "half",
+          "validations": [
+            "required"
+          ],
+          "placeholder": "Ej: Martín Aguirre"
+        },
+        {
+          "id": "f_doc_type",
+          "kind": "field",
+          "name": "document_type",
+          "fieldType": "enum",
+          "label": "Documento",
+          "width": "half",
+          "validations": [
+            "required"
+          ],
+          "options": [
+            {
+              "value": "dni",
+              "label": "DNI"
+            },
+            {
+              "value": "cuit",
+              "label": "CUIT"
+            },
+            {
+              "value": "cuil",
+              "label": "CUIL"
+            },
+            {
+              "value": "pasaporte",
+              "label": "Pasaporte"
+            }
+          ]
+        },
+        {
+          "id": "f_doc",
+          "kind": "field",
+          "name": "document_number",
+          "fieldType": "text",
+          "label": "Número",
+          "width": "half",
+          "validations": [
+            "required"
+          ],
+          "placeholder": "Ej: 32.145.678"
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "kind": "container",
+      "ctype": "card",
+      "label": "Datos personales",
+      "icon": "IdCard",
+      "children": [
+        {
+          "id": "f_nationality",
+          "kind": "field",
+          "name": "nationality",
+          "fieldType": "text",
+          "label": "Nacionalidad",
+          "width": "half",
+          "validations": [],
+          "placeholder": "Ej: argentina"
+        },
+        {
+          "id": "f_marital",
+          "kind": "field",
+          "name": "marital_status",
+          "fieldType": "enum",
+          "label": "Estado civil",
+          "width": "half",
+          "validations": [],
+          "options": [
+            {
+              "value": "soltero",
+              "label": "Soltero/a"
+            },
+            {
+              "value": "casado",
+              "label": "Casado/a"
+            },
+            {
+              "value": "divorciado",
+              "label": "Divorciado/a"
+            },
+            {
+              "value": "viudo",
+              "label": "Viudo/a"
+            },
+            {
+              "value": "union_convivencial",
+              "label": "Unión convivencial"
+            }
+          ]
+        },
+        {
+          "id": "f_spouse",
+          "kind": "field",
+          "name": "spouse_name",
+          "fieldType": "text",
+          "label": "Cónyuge",
+          "width": "half",
+          "validations": [],
+          "placeholder": "Ej: Carla Beltrán"
+        },
+        {
+          "id": "f_spouse_doc",
+          "kind": "field",
+          "name": "spouse_document",
+          "fieldType": "text",
+          "label": "Documento del cónyuge",
+          "width": "half",
+          "validations": [],
+          "placeholder": "Ej: 30.987.654"
+        },
+        {
+          "id": "f_job",
+          "kind": "field",
+          "name": "occupation",
+          "fieldType": "text",
+          "label": "Profesión u ocupación",
+          "validations": [],
+          "placeholder": "Ej: empleado de comercio"
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "kind": "container",
+      "ctype": "card",
+      "label": "Si es empresa",
+      "icon": "Building2",
+      "children": [
+        {
+          "id": "f_rep",
+          "kind": "field",
+          "name": "legal_representative",
+          "fieldType": "text",
+          "label": "Representante legal",
+          "width": "half",
+          "validations": [],
+          "placeholder": "Ej: Roberto Puig"
+        },
+        {
+          "id": "f_legal",
+          "kind": "field",
+          "name": "legal_form",
+          "fieldType": "enum",
+          "label": "Forma jurídica",
+          "width": "half",
+          "validations": [],
+          "options": [
+            {
+              "value": "sa",
+              "label": "S.A."
+            },
+            {
+              "value": "srl",
+              "label": "S.R.L."
+            },
+            {
+              "value": "sas",
+              "label": "S.A.S."
+            },
+            {
+              "value": "sociedad_de_hecho",
+              "label": "Sociedad de hecho"
+            },
+            {
+              "value": "monotributista",
+              "label": "Monotributista"
+            },
+            {
+              "value": "cooperativa",
+              "label": "Cooperativa"
+            },
+            {
+              "value": "otra",
+              "label": "Otra"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "kind": "container",
+      "ctype": "card",
+      "label": "Contacto",
+      "icon": "Phone",
+      "children": [
+        {
+          "id": "f_email",
+          "kind": "field",
+          "name": "email",
+          "fieldType": "text",
+          "label": "Email",
+          "width": "half",
+          "validations": [],
+          "placeholder": "Ej: martin.aguirre@gmail.com"
+        },
+        {
+          "id": "f_phone",
+          "kind": "field",
+          "name": "phone",
+          "fieldType": "text",
+          "label": "Teléfono",
+          "width": "half",
+          "validations": [],
+          "placeholder": "Ej: 341 555-8899"
+        },
+        {
+          "id": "f_phone2",
+          "kind": "field",
+          "name": "phone_alt",
+          "fieldType": "text",
+          "label": "Teléfono alternativo",
+          "width": "half",
+          "validations": [],
+          "placeholder": "Ej: 341 444-1122"
+        }
+      ]
+    },
+    {
+      "id": "s5",
+      "kind": "container",
+      "ctype": "card",
+      "label": "Domicilio",
+      "icon": "MapPin",
+      "children": [
+        {
+          "id": "f_street",
+          "kind": "field",
+          "name": "address",
+          "fieldType": "text",
+          "label": "Calle y altura",
+          "width": "half",
+          "validations": [],
+          "placeholder": "Ej: Mitre 2345"
+        },
+        {
+          "id": "f_city",
+          "kind": "field",
+          "name": "city",
+          "fieldType": "text",
+          "label": "Localidad",
+          "width": "half",
+          "validations": [],
+          "placeholder": "Ej: Rosario"
+        },
+        {
+          "id": "f_zip",
+          "kind": "field",
+          "name": "zip_code",
+          "fieldType": "text",
+          "label": "Código postal",
+          "width": "half",
+          "validations": [],
+          "placeholder": "Ej: S2000"
+        },
+        {
+          "id": "f_province",
+          "kind": "field",
+          "name": "province",
+          "fieldType": "enum",
+          "label": "Provincia",
+          "width": "half",
+          "validations": [],
+          "options": [
+            {
+              "value": "buenos_aires",
+              "label": "Buenos Aires"
+            },
+            {
+              "value": "caba",
+              "label": "Ciudad Autónoma de Buenos Aires"
+            },
+            {
+              "value": "catamarca",
+              "label": "Catamarca"
+            },
+            {
+              "value": "chaco",
+              "label": "Chaco"
+            },
+            {
+              "value": "chubut",
+              "label": "Chubut"
+            },
+            {
+              "value": "cordoba",
+              "label": "Córdoba"
+            },
+            {
+              "value": "corrientes",
+              "label": "Corrientes"
+            },
+            {
+              "value": "entre_rios",
+              "label": "Entre Ríos"
+            },
+            {
+              "value": "formosa",
+              "label": "Formosa"
+            },
+            {
+              "value": "jujuy",
+              "label": "Jujuy"
+            },
+            {
+              "value": "la_pampa",
+              "label": "La Pampa"
+            },
+            {
+              "value": "la_rioja",
+              "label": "La Rioja"
+            },
+            {
+              "value": "mendoza",
+              "label": "Mendoza"
+            },
+            {
+              "value": "misiones",
+              "label": "Misiones"
+            },
+            {
+              "value": "neuquen",
+              "label": "Neuquén"
+            },
+            {
+              "value": "rio_negro",
+              "label": "Río Negro"
+            },
+            {
+              "value": "salta",
+              "label": "Salta"
+            },
+            {
+              "value": "san_juan",
+              "label": "San Juan"
+            },
+            {
+              "value": "san_luis",
+              "label": "San Luis"
+            },
+            {
+              "value": "santa_cruz",
+              "label": "Santa Cruz"
+            },
+            {
+              "value": "santa_fe",
+              "label": "Santa Fe"
+            },
+            {
+              "value": "santiago_del_estero",
+              "label": "Santiago del Estero"
+            },
+            {
+              "value": "tierra_del_fuego",
+              "label": "Tierra del Fuego"
+            },
+            {
+              "value": "tucuman",
+              "label": "Tucumán"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

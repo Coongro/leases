@@ -1,0 +1,257 @@
+{
+  "specVersion": 1,
+  "kind": "blank",
+  "title": "Contratos",
+  "blocks": [
+    {
+      "id": "ph",
+      "kind": "component",
+      "comp": "PageHeader",
+      "props": {
+        "kicker": "ALQUILERES",
+        "title": "Contratos",
+        "subtitle": "Plazos, valores y ajustes de cada locación.",
+        "actionLabel": "Nuevo contrato",
+        "action": {
+          "id": "openForm",
+          "label": "Nuevo contrato",
+          "target": "leases.contrato.open"
+        }
+      }
+    },
+    {
+      "id": "tbl",
+      "kind": "component",
+      "comp": "DataTable",
+      "props": {
+        "view": "table",
+        "density": "compact",
+        "mobile": "cards",
+        "pageSize": "20",
+        "subtitle": "property",
+        "expandable": true,
+        "rowAction": {
+          "id": "navigate",
+          "label": "Ver contrato",
+          "target": "leases.ficha-de-contrato.open"
+        },
+        "columns": [
+          {
+            "key": "unit",
+            "label": "Unidad",
+            "emptyLabel": "Sin unidad"
+          },
+          {
+            "key": "property",
+            "label": "Propiedad",
+            "emptyLabel": "—"
+          },
+          {
+            "key": "tenant",
+            "label": "Inquilino",
+            "emptyLabel": "Sin inquilino"
+          },
+          {
+            "key": "start_date",
+            "label": "Desde",
+            "format": "date"
+          },
+          {
+            "key": "end_date",
+            "label": "Hasta",
+            "format": "date"
+          },
+          {
+            "key": "rent_amount",
+            "label": "Alquiler vigente",
+            "display": "mono",
+            "format": "money"
+          },
+          {
+            "key": "adjustment_index",
+            "label": "Ajuste",
+            "display": "pill",
+            "tone": "outline",
+            "emptyLabel": "Fijo",
+            "values": [
+              {
+                "value": "ICL",
+                "label": "ICL",
+                "icon": "TrendingUp"
+              },
+              {
+                "value": "IPC",
+                "label": "IPC",
+                "icon": "TrendingUp"
+              },
+              {
+                "value": "casa_propia",
+                "label": "Casa Propia",
+                "icon": "TrendingUp"
+              }
+            ]
+          },
+          {
+            "key": "state",
+            "label": "Estado",
+            "display": "pill",
+            "values": [
+              {
+                "value": "vigente",
+                "label": "Vigente",
+                "tone": "success",
+                "icon": "CircleCheck"
+              },
+              {
+                "value": "por_comenzar",
+                "label": "Por comenzar",
+                "tone": "neutral",
+                "icon": "CalendarPlus"
+              },
+              {
+                "value": "por_vencer",
+                "label": "Por vencer",
+                "tone": "warning",
+                "icon": "CalendarClock"
+              },
+              {
+                "value": "terminado",
+                "label": "Terminado",
+                "tone": "outline",
+                "icon": "CircleSlash"
+              },
+              {
+                "value": "renovado",
+                "label": "Renovado",
+                "tone": "outline",
+                "icon": "RefreshCw"
+              },
+              {
+                "value": "rescindido",
+                "label": "Rescindido",
+                "tone": "outline",
+                "icon": "Ban"
+              },
+              {
+                "value": "borrador",
+                "label": "Borrador",
+                "tone": "neutral",
+                "icon": "FileEdit"
+              }
+            ]
+          },
+          {
+            "key": "currency",
+            "label": "Moneda",
+            "visible": false
+          },
+          {
+            "key": "adjustment_months",
+            "label": "Ajusta cada (meses)",
+            "visible": false
+          },
+          {
+            "key": "deposit_amount",
+            "label": "Depósito",
+            "visible": false,
+            "display": "mono",
+            "format": "money"
+          },
+          {
+            "key": "deposit_status",
+            "label": "Estado del depósito",
+            "visible": false
+          }
+        ],
+        "cells": [
+          [
+            "3°B",
+            "Belgrano 1240",
+            "Martina Ruiz",
+            "2025-09-01",
+            "2028-08-31",
+            "485000",
+            "ICL",
+            "vigente",
+            "ARS",
+            "6",
+            "420000",
+            "recibido"
+          ],
+          [
+            "2°A",
+            "Belgrano 1240",
+            "Diego Sosa",
+            "2025-03-01",
+            "2028-02-29",
+            "460000",
+            "ICL",
+            "vigente",
+            "ARS",
+            "6",
+            "400000",
+            "recibido"
+          ],
+          [
+            "1°C",
+            "Salta 870",
+            "Nicolás Vera",
+            "2023-09-15",
+            "2026-09-14",
+            "505000",
+            "ICL",
+            "por_vencer",
+            "ARS",
+            "12",
+            "300000",
+            "recibido"
+          ]
+        ],
+        "filters": [
+          {
+            "column": "state",
+            "label": "Estado",
+            "kind": "select",
+            "options": []
+          },
+          {
+            "column": "adjustment_index",
+            "label": "Índice",
+            "kind": "select",
+            "options": []
+          }
+        ],
+        "actions": [
+          {
+            "label": "Renovar",
+            "icon": "RefreshCw",
+            "action": {
+              "id": "openForm",
+              "label": "Renovar",
+              "target": "leases.renovar-contrato.open"
+            },
+            "showWhenColumn": "state",
+            "showWhenValues": "vigente, por_vencer, terminado"
+          },
+          {
+            "label": "Rescindir",
+            "variant": "destructive",
+            "icon": "Ban",
+            "action": {
+              "id": "openForm",
+              "label": "Rescindir",
+              "target": "leases.rescindir-contrato.open"
+            },
+            "showWhenColumn": "state",
+            "showWhenValues": "vigente, por_vencer, por_comenzar"
+          }
+        ],
+        "emptyTitle": "Todavía no hay contratos",
+        "emptySub": "Firmá el primero para empezar a generar los cargos del mes."
+      }
+    }
+  ],
+  "data": {
+    "repositoryPrefix": "leases.contracts"
+  }
+}

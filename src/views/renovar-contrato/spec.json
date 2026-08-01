@@ -1,0 +1,134 @@
+{
+  "specVersion": 1,
+  "kind": "panel",
+  "title": "Renovar contrato",
+  "blocks": [
+    {
+      "id": "aviso",
+      "kind": "component",
+      "comp": "Callout",
+      "props": {
+        "tone": "neutral",
+        "title": "Se crea un contrato nuevo",
+        "text": "El actual queda cerrado como renovado y se encadena con el nuevo, así la historia de la unidad queda completa. Las condiciones se heredan salvo las que cambies acá."
+      }
+    },
+    {
+      "id": "s1",
+      "kind": "container",
+      "ctype": "card",
+      "label": "Nuevo plazo",
+      "icon": "CalendarRange",
+      "children": [
+        {
+          "id": "f_start",
+          "kind": "field",
+          "name": "startDate",
+          "fieldType": "date",
+          "label": "Desde",
+          "width": "half",
+          "validations": []
+        },
+        {
+          "id": "f_end",
+          "kind": "field",
+          "name": "endDate",
+          "fieldType": "date",
+          "label": "Hasta",
+          "width": "half",
+          "validations": [
+            "required"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "kind": "container",
+      "ctype": "card",
+      "label": "Nuevo valor",
+      "icon": "Wallet",
+      "children": [
+        {
+          "id": "f_rent",
+          "kind": "field",
+          "name": "rentAmount",
+          "fieldType": "money",
+          "label": "Alquiler de la renovación",
+          "validations": [
+            "required"
+          ],
+          "placeholder": "Ej: 640000"
+        },
+        {
+          "id": "f_index",
+          "kind": "field",
+          "name": "adjustmentIndex",
+          "fieldType": "enum",
+          "label": "Índice de actualización",
+          "width": "half",
+          "validations": [],
+          "options": [
+            {
+              "value": "ICL",
+              "label": "ICL (BCRA)"
+            },
+            {
+              "value": "IPC",
+              "label": "IPC (INDEC)"
+            },
+            {
+              "value": "casa_propia",
+              "label": "Casa Propia"
+            },
+            {
+              "value": "fijo",
+              "label": "Escalonado fijo"
+            }
+          ]
+        },
+        {
+          "id": "f_months",
+          "kind": "field",
+          "name": "adjustmentMonths",
+          "fieldType": "enum",
+          "label": "Se actualiza cada",
+          "width": "half",
+          "validations": [],
+          "options": [
+            {
+              "value": "3",
+              "label": "3 meses"
+            },
+            {
+              "value": "4",
+              "label": "4 meses"
+            },
+            {
+              "value": "6",
+              "label": "6 meses"
+            },
+            {
+              "value": "12",
+              "label": "12 meses"
+            }
+          ]
+        },
+        {
+          "id": "f_notes",
+          "kind": "field",
+          "name": "notes",
+          "fieldType": "text",
+          "label": "Notas de la renovación",
+          "validations": [],
+          "placeholder": "Ej: se acordó por teléfono el 12/07"
+        }
+      ]
+    }
+  ],
+  "data": {
+    "submitLabel": "Renovar contrato",
+    "successTitle": "Contrato renovado",
+    "successMessage": "Se creó el contrato nuevo y el anterior quedó cerrado."
+  }
+}
