@@ -41,7 +41,8 @@
         "order": 50,
         "viewId": "leases.actualizaciones.open",
         "icon": "TrendingUp"
-      }
+      },
+      { "path": "Vencimientos", "viewId": "leases.vencimientos.open" }
     ],
     "views": [
       {
@@ -115,6 +116,12 @@
         "title": "Concepto del contrato",
         "component": "./dist/views/concepto-del-contrato/index.js",
         "export": "ConceptoDelContratoView"
+      },
+      {
+        "id": "leases.vencimientos.open",
+        "title": "Vencimientos",
+        "component": "./dist/views/vencimientos/index.js",
+        "export": "VencimientosView"
       }
     ],
     "repositories": [
@@ -152,6 +159,11 @@
         "module": "./dist/repositories/rent-billing.repository.js",
         "export": "RentBillingRepository",
         "prefix": "leases.billing"
+      },
+      {
+        "module": "./dist/repositories/expiry-alert.repository.js",
+        "export": "ExpiryAlertRepository",
+        "prefix": "leases.expiries"
       }
     ],
     "settings": {
@@ -392,6 +404,13 @@
         "cron": "0 7 * * *",
         "handler": "./dist/tasks/adjustments.js",
         "export": "adjustments",
+        "scope": "tenant"
+      },
+      {
+        "id": "expiries",
+        "cron": "0 6 * * *",
+        "handler": "./dist/tasks/expiries.js",
+        "export": "expiries",
         "scope": "tenant"
       }
     ],
@@ -1213,6 +1232,76 @@
               "name": "name",
               "label": "Inquilino",
               "format": "text"
+            }
+          ],
+          "identifierKey": "id",
+          "defaultLimit": 20,
+          "maxLimit": 50
+        }
+      },
+      {
+        "id": "leases.expiries.list",
+        "action": "leases.expiries.list",
+        "generatedBy": "builder",
+        "title": "Listar Vencimientos",
+        "description": "Obtiene Vencimientos disponibles para el cliente actual.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "description": "Cantidad de resultados a devolver. Default 20; máximo 50."
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Cantidad de resultados a saltear para pedir la página siguiente."
+            }
+          },
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "collection",
+          "fields": [
+            {
+              "key": "level",
+              "name": "level",
+              "label": "Estado",
+              "format": "text",
+              "values": [
+                { "value": "vencido", "label": "Vencido" },
+                { "value": "por_vencer", "label": "Por vencer" }
+              ]
+            },
+            {
+              "key": "kind",
+              "name": "kind",
+              "label": "Qué vence",
+              "format": "text",
+              "values": [
+                { "value": "certificado", "label": "Certificado" },
+                { "value": "contrato", "label": "Contrato" },
+                { "value": "garantia", "label": "Garantía" }
+              ]
+            },
+            {
+              "key": "label",
+              "name": "label",
+              "label": "Detalle",
+              "format": "text"
+            },
+            {
+              "key": "message",
+              "name": "message",
+              "label": "Cuándo",
+              "format": "text"
+            },
+            {
+              "key": "expires_at",
+              "name": "expiresAt",
+              "label": "Vence",
+              "format": "date"
             }
           ],
           "identifierKey": "id",
@@ -4062,6 +4151,127 @@
                 { "value": "rescindido", "label": "Rescindido" },
                 { "value": "borrador", "label": "Borrador" }
               ]
+            }
+          ],
+          "identifierKey": "id"
+        },
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.expiries.scan",
+        "action": "leases.expiries.scan",
+        "title": "Revisar vencimientos",
+        "description": "Se revisa toda la cartera y se actualiza la lista. No modifica ningún certificado ni contrato: solo mira fechas.",
+        "effect": "write",
+        "confirmation": "always",
+        "inputSchema": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "record",
+          "fields": [
+            {
+              "key": "level",
+              "name": "level",
+              "label": "Estado",
+              "format": "text",
+              "values": [
+                { "value": "vencido", "label": "Vencido" },
+                { "value": "por_vencer", "label": "Por vencer" }
+              ]
+            },
+            {
+              "key": "kind",
+              "name": "kind",
+              "label": "Qué vence",
+              "format": "text",
+              "values": [
+                { "value": "certificado", "label": "Certificado" },
+                { "value": "contrato", "label": "Contrato" },
+                { "value": "garantia", "label": "Garantía" }
+              ]
+            },
+            {
+              "key": "label",
+              "name": "label",
+              "label": "Detalle",
+              "format": "text"
+            },
+            {
+              "key": "message",
+              "name": "message",
+              "label": "Cuándo",
+              "format": "text"
+            },
+            {
+              "key": "expires_at",
+              "name": "expiresAt",
+              "label": "Vence",
+              "format": "date"
+            }
+          ],
+          "identifierKey": "id"
+        },
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.expiries.acknowledge",
+        "action": "leases.expiries.acknowledge",
+        "title": "Ya lo sé",
+        "description": "Deja de figurar en la lista. Si el vencimiento cambia —porque se renovó y volvió a vencer— vuelve a aparecer solo.",
+        "effect": "write",
+        "confirmation": "always",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "format": "uuid", "description": "ID" }
+          },
+          "required": ["id"],
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "record",
+          "fields": [
+            {
+              "key": "level",
+              "name": "level",
+              "label": "Estado",
+              "format": "text",
+              "values": [
+                { "value": "vencido", "label": "Vencido" },
+                { "value": "por_vencer", "label": "Por vencer" }
+              ]
+            },
+            {
+              "key": "kind",
+              "name": "kind",
+              "label": "Qué vence",
+              "format": "text",
+              "values": [
+                { "value": "certificado", "label": "Certificado" },
+                { "value": "contrato", "label": "Contrato" },
+                { "value": "garantia", "label": "Garantía" }
+              ]
+            },
+            {
+              "key": "label",
+              "name": "label",
+              "label": "Detalle",
+              "format": "text"
+            },
+            {
+              "key": "message",
+              "name": "message",
+              "label": "Cuándo",
+              "format": "text"
+            },
+            {
+              "key": "expires_at",
+              "name": "expiresAt",
+              "label": "Vence",
+              "format": "date"
             }
           ],
           "identifierKey": "id"

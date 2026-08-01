@@ -7,3 +7,4 @@ export * from './guarantee.js';
 export * from './index-adjustment.js';
 export * from './notice-log.js';
 export * from './lease-charge.js';
+export * from './expiry-alert.js';
