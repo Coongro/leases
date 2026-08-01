@@ -109,6 +109,12 @@
         "title": "Ficha de inquilino",
         "component": "./dist/views/ficha-de-inquilino/index.js",
         "export": "FichaDeInquilinoView"
+      },
+      {
+        "id": "leases.concepto-del-contrato.open",
+        "title": "Concepto del contrato",
+        "component": "./dist/views/concepto-del-contrato/index.js",
+        "export": "ConceptoDelContratoView"
       }
     ],
     "repositories": [
@@ -144,13 +150,7 @@
       }
     ],
     "settings": {
-      "groups": [
-        {
-          "id": "leases",
-          "label": "leases",
-          "order": 50
-        }
-      ],
+      "groups": [{ "id": "leases", "label": "leases", "order": 50 }],
       "pages": [
         {
           "id": "leases.contratos",
@@ -181,26 +181,11 @@
               "description": "«A mano»: vos apretás el botón en Cobranzas cuando querés. «Avisarme»: el sistema te recuerda al inicio del mes y generás vos. «Sola»: se generan al empezar el mes sin preguntar. Generándolos dos veces nunca se duplican, así que la diferencia real es cuánta iniciativa querés que tome el sistema.",
               "default": "manual",
               "options": [
-                {
-                  "value": "manual",
-                  "label": "A mano"
-                },
-                {
-                  "value": "ask",
-                  "label": "Avisarme y genero yo"
-                },
-                {
-                  "value": "auto",
-                  "label": "Que se generen solas"
-                }
+                { "value": "manual", "label": "A mano" },
+                { "value": "ask", "label": "Avisarme y genero yo" },
+                { "value": "auto", "label": "Que se generen solas" }
               ],
-              "tags": [
-                "leases",
-                "charges",
-                "generation",
-                "cómo",
-                "generan"
-              ]
+              "tags": ["leases", "charges", "generation", "cómo", "generan"]
             }
           ]
         },
@@ -218,13 +203,7 @@
               "default": 0,
               "min": 0,
               "max": 30,
-              "tags": [
-                "leases",
-                "latefee",
-                "gracedays",
-                "días",
-                "gracia"
-              ]
+              "tags": ["leases", "latefee", "gracedays", "días", "gracia"]
             },
             {
               "key": "leases.lateFee.apply",
@@ -233,14 +212,8 @@
               "description": "El punitorio nunca se agrega en silencio. «Proponer» lo calcula y espera tu confirmación antes de sumarlo a la cuenta; «no calcular» lo deja fuera del sistema, para quien lo arregla hablando.",
               "default": "propose",
               "options": [
-                {
-                  "value": "propose",
-                  "label": "Proponer y confirmo yo"
-                },
-                {
-                  "value": "off",
-                  "label": "No calcular punitorios"
-                }
+                { "value": "propose", "label": "Proponer y confirmo yo" },
+                { "value": "off", "label": "No calcular punitorios" }
               ],
               "tags": [
                 "leases",
@@ -266,21 +239,10 @@
               "description": "En qué moneda se pactan tus alquileres habitualmente. Es solo el valor con el que arranca el formulario: cada contrato puede firmarse en la otra.",
               "default": "ARS",
               "options": [
-                {
-                  "value": "ARS",
-                  "label": "Pesos (ARS)"
-                },
-                {
-                  "value": "USD",
-                  "label": "Dólares (USD)"
-                }
+                { "value": "ARS", "label": "Pesos (ARS)" },
+                { "value": "USD", "label": "Dólares (USD)" }
               ],
-              "tags": [
-                "leases",
-                "contracts",
-                "defaultcurrency",
-                "moneda"
-              ]
+              "tags": ["leases", "contracts", "defaultcurrency", "moneda"]
             },
             {
               "key": "leases.contracts.defaultDueDay",
@@ -305,14 +267,8 @@
               "description": "«Día fijo» vence siempre la misma fecha, caiga como caiga. «Día hábil» corre el vencimiento cuando cae fin de semana o feriado — se usa cuando el pago entra por transferencia y el banco tiene que estar abierto.",
               "default": "fixed",
               "options": [
-                {
-                  "value": "fixed",
-                  "label": "Día fijo del mes"
-                },
-                {
-                  "value": "business",
-                  "label": "Día hábil"
-                }
+                { "value": "fixed", "label": "Día fijo del mes" },
+                { "value": "business", "label": "Día hábil" }
               ],
               "tags": [
                 "leases",
@@ -331,22 +287,10 @@
               "description": "Con qué índice actualizás los alquileres. Desde la Ley 27.551 el ICL del BCRA es el más usado, pero se pacta libremente.",
               "default": "ICL",
               "options": [
-                {
-                  "value": "ICL",
-                  "label": "ICL (BCRA)"
-                },
-                {
-                  "value": "IPC",
-                  "label": "IPC (INDEC)"
-                },
-                {
-                  "value": "casa_propia",
-                  "label": "Casa Propia"
-                },
-                {
-                  "value": "fijo",
-                  "label": "Escalonado fijo"
-                }
+                { "value": "ICL", "label": "ICL (BCRA)" },
+                { "value": "IPC", "label": "IPC (INDEC)" },
+                { "value": "casa_propia", "label": "Casa Propia" },
+                { "value": "fijo", "label": "Escalonado fijo" }
               ],
               "tags": [
                 "leases",
@@ -363,22 +307,10 @@
               "description": "Cada cuántos meses se recalcula el alquiler. Ya no lo fija la ley: se pacta en el contrato.",
               "default": "6",
               "options": [
-                {
-                  "value": "3",
-                  "label": "3 meses"
-                },
-                {
-                  "value": "4",
-                  "label": "4 meses"
-                },
-                {
-                  "value": "6",
-                  "label": "6 meses"
-                },
-                {
-                  "value": "12",
-                  "label": "12 meses"
-                }
+                { "value": "3", "label": "3 meses" },
+                { "value": "4", "label": "4 meses" },
+                { "value": "6", "label": "6 meses" },
+                { "value": "12", "label": "12 meses" }
               ],
               "tags": [
                 "leases",
@@ -404,26 +336,11 @@
               "description": "Un contrato pactado en dólares se cobra en pesos: el cargo se convierte con esta cotización el día que se emite, y queda asentado con qué valor y de qué fecha se hizo la cuenta. Elegí la que dice el contrato — si dice «dólar oficial», poné oficial.",
               "default": "oficial",
               "options": [
-                {
-                  "value": "oficial",
-                  "label": "Oficial"
-                },
-                {
-                  "value": "blue",
-                  "label": "Blue"
-                },
-                {
-                  "value": "bolsa",
-                  "label": "MEP (bolsa)"
-                },
-                {
-                  "value": "contadoconliqui",
-                  "label": "Contado con liqui"
-                },
-                {
-                  "value": "mayorista",
-                  "label": "Mayorista"
-                }
+                { "value": "oficial", "label": "Oficial" },
+                { "value": "blue", "label": "Blue" },
+                { "value": "bolsa", "label": "MEP (bolsa)" },
+                { "value": "contadoconliqui", "label": "Contado con liqui" },
+                { "value": "mayorista", "label": "Mayorista" }
               ],
               "tags": [
                 "leases",
@@ -474,250 +391,6 @@
       }
     ],
     "copilotCapabilities": [
-      {
-        "id": "leases.contracts.list",
-        "action": "leases.contracts.list",
-        "generatedBy": "builder",
-        "title": "Listar Contratos",
-        "description": "Obtiene Contratos disponibles para el cliente actual.",
-        "effect": "read",
-        "confirmation": "never",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "limit": {
-              "type": "integer",
-              "description": "Cantidad de resultados a devolver. Default 20; máximo 50."
-            },
-            "offset": {
-              "type": "integer",
-              "description": "Cantidad de resultados a saltear para pedir la página siguiente."
-            }
-          },
-          "additionalProperties": false
-        },
-        "output": {
-          "kind": "collection",
-          "fields": [
-            {
-              "key": "unit",
-              "name": "unit",
-              "label": "Unidad",
-              "format": "text"
-            },
-            {
-              "key": "property",
-              "name": "property",
-              "label": "Propiedad",
-              "format": "text"
-            },
-            {
-              "key": "tenant",
-              "name": "tenant",
-              "label": "Inquilino",
-              "format": "text"
-            },
-            {
-              "key": "start_date",
-              "name": "startDate",
-              "label": "Desde",
-              "format": "date"
-            },
-            {
-              "key": "end_date",
-              "name": "endDate",
-              "label": "Hasta",
-              "format": "date"
-            },
-            {
-              "key": "rent_amount",
-              "name": "rentAmount",
-              "label": "Alquiler vigente",
-              "format": "money"
-            },
-            {
-              "key": "adjustment_index",
-              "name": "adjustmentIndex",
-              "label": "Ajuste",
-              "format": "text",
-              "values": [
-                {
-                  "value": "ICL",
-                  "label": "ICL"
-                },
-                {
-                  "value": "IPC",
-                  "label": "IPC"
-                },
-                {
-                  "value": "casa_propia",
-                  "label": "Casa Propia"
-                }
-              ]
-            },
-            {
-              "key": "state",
-              "name": "state",
-              "label": "Estado",
-              "format": "text",
-              "values": [
-                {
-                  "value": "vigente",
-                  "label": "Vigente"
-                },
-                {
-                  "value": "por_comenzar",
-                  "label": "Por comenzar"
-                },
-                {
-                  "value": "por_vencer",
-                  "label": "Por vencer"
-                },
-                {
-                  "value": "terminado",
-                  "label": "Terminado"
-                },
-                {
-                  "value": "renovado",
-                  "label": "Renovado"
-                },
-                {
-                  "value": "rescindido",
-                  "label": "Rescindido"
-                },
-                {
-                  "value": "borrador",
-                  "label": "Borrador"
-                }
-              ]
-            }
-          ],
-          "identifierKey": "id",
-          "defaultLimit": 20,
-          "maxLimit": 50
-        }
-      },
-      {
-        "id": "leases.contracts.getById",
-        "action": "leases.contracts.getById",
-        "generatedBy": "builder",
-        "title": "Consultar Contrato",
-        "description": "Obtiene un registro de Contrato por su ID.",
-        "effect": "read",
-        "confirmation": "never",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "format": "uuid",
-              "description": "ID"
-            }
-          },
-          "required": [
-            "id"
-          ],
-          "additionalProperties": false
-        },
-        "output": {
-          "kind": "record",
-          "fields": [
-            {
-              "key": "unit",
-              "name": "unit",
-              "label": "Unidad",
-              "format": "text"
-            },
-            {
-              "key": "property",
-              "name": "property",
-              "label": "Propiedad",
-              "format": "text"
-            },
-            {
-              "key": "tenant",
-              "name": "tenant",
-              "label": "Inquilino",
-              "format": "text"
-            },
-            {
-              "key": "start_date",
-              "name": "startDate",
-              "label": "Desde",
-              "format": "date"
-            },
-            {
-              "key": "end_date",
-              "name": "endDate",
-              "label": "Hasta",
-              "format": "date"
-            },
-            {
-              "key": "rent_amount",
-              "name": "rentAmount",
-              "label": "Alquiler vigente",
-              "format": "money"
-            },
-            {
-              "key": "adjustment_index",
-              "name": "adjustmentIndex",
-              "label": "Ajuste",
-              "format": "text",
-              "values": [
-                {
-                  "value": "ICL",
-                  "label": "ICL"
-                },
-                {
-                  "value": "IPC",
-                  "label": "IPC"
-                },
-                {
-                  "value": "casa_propia",
-                  "label": "Casa Propia"
-                }
-              ]
-            },
-            {
-              "key": "state",
-              "name": "state",
-              "label": "Estado",
-              "format": "text",
-              "values": [
-                {
-                  "value": "vigente",
-                  "label": "Vigente"
-                },
-                {
-                  "value": "por_comenzar",
-                  "label": "Por comenzar"
-                },
-                {
-                  "value": "por_vencer",
-                  "label": "Por vencer"
-                },
-                {
-                  "value": "terminado",
-                  "label": "Terminado"
-                },
-                {
-                  "value": "renovado",
-                  "label": "Renovado"
-                },
-                {
-                  "value": "rescindido",
-                  "label": "Rescindido"
-                },
-                {
-                  "value": "borrador",
-                  "label": "Borrador"
-                }
-              ]
-            }
-          ],
-          "identifierKey": "id"
-        }
-      },
       {
         "id": "leases.adjustments.list",
         "action": "leases.adjustments.list",
@@ -798,18 +471,9 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "pending",
-                  "label": "Pendiente"
-                },
-                {
-                  "value": "applied",
-                  "label": "Aplicada"
-                },
-                {
-                  "value": "cancelled",
-                  "label": "Cancelada"
-                }
+                { "value": "pending", "label": "Pendiente" },
+                { "value": "applied", "label": "Aplicada" },
+                { "value": "cancelled", "label": "Cancelada" }
               ]
             }
           ],
@@ -829,15 +493,9 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "id": {
-              "type": "string",
-              "format": "uuid",
-              "description": "ID"
-            }
+            "id": { "type": "string", "format": "uuid", "description": "ID" }
           },
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "additionalProperties": false
         },
         "output": {
@@ -898,22 +556,735 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "pending",
-                  "label": "Pendiente"
-                },
-                {
-                  "value": "applied",
-                  "label": "Aplicada"
-                },
-                {
-                  "value": "cancelled",
-                  "label": "Cancelada"
-                }
+                { "value": "pending", "label": "Pendiente" },
+                { "value": "applied", "label": "Aplicada" },
+                { "value": "cancelled", "label": "Cancelada" }
               ]
             }
           ],
           "identifierKey": "id"
+        }
+      },
+      {
+        "id": "leases.charges.list",
+        "action": "leases.charges.list",
+        "generatedBy": "builder",
+        "title": "Listar Concepto del contrato",
+        "description": "Obtiene Concepto del contrato disponibles para el cliente actual.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "description": "Cantidad de resultados a devolver. Default 20; máximo 50."
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Cantidad de resultados a saltear para pedir la página siguiente."
+            }
+          },
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "collection",
+          "fields": [
+            {
+              "key": "lease_id",
+              "name": "leaseId",
+              "label": "Contrato",
+              "format": "text"
+            },
+            {
+              "key": "type",
+              "name": "type",
+              "label": "Tipo",
+              "format": "text",
+              "values": [
+                { "value": "abl", "label": "abl" },
+                { "value": "servicio", "label": "servicio" },
+                { "value": "expensas", "label": "expensas" },
+                { "value": "descuento", "label": "descuento" },
+                { "value": "otro", "label": "otro" }
+              ]
+            },
+            {
+              "key": "label",
+              "name": "label",
+              "label": "Como aparece en la factura",
+              "format": "text"
+            },
+            {
+              "key": "amount",
+              "name": "amount",
+              "label": "Importe por mes",
+              "format": "money"
+            },
+            {
+              "key": "valid_from",
+              "name": "validFrom",
+              "label": "Primer período",
+              "format": "text"
+            },
+            {
+              "key": "valid_to",
+              "name": "validTo",
+              "label": "Último período",
+              "format": "text"
+            },
+            {
+              "key": "notes",
+              "name": "notes",
+              "label": "Observaciones",
+              "format": "text"
+            }
+          ],
+          "identifierKey": "id",
+          "defaultLimit": 20,
+          "maxLimit": 50
+        }
+      },
+      {
+        "id": "leases.charges.getById",
+        "action": "leases.charges.getById",
+        "generatedBy": "builder",
+        "title": "Consultar Concepto del contrato",
+        "description": "Obtiene un registro de Concepto del contrato por su ID.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "format": "uuid", "description": "ID" }
+          },
+          "required": ["id"],
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "record",
+          "fields": [
+            {
+              "key": "lease_id",
+              "name": "leaseId",
+              "label": "Contrato",
+              "format": "text"
+            },
+            {
+              "key": "type",
+              "name": "type",
+              "label": "Tipo",
+              "format": "text",
+              "values": [
+                { "value": "abl", "label": "abl" },
+                { "value": "servicio", "label": "servicio" },
+                { "value": "expensas", "label": "expensas" },
+                { "value": "descuento", "label": "descuento" },
+                { "value": "otro", "label": "otro" }
+              ]
+            },
+            {
+              "key": "label",
+              "name": "label",
+              "label": "Como aparece en la factura",
+              "format": "text"
+            },
+            {
+              "key": "amount",
+              "name": "amount",
+              "label": "Importe por mes",
+              "format": "money"
+            },
+            {
+              "key": "valid_from",
+              "name": "validFrom",
+              "label": "Primer período",
+              "format": "text"
+            },
+            {
+              "key": "valid_to",
+              "name": "validTo",
+              "label": "Último período",
+              "format": "text"
+            },
+            {
+              "key": "notes",
+              "name": "notes",
+              "label": "Observaciones",
+              "format": "text"
+            }
+          ],
+          "identifierKey": "id"
+        }
+      },
+      {
+        "id": "leases.charges.create",
+        "action": "leases.charges.create",
+        "generatedBy": "builder",
+        "title": "Crear Concepto del contrato",
+        "description": "Crea Concepto del contrato con los mismos campos disponibles en el formulario del cliente.",
+        "effect": "write",
+        "confirmation": "always",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "object",
+              "description": "Datos de Concepto del contrato a crear.",
+              "properties": {
+                "lease_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "Contrato"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": ["abl", "servicio", "expensas", "descuento", "otro"],
+                  "description": "Tipo. Opciones: abl (ABL / inmobiliario), servicio (Servicio), expensas (Expensas), descuento (Descuento), otro (Otro).",
+                  "default": "servicio"
+                },
+                "label": {
+                  "type": "string",
+                  "description": "Como aparece en la factura"
+                },
+                "amount": {
+                  "type": "string",
+                  "pattern": "^-?\\d+(?:\\.\\d+)?$",
+                  "description": "Importe por mes"
+                },
+                "valid_from": {
+                  "type": "string",
+                  "description": "Primer período"
+                },
+                "valid_to": {
+                  "type": "string",
+                  "description": "Último período"
+                },
+                "notes": { "type": "string", "description": "Observaciones" }
+              },
+              "required": ["lease_id", "type", "label", "amount"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["data"],
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "record",
+          "fields": [
+            {
+              "key": "lease_id",
+              "name": "leaseId",
+              "label": "Contrato",
+              "format": "text"
+            },
+            {
+              "key": "type",
+              "name": "type",
+              "label": "Tipo",
+              "format": "text",
+              "values": [
+                { "value": "abl", "label": "abl" },
+                { "value": "servicio", "label": "servicio" },
+                { "value": "expensas", "label": "expensas" },
+                { "value": "descuento", "label": "descuento" },
+                { "value": "otro", "label": "otro" }
+              ]
+            },
+            {
+              "key": "label",
+              "name": "label",
+              "label": "Como aparece en la factura",
+              "format": "text"
+            },
+            {
+              "key": "amount",
+              "name": "amount",
+              "label": "Importe por mes",
+              "format": "money"
+            },
+            {
+              "key": "valid_from",
+              "name": "validFrom",
+              "label": "Primer período",
+              "format": "text"
+            },
+            {
+              "key": "valid_to",
+              "name": "validTo",
+              "label": "Último período",
+              "format": "text"
+            },
+            {
+              "key": "notes",
+              "name": "notes",
+              "label": "Observaciones",
+              "format": "text"
+            }
+          ],
+          "identifierKey": "id"
+        }
+      },
+      {
+        "id": "leases.charges.update",
+        "action": "leases.charges.update",
+        "generatedBy": "builder",
+        "title": "Actualizar Concepto del contrato",
+        "description": "Actualiza los campos editables de Concepto del contrato.",
+        "effect": "write",
+        "confirmation": "always",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "format": "uuid", "description": "ID" },
+            "data": {
+              "type": "object",
+              "description": "Campos de Concepto del contrato a modificar.",
+              "properties": {
+                "lease_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "Contrato"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": ["abl", "servicio", "expensas", "descuento", "otro"],
+                  "description": "Tipo. Opciones: abl (ABL / inmobiliario), servicio (Servicio), expensas (Expensas), descuento (Descuento), otro (Otro).",
+                  "default": "servicio"
+                },
+                "label": {
+                  "type": "string",
+                  "description": "Como aparece en la factura"
+                },
+                "amount": {
+                  "type": "string",
+                  "pattern": "^-?\\d+(?:\\.\\d+)?$",
+                  "description": "Importe por mes"
+                },
+                "valid_from": {
+                  "type": "string",
+                  "description": "Primer período"
+                },
+                "valid_to": {
+                  "type": "string",
+                  "description": "Último período"
+                },
+                "notes": { "type": "string", "description": "Observaciones" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": ["id", "data"],
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "record",
+          "fields": [
+            {
+              "key": "lease_id",
+              "name": "leaseId",
+              "label": "Contrato",
+              "format": "text"
+            },
+            {
+              "key": "type",
+              "name": "type",
+              "label": "Tipo",
+              "format": "text",
+              "values": [
+                { "value": "abl", "label": "abl" },
+                { "value": "servicio", "label": "servicio" },
+                { "value": "expensas", "label": "expensas" },
+                { "value": "descuento", "label": "descuento" },
+                { "value": "otro", "label": "otro" }
+              ]
+            },
+            {
+              "key": "label",
+              "name": "label",
+              "label": "Como aparece en la factura",
+              "format": "text"
+            },
+            {
+              "key": "amount",
+              "name": "amount",
+              "label": "Importe por mes",
+              "format": "money"
+            },
+            {
+              "key": "valid_from",
+              "name": "validFrom",
+              "label": "Primer período",
+              "format": "text"
+            },
+            {
+              "key": "valid_to",
+              "name": "validTo",
+              "label": "Último período",
+              "format": "text"
+            },
+            {
+              "key": "notes",
+              "name": "notes",
+              "label": "Observaciones",
+              "format": "text"
+            }
+          ],
+          "identifierKey": "id"
+        }
+      },
+      {
+        "id": "leases.contracts.list",
+        "action": "leases.contracts.list",
+        "generatedBy": "builder",
+        "title": "Listar Contrato",
+        "description": "Obtiene Contrato disponibles para el cliente actual.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "description": "Cantidad de resultados a devolver. Default 20; máximo 50."
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Cantidad de resultados a saltear para pedir la página siguiente."
+            }
+          },
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "collection",
+          "fields": [
+            {
+              "key": "unit",
+              "name": "unit",
+              "label": "Unidad",
+              "format": "text"
+            },
+            {
+              "key": "property",
+              "name": "property",
+              "label": "Propiedad",
+              "format": "text"
+            },
+            {
+              "key": "tenant",
+              "name": "tenant",
+              "label": "Inquilino",
+              "format": "text"
+            },
+            {
+              "key": "start_date",
+              "name": "startDate",
+              "label": "Desde",
+              "format": "date"
+            },
+            {
+              "key": "end_date",
+              "name": "endDate",
+              "label": "Hasta",
+              "format": "date"
+            },
+            {
+              "key": "rent_amount",
+              "name": "rentAmount",
+              "label": "Alquiler vigente",
+              "format": "money"
+            },
+            {
+              "key": "adjustment_index",
+              "name": "adjustmentIndex",
+              "label": "Ajuste",
+              "format": "text",
+              "values": [
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" }
+              ]
+            },
+            {
+              "key": "state",
+              "name": "state",
+              "label": "Estado",
+              "format": "text",
+              "values": [
+                { "value": "vigente", "label": "Vigente" },
+                { "value": "por_comenzar", "label": "Por comenzar" },
+                { "value": "por_vencer", "label": "Por vencer" },
+                { "value": "terminado", "label": "Terminado" },
+                { "value": "renovado", "label": "Renovado" },
+                { "value": "rescindido", "label": "Rescindido" },
+                { "value": "borrador", "label": "Borrador" }
+              ]
+            }
+          ],
+          "identifierKey": "id",
+          "defaultLimit": 20,
+          "maxLimit": 50
+        }
+      },
+      {
+        "id": "leases.contracts.getById",
+        "action": "leases.contracts.getById",
+        "generatedBy": "builder",
+        "title": "Consultar Contrato",
+        "description": "Obtiene un registro de Contrato por su ID.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "format": "uuid", "description": "ID" }
+          },
+          "required": ["id"],
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "record",
+          "fields": [
+            {
+              "key": "unit",
+              "name": "unit",
+              "label": "Unidad",
+              "format": "text"
+            },
+            {
+              "key": "property",
+              "name": "property",
+              "label": "Propiedad",
+              "format": "text"
+            },
+            {
+              "key": "tenant",
+              "name": "tenant",
+              "label": "Inquilino",
+              "format": "text"
+            },
+            {
+              "key": "start_date",
+              "name": "startDate",
+              "label": "Desde",
+              "format": "date"
+            },
+            {
+              "key": "end_date",
+              "name": "endDate",
+              "label": "Hasta",
+              "format": "date"
+            },
+            {
+              "key": "rent_amount",
+              "name": "rentAmount",
+              "label": "Alquiler vigente",
+              "format": "money"
+            },
+            {
+              "key": "adjustment_index",
+              "name": "adjustmentIndex",
+              "label": "Ajuste",
+              "format": "text",
+              "values": [
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" }
+              ]
+            },
+            {
+              "key": "state",
+              "name": "state",
+              "label": "Estado",
+              "format": "text",
+              "values": [
+                { "value": "vigente", "label": "Vigente" },
+                { "value": "por_comenzar", "label": "Por comenzar" },
+                { "value": "por_vencer", "label": "Por vencer" },
+                { "value": "terminado", "label": "Terminado" },
+                { "value": "renovado", "label": "Renovado" },
+                { "value": "rescindido", "label": "Rescindido" },
+                { "value": "borrador", "label": "Borrador" }
+              ]
+            }
+          ],
+          "identifierKey": "id"
+        }
+      },
+      {
+        "id": "leases.delegate.properties_units_list",
+        "action": "properties.units.list",
+        "generatedBy": "builder",
+        "title": "Listar Unidad",
+        "description": "Obtiene Unidad disponibles para el cliente actual.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "description": "Cantidad de resultados a devolver. Default 20; máximo 50."
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Cantidad de resultados a saltear para pedir la página siguiente."
+            }
+          },
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "collection",
+          "fields": [
+            { "key": "id", "name": "id", "label": "ID", "format": "text" },
+            {
+              "key": "name",
+              "name": "name",
+              "label": "Unidad",
+              "format": "text"
+            }
+          ],
+          "identifierKey": "id",
+          "defaultLimit": 20,
+          "maxLimit": 50
+        }
+      },
+      {
+        "id": "leases.delegate.properties_units_getById",
+        "action": "properties.units.getById",
+        "generatedBy": "builder",
+        "title": "Consultar Unidad",
+        "description": "Obtiene un registro de Unidad por su ID.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "format": "uuid", "description": "ID" }
+          },
+          "required": ["id"],
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "record",
+          "fields": [
+            { "key": "id", "name": "id", "label": "ID", "format": "text" },
+            {
+              "key": "name",
+              "name": "name",
+              "label": "Unidad",
+              "format": "text"
+            }
+          ],
+          "identifierKey": "id"
+        }
+      },
+      {
+        "id": "leases.delegate.contacts_list",
+        "action": "contacts.list",
+        "generatedBy": "builder",
+        "title": "Listar Inquilino",
+        "description": "Obtiene Inquilino disponibles para el cliente actual.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "description": "Cantidad de resultados a devolver. Default 20; máximo 50."
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Cantidad de resultados a saltear para pedir la página siguiente."
+            }
+          },
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "collection",
+          "fields": [
+            { "key": "id", "name": "id", "label": "ID", "format": "text" },
+            {
+              "key": "name",
+              "name": "name",
+              "label": "Inquilino",
+              "format": "text"
+            }
+          ],
+          "identifierKey": "id",
+          "defaultLimit": 20,
+          "maxLimit": 50
+        }
+      },
+      {
+        "id": "leases.delegate.contacts_getById",
+        "action": "contacts.getById",
+        "generatedBy": "builder",
+        "title": "Consultar Inquilino",
+        "description": "Obtiene un registro de Inquilino por su ID.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "format": "uuid", "description": "ID" }
+          },
+          "required": ["id"],
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "record",
+          "fields": [
+            { "key": "id", "name": "id", "label": "ID", "format": "text" },
+            {
+              "key": "name",
+              "name": "name",
+              "label": "Inquilino",
+              "format": "text"
+            }
+          ],
+          "identifierKey": "id"
+        }
+      },
+      {
+        "id": "leases.delegate.contacts_search",
+        "action": "contacts.search",
+        "generatedBy": "builder",
+        "title": "Buscar Inquilino",
+        "description": "Busca Inquilino por texto para el cliente actual.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": { "type": "string", "description": "Texto a buscar." },
+            "limit": {
+              "type": "integer",
+              "description": "Cantidad de resultados a devolver. Default 20; máximo 50."
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Cantidad de resultados a saltear para pedir la página siguiente."
+            }
+          },
+          "required": ["query"],
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "collection",
+          "fields": [
+            { "key": "id", "name": "id", "label": "ID", "format": "text" },
+            {
+              "key": "name",
+              "name": "name",
+              "label": "Inquilino",
+              "format": "text"
+            }
+          ],
+          "identifierKey": "id",
+          "defaultLimit": 20,
+          "maxLimit": 50
         }
       },
       {
@@ -926,15 +1297,9 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "id": {
-              "type": "string",
-              "format": "uuid",
-              "description": "ID"
-            }
+            "id": { "type": "string", "format": "uuid", "description": "ID" }
           },
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "additionalProperties": false
         },
         "output": {
@@ -995,18 +1360,9 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "pending",
-                  "label": "Pendiente"
-                },
-                {
-                  "value": "applied",
-                  "label": "Aplicada"
-                },
-                {
-                  "value": "cancelled",
-                  "label": "Cancelada"
-                }
+                { "value": "pending", "label": "Pendiente" },
+                { "value": "applied", "label": "Aplicada" },
+                { "value": "cancelled", "label": "Cancelada" }
               ]
             }
           ],
@@ -1024,15 +1380,9 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "id": {
-              "type": "string",
-              "format": "uuid",
-              "description": "ID"
-            }
+            "id": { "type": "string", "format": "uuid", "description": "ID" }
           },
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "additionalProperties": false
         },
         "output": {
@@ -1093,18 +1443,9 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "pending",
-                  "label": "Pendiente"
-                },
-                {
-                  "value": "applied",
-                  "label": "Aplicada"
-                },
-                {
-                  "value": "cancelled",
-                  "label": "Cancelada"
-                }
+                { "value": "pending", "label": "Pendiente" },
+                { "value": "applied", "label": "Aplicada" },
+                { "value": "cancelled", "label": "Cancelada" }
               ]
             }
           ],

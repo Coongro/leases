@@ -40,8 +40,17 @@ export function appliesInPeriod(charge: LeaseCharge, period: PeriodKey): boolean
   return !(hasta && period > hasta);
 }
 
-/** `-1` solo si está explícito; cualquier otra cosa suma. */
+/**
+ * Si suma o resta.
+ *
+ * Un concepto de tipo «descuento» SIEMPRE resta, sin depender de que alguien haya
+ * cargado bien el signo: quien da de alta una bonificación no tiene por qué pensar en
+ * números negativos, y si tuviera que hacerlo, el día que se olvide el descuento se le
+ * cobraría al inquilino. El `sign` queda para el caso raro de un concepto que resta sin
+ * ser un descuento.
+ */
 function signoDe(charge: LeaseCharge): number {
+  if (String(charge.type).toLowerCase() === 'descuento') return -1;
   return Number(charge.sign) === -1 ? -1 : 1;
 }
 
