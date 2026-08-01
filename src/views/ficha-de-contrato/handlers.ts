@@ -13,7 +13,7 @@ import {
   type CustomHandlers,
   type LiveValues,
 } from '@coongro/plugin-sdk';
-/** El contrato tal como lo devuelve `leases.contracts.getDetail`. */
+/** El contrato, como viene dentro de la ficha. */
 interface LeaseDetail {
   unit?: string | null;
   property?: string | null;
@@ -35,7 +35,6 @@ interface LeaseDetail {
 }
 
 interface AdjustmentOfLease {
-  lease_id: string;
   index_code: string;
   status: string;
   effective_date: string;
@@ -48,6 +47,15 @@ interface GuaranteeRow {
   type?: string;
   notes?: string | null;
   guarantor_contact_id?: string | null;
+}
+
+/** La ficha completa, tal como la devuelve `leases.billing.contractFile`. */
+interface FichaContrato {
+  contrato: LeaseDetail;
+  garantia?: GuaranteeRow;
+  cargos: Array<Record<string, unknown>>;
+  saldo: number;
+  impagos: number;
 }
 
 /** El contrato puede estar pactado en dólares: la moneda viaja con el monto. */
@@ -97,23 +105,15 @@ const ESTADO_CONTRATO: Record<string, { label: string; tone: LiveValues['badgeTo
   rescindido: { label: 'Rescindido', tone: 'outline' },
 };
 
-import { cargosDeContrato } from '../../data/cargos.js';
-
 export const customHandlers: CustomHandlers = {
   loadLiveValues: async ({ execute, record }) => {
     const id = record?.id as string | undefined;
     if (!id) return {};
-    const c = await execute<LeaseDetail | undefined>('leases.contracts.getDetail', { id });
-    if (!c) return {};
-
-    const [garantias, cargos] = await Promise.all([
-      execute<GuaranteeRow[]>('leases.guarantees.list').catch(() => []),
-      cargosDeContrato(id),
-    ]);
-    const g = garantias?.[0];
-
-    const saldo = cargos.reduce((s, x) => s + Number(x.balance), 0);
-    const impagos = cargos.filter((x) => x.status !== 'paid').length;
+    const f = await execute<FichaContrato | undefined>('leases.billing.contractFile', {
+      leaseId: id,
+    });
+    if (!f) return {};
+    const { contrato: c, garantia: g, cargos, saldo, impagos } = f;
 
     const indice = c.adjustment_index && c.adjustment_index !== 'fijo' ? c.adjustment_index : null;
     const cadaMeses = Number(c.adjustment_months ?? 0);
@@ -187,22 +187,30 @@ export const customHandlers: CustomHandlers = {
     tbl_ajustes: async ({ execute, record }) => {
       const id = String(record?.id ?? '');
       if (!id) return [];
-      const todas = await execute<AdjustmentOfLease[]>('leases.adjustments.list');
-      return (todas ?? [])
-        .filter((a) => a.lease_id === id)
-        .sort((a, b) => String(b.effective_date).localeCompare(String(a.effective_date)))
-        .map((a) => ({
-          date: a.effective_date,
-          index: a.index_code,
-          // La variación se guarda con punto; en la tabla se lee con coma.
-          rate: String(a.rate_percent ?? '').replace('.', ','),
-          previous_rent: a.previous_rent,
-          new_rent: a.new_rent,
-          status: a.status,
-        }));
+      const todas = await execute<AdjustmentOfLease[]>('leases.adjustments.forLease', {
+        leaseId: id,
+      });
+      return (todas ?? []).map((a) => ({
+        date: a.effective_date,
+        index: a.index_code,
+        // La variación se guarda con punto; en la tabla se lee con coma.
+        rate: String(a.rate_percent ?? '').replace('.', ','),
+        previous_rent: a.previous_rent,
+        new_rent: a.new_rent,
+        status: a.status,
+      }));
     },
 
     /** Los cargos de ESTE contrato: los mismos que muestra Cobranzas. */
-    tbl_cargos: ({ record }) => cargosDeContrato(String(record?.id ?? '')),
+    tbl_cargos: ({ execute, record }) =>
+      execute<Record<string, unknown>[]>('leases.billing.chargesForLease', {
+        leaseId: String(record?.id ?? ''),
+      }),
+
+    /** Los conceptos pactados que se suman al alquiler cada mes: ABL, agua, descuentos. */
+    tbl_conceptos: ({ execute, record }) =>
+      execute<Record<string, unknown>[]>('leases.charges.forLease', {
+        leaseId: String(record?.id ?? ''),
+      }),
   },
 };

@@ -270,7 +270,10 @@
               "value": "seguro_caucion",
               "label": "Seguro de caución"
             }
-          ]
+          ],
+          "headless": {
+            "input": "omit"
+          }
         },
         {
           "id": "f_guarantor",
@@ -280,7 +283,10 @@
           "label": "Garante",
           "refEntity": "contacts",
           "width": "half",
-          "validations": []
+          "validations": [],
+          "headless": {
+            "input": "omit"
+          }
         },
         {
           "id": "f_guarantee_notes",
@@ -289,7 +295,10 @@
           "fieldType": "text",
           "label": "Detalle de la garantía",
           "validations": [],
-          "placeholder": "Ej: póliza 4471102, vence 30/09/2027"
+          "placeholder": "Ej: póliza 4471102, vence 30/09/2027",
+          "headless": {
+            "input": "omit"
+          }
         }
       ]
     },
@@ -376,5 +385,21 @@
         }
       ]
     }
-  ]
+  ],
+  "headless": {
+    "handlers": [
+      {
+        "hook": "onInit",
+        "mode": "uiOnly",
+        "reason": "Prefill de un alta nueva con las settings del plugin; no consulta ni modifica datos del negocio."
+      },
+      {
+        "hook": "onSubmit",
+        "mode": "command",
+        "action": "leases.contracts.save",
+        "effect": "write",
+        "confirmation": "always"
+      }
+    ]
+  }
 }

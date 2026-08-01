@@ -18,7 +18,7 @@
         "action": {
           "id": "serverAction",
           "label": "Buscar actualizaciones",
-          "target": "leases.adjustments.list",
+          "target": "leases.adjustments.detect",
           "confirm": "Se revisan los contratos que cumplieron su período y se calcula el factor del índice. No se cambia ningún alquiler: cada actualización queda pendiente para que la confirmes."
         }
       }
@@ -71,9 +71,9 @@
               "kind": "component",
               "comp": "SummaryCard",
               "props": {
-                "label": "Índice ICL",
+                "label": "Índice de referencia",
                 "value": "—",
-                "sub": "último valor del BCRA",
+                "sub": "último valor publicado",
                 "icon": "RefreshCw",
                 "tone": "success"
               }
@@ -256,5 +256,29 @@
         "emptySub": "Cuando un contrato cumpla su período, la actualización aparece acá con el factor ya calculado."
       }
     }
-  ]
+  ],
+  "headless": {
+    "handlers": [
+      {
+        "hook": "loadData",
+        "mode": "query",
+        "action": "leases.adjustments.listDetailed",
+        "resource": "leases.adjustments"
+      },
+      {
+        "hook": "loadLiveValues",
+        "mode": "query",
+        "action": "leases.adjustments.overview",
+        "resource": "leases.adjustments"
+      },
+      {
+        "hook": "onAction",
+        "mode": "command",
+        "action": "leases.adjustments.detect",
+        "resource": "leases.adjustments",
+        "effect": "write",
+        "confirmation": "always"
+      }
+    ]
+  }
 }

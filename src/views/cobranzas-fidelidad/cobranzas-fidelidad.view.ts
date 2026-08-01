@@ -204,7 +204,7 @@ export function CobranzasFidelidadView() {
       label: 'Cobrar punitorio',
       icon: 'AlarmClock',
       onClick: (row: any) => {
-        void runServerAction('leases.lateFee.charge', { id: row.id }, row);
+        void runServerAction('leases.billing.chargeLateFee', { id: row.id }, row);
       },
       hidden: (row: any) => !['proponer'].includes(String(row?.['late_fee_state'] ?? '')),
     },
@@ -402,7 +402,7 @@ export function CobranzasFidelidadView() {
               {
                 variant: 'default',
                 onClick: () => {
-                  void runServerAction('leases.contracts.list');
+                  void runServerAction('leases.billing.generateForPeriod');
                 },
               },
               'Generar cargos del mes'

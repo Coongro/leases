@@ -502,5 +502,37 @@
         }
       ]
     }
-  ]
+  ],
+  "headless": {
+    "handlers": [
+      {
+        "hook": "loadLiveValues",
+        "mode": "query",
+        "action": "leases.billing.contractFile"
+      },
+      {
+        "hook": "loadDataFor",
+        "key": "tbl_ajustes",
+        "mode": "query",
+        "action": "leases.adjustments.forLease",
+        "resource": "leases.adjustments",
+        "outputBlockId": "tbl_ajustes"
+      },
+      {
+        "hook": "loadDataFor",
+        "key": "tbl_cargos",
+        "mode": "query",
+        "action": "leases.billing.chargesForLease",
+        "outputBlockId": "tbl_cargos"
+      },
+      {
+        "hook": "loadDataFor",
+        "key": "tbl_conceptos",
+        "mode": "query",
+        "action": "leases.charges.forLease",
+        "resource": "leases.charges",
+        "outputBlockId": "tbl_conceptos"
+      }
+    ]
+  }
 }

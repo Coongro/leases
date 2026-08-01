@@ -253,5 +253,15 @@
   ],
   "data": {
     "repositoryPrefix": "leases.contracts"
+  },
+  "headless": {
+    "handlers": [
+      {
+        "hook": "loadData",
+        "mode": "query",
+        "action": "leases.contracts.list",
+        "resource": "leases.contracts"
+      }
+    ]
   }
 }

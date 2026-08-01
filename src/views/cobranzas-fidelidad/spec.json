@@ -15,7 +15,7 @@
         "action": {
           "id": "serverAction",
           "label": "Generar cargos del mes",
-          "target": "leases.contracts.list",
+          "target": "leases.billing.generateForPeriod",
           "confirm": "Se generan los cargos de todos los contratos vigentes del período. Si ya estaban generados, no se duplican."
         }
       }
@@ -275,7 +275,7 @@
             "action": {
               "id": "serverAction",
               "label": "Cobrar punitorio",
-              "target": "leases.lateFee.charge"
+              "target": "leases.billing.chargeLateFee"
             },
             "showWhenColumn": "late_fee_state",
             "showWhenValues": "proponer"
@@ -285,5 +285,35 @@
         "emptySub": "Generá los cargos del mes desde el botón de arriba."
       }
     }
-  ]
+  ],
+  "headless": {
+    "handlers": [
+      {
+        "hook": "loadData",
+        "mode": "query",
+        "action": "leases.billing.chargesForPeriod"
+      },
+      {
+        "hook": "loadLiveValues",
+        "mode": "query",
+        "action": "leases.billing.periodSummary"
+      },
+      {
+        "hook": "onPeriodChange",
+        "mode": "uiOnly",
+        "reason": "Cambia el mes que se está mirando; los datos se vuelven a pedir por loadData."
+      },
+      {
+        "hook": "onAction",
+        "mode": "command",
+        "action": "leases.billing.generateForPeriod",
+        "effect": "write",
+        "confirmation": "always",
+        "preconditions": [
+          "El período se toma del selector de mes de la pantalla.",
+          "Es idempotente: los cargos que ya existían no se duplican."
+        ]
+      }
+    ]
+  }
 }

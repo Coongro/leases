@@ -130,5 +130,13 @@
         }
       ]
     }
-  ]
+  ],
+  "headless": {
+    "handlers": [
+      {
+        "hook": "refLabel",
+        "mode": "presentation"
+      }
+    ]
+  }
 }

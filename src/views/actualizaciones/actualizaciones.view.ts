@@ -411,7 +411,7 @@ export function ActualizacionesView() {
               {
                 variant: 'default',
                 onClick: () => {
-                  void runServerAction('leases.adjustments.list');
+                  void runServerAction('leases.adjustments.detect');
                 },
               },
               'Buscar actualizaciones'
@@ -662,7 +662,7 @@ export function ActualizacionesView() {
                         color: 'var(--cg-text-muted)',
                       },
                     },
-                    'Índice ICL'
+                    'Índice de referencia'
                   )
                 ),
                 h(
@@ -681,7 +681,7 @@ export function ActualizacionesView() {
                 h(
                   'div',
                   { style: { fontSize: '12px', color: 'var(--cg-text-muted)', marginTop: '2px' } },
-                  metric('k3', 'sub', 'último valor del BCRA')
+                  metric('k3', 'sub', 'último valor publicado')
                 )
               )
             )
