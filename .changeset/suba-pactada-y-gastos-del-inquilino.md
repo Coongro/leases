@@ -27,3 +27,14 @@ con la regla con la que liquida una administración: **el primer recibo que toda
 Cargarlo dos veces no duplica, y corregir la orden retira la línea del recibo mientras nadie haya
 pagado contra él. Corre al generar los cargos del mes y en un barrido diario a las 8, así un arreglo
 cerrado no espera a que alguien se acuerde de facturar.
+
+**El desglose del cargo en Cobranzas no cerraba con el total.** Salía de las condiciones del
+contrato en vez de las líneas facturadas, así que después de una actualización mostraba el alquiler
+nuevo sobre un cargo viejo, las expensas liquidadas por el consorcio figuraban en cero porque el
+contrato no las tiene, y ningún otro concepto aparecía. El inquilino leía un total que el detalle no
+explicaba. Ahora se arma de lo efectivamente facturado y suma «Otros conceptos» —arreglos, impuestos,
+descuentos, punitorios ya cobrados—, de modo que las partes siempre dan el total. La columna de
+punitorio pasa a llamarse «Punitorio a proponer», que es lo que muestra: lo que se podría cobrar hoy,
+no lo que ya está en la cuenta.
+
+De paso, el menú «Vencimientos» no tenía icono y quedaba desalineado del resto.

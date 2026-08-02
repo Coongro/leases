@@ -73,9 +73,11 @@ export interface RentChargeRow {
   paid: string;
   balance: string;
   status: string;
-  /** Desglose de lo pactado, para explicar el total sin abrir cada cuenta. */
+  /** Desglose de lo FACTURADO, para explicar el total sin abrir cada cuenta. */
   rent: string;
   expenses: string;
+  /** Todo lo que no es alquiler, expensas ni punitorio: arreglos, impuestos, descuentos. */
+  other: string;
   /** Porcentaje diario de punitorio pactado ('0' = no se pactó). */
   late_fee_percent: string;
   /** Punitorio propuesto para este cargo. Vacío = no corresponde. */
@@ -261,9 +263,10 @@ export class RentBillingRepository {
       if (yaHay.length === 0) await this.generateForPeriod({ period, usdHouse });
     }
 
-    const [filas, leases] = await Promise.all([
+    const [filas, leases, desgloses] = await Promise.all([
       cuentas.listWithTotals({ source: RENT_SOURCE, refSuffix: `:${period}` }),
       contratos.list(),
+      this.desglosePorCuenta(),
     ]);
 
     const porContrato = new Map(leases.map((l) => [l.id, l]));
@@ -275,6 +278,7 @@ export class RentBillingRepository {
     return (filas ?? []).map((cuenta) => {
       const leaseId = leaseIdDe(String(cuenta.source_ref ?? ''));
       const l = porContrato.get(leaseId);
+      const desglose = desgloses.get(String(cuenta.id)) ?? { rent: 0, expenses: 0, otros: 0 };
 
       const fila = {
         id: String(cuenta.id),
@@ -287,8 +291,15 @@ export class RentBillingRepository {
         paid: String(cuenta.paid ?? '0'),
         balance: String(cuenta.balance ?? '0'),
         status: String(cuenta.status ?? 'open'),
-        rent: l?.rent_amount ?? '0',
-        expenses: l?.expenses_amount ?? '0',
+        // Lo FACTURADO, no lo pactado. Salía del contrato, y eso hacía que el desglose
+        // no cerrara con el total en cuanto los dos dejaban de coincidir: después de una
+        // actualización mostraba el alquiler nuevo sobre un cargo viejo, las expensas
+        // liquidadas por el consorcio figuraban en cero porque el contrato no las tiene,
+        // y cualquier otro concepto —un arreglo a cargo del inquilino, un descuento— no
+        // aparecía en ninguna parte. El inquilino leía un total que el detalle no explicaba.
+        rent: String(desglose.rent),
+        expenses: String(desglose.expenses),
+        other: String(desglose.otros),
         late_fee_percent: l?.late_fee_percent ?? '0',
       };
 
@@ -300,6 +311,40 @@ export class RentBillingRepository {
         late_fee_state: punitorio.amount === '0' ? '' : 'proponer',
       };
     });
+  }
+
+  /**
+   * Lo que se facturó en cada cargo, abierto en alquiler, expensas y todo lo demás.
+   *
+   * Se arma de las líneas —que son lo que la persona va a pagar— y no de las condiciones
+   * del contrato.
+   *
+   * «Otros» incluye el punitorio YA FACTURADO, aunque la pantalla tenga su propia columna
+   * de punitorio: esa columna muestra lo que se PROPONE cobrar hoy, que no está en la
+   * cuenta y no suma al total. Son dos cosas distintas con el mismo nombre, y dejar
+   * afuera el punitorio cobrado hacía que el desglose de un cargo atrasado no llegara
+   * al total.
+   */
+  private async desglosePorCuenta(): Promise<
+    Map<string, { rent: number; expenses: number; otros: number }>
+  > {
+    const lineas = await new AccountLineRepository(this.db).list();
+    const porCuenta = new Map<string, { rent: number; expenses: number; otros: number }>();
+
+    for (const linea of lineas ?? []) {
+      const cuenta = String(linea.account_id ?? '');
+      if (!cuenta) continue;
+      const acc = porCuenta.get(cuenta) ?? { rent: 0, expenses: 0, otros: 0 };
+      const monto = Number(linea.subtotal ?? 0);
+      const tipo = String(linea.source_type ?? '');
+
+      if (tipo === RENT_SOURCE) acc.rent += monto;
+      else if (tipo === 'expenses') acc.expenses += monto;
+      else acc.otros += monto;
+
+      porCuenta.set(cuenta, acc);
+    }
+    return porCuenta;
   }
 
   /** Los totales de arriba de Cobranzas: facturado, cobrado, por cobrar y vencido. */

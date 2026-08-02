@@ -202,16 +202,24 @@
             "format": "money"
           },
           {
-            "key": "late_fee",
-            "label": "Punitorio",
+            "key": "other",
+            "label": "Otros conceptos",
             "visible": false,
             "display": "mono",
             "format": "money",
-            "emptyLabel": "Sin punitorio"
+            "emptyLabel": "Sin otros conceptos"
+          },
+          {
+            "key": "late_fee",
+            "label": "Punitorio a proponer",
+            "visible": false,
+            "display": "mono",
+            "format": "money",
+            "emptyLabel": "Sin punitorio para proponer"
           },
           {
             "key": "late_fee_detail",
-            "label": "Cálculo del punitorio",
+            "label": "Cálculo de esa propuesta",
             "visible": false,
             "emptyLabel": "—"
           },
@@ -233,7 +241,8 @@
             "0",
             "paid",
             "420000",
-            "65000"
+            "65000",
+            "0"
           ],
           [
             "2°A",
@@ -245,7 +254,8 @@
             "260000",
             "partial",
             "400000",
-            "60000"
+            "60000",
+            "0"
           ],
           [
             "1°C",
@@ -257,7 +267,8 @@
             "505000",
             "overdue",
             "435000",
-            "70000"
+            "70000",
+            "95000"
           ]
         ],
         "filters": [

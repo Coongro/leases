@@ -42,7 +42,12 @@
         "viewId": "leases.actualizaciones.open",
         "icon": "TrendingUp"
       },
-      { "path": "Vencimientos", "viewId": "leases.vencimientos.open" }
+      {
+        "path": "Vencimientos",
+        "order": 60,
+        "viewId": "leases.vencimientos.open",
+        "icon": "CalendarClock"
+      }
     ],
     "views": [
       {
