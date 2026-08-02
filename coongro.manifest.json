@@ -47,6 +47,12 @@
         "order": 60,
         "viewId": "leases.vencimientos.open",
         "icon": "CalendarClock"
+      },
+      {
+        "path": "Resultado",
+        "order": 70,
+        "viewId": "leases.resultado.open",
+        "icon": "Scale"
       }
     ],
     "views": [
@@ -127,6 +133,12 @@
         "title": "Vencimientos",
         "component": "./dist/views/vencimientos/index.js",
         "export": "VencimientosView"
+      },
+      {
+        "id": "leases.resultado.open",
+        "title": "Resultado",
+        "component": "./dist/views/resultado/index.js",
+        "export": "ResultadoView"
       }
     ],
     "repositories": [
@@ -4250,6 +4262,82 @@
             }
           ],
           "identifierKey": "id"
+        },
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.billing.propertyResults",
+        "action": "leases.billing.propertyResults",
+        "title": "Resultado",
+        "description": "Resultado: capacidad declarada por el Builder.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "collection",
+          "fields": [
+            {
+              "key": "unit",
+              "name": "unit",
+              "label": "Unidad",
+              "format": "text"
+            },
+            {
+              "key": "property",
+              "name": "property",
+              "label": "Propiedad",
+              "format": "text"
+            },
+            {
+              "key": "tenant",
+              "name": "tenant",
+              "label": "Inquilino",
+              "format": "text"
+            },
+            {
+              "key": "due_date",
+              "name": "dueDate",
+              "label": "Vence",
+              "format": "date"
+            },
+            {
+              "key": "total_due",
+              "name": "totalDue",
+              "label": "A pagar",
+              "format": "money"
+            },
+            {
+              "key": "paid",
+              "name": "paid",
+              "label": "Cobrado",
+              "format": "money"
+            },
+            {
+              "key": "balance",
+              "name": "balance",
+              "label": "Saldo",
+              "format": "money"
+            },
+            {
+              "key": "status",
+              "name": "status",
+              "label": "Estado",
+              "format": "text",
+              "values": [
+                { "value": "open", "label": "Emitido" },
+                { "value": "partial", "label": "Parcial" },
+                { "value": "paid", "label": "Pagado" },
+                { "value": "overdue", "label": "Vencido" }
+              ]
+            }
+          ],
+          "identifierKey": "id",
+          "defaultLimit": 20,
+          "maxLimit": 50
         },
         "generatedBy": "builder"
       },

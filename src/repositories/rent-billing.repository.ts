@@ -30,6 +30,12 @@ import type { ExpenseSettlement } from '../services/expenses.js';
 import { proposeLateFee, type LateFeePolicy } from '../services/late-fee.js';
 import type { LeaseCharge } from '../services/lease-charges.js';
 import { periodTotals, type PeriodTotals } from '../services/period-totals.js';
+import {
+  propertyResults,
+  type ChargeForResult,
+  type ExpenseForResult,
+  type PropertyResult,
+} from '../services/property-result.js';
 import { chargeForTenantExpense } from '../services/tenant-expense.js';
 
 import { GuaranteeRepository } from './guarantee.repository.js';
@@ -224,6 +230,17 @@ function leaseIdDe(sourceRef: string): string {
   return corte < 0 ? sourceRef : sourceRef.slice(0, corte);
 }
 
+/** `<leaseId>:<período>` — el período es lo que sigue a los dos puntos finales. */
+function periodoDe(sourceRef: string): string {
+  const corte = sourceRef.lastIndexOf(':');
+  return corte < 0 ? '' : sourceRef.slice(corte + 1);
+}
+
+/** El resultado de una propiedad con su nombre resuelto, como lo muestra la pantalla. */
+export interface PropertyResultRow extends PropertyResult {
+  property: string;
+}
+
 export class RentBillingRepository {
   constructor(private readonly db: ModuleDatabaseAPI) {}
 
@@ -350,6 +367,66 @@ export class RentBillingRepository {
   /** Los totales de arriba de Cobranzas: facturado, cobrado, por cobrar y vencido. */
   async periodSummary({ period }: { period: string }): Promise<PeriodTotals> {
     return periodTotals(await this.chargesForPeriod({ period }));
+  }
+
+  /**
+   * Qué le dejó cada propiedad en el año: alquiler cobrado menos honorarios y gastos.
+   *
+   * Cruza los tres plugins que tienen las puntas —los contratos y su cobranza en
+   * `leases`, la propiedad en `properties`, los arreglos en `maintenance`— porque
+   * ninguno solo puede responderlo. Es el único lugar del kit donde se ve si una
+   * propiedad rinde o se come la renta en mantenimiento.
+   *
+   * El criterio de qué entra y qué no vive en el servicio puro, con sus tests.
+   */
+  async propertyResults({ year }: { year?: number } = {}): Promise<PropertyResultRow[]> {
+    const anio = year ?? new Date().getFullYear();
+    const [cuentas, contratos, desgloses, edificios, ordenes] = await Promise.all([
+      new AccountRepository(this.db).listWithTotals({ source: RENT_SOURCE }),
+      new LeaseRepository(this.db).list(),
+      this.desglosePorCuenta(),
+      new BuildingRepository(this.db).list(),
+      new WorkOrderRepository(this.db).list(),
+    ]);
+
+    const porContrato = new Map(contratos.map((l) => [l.id, l]));
+    const nombre = new Map(
+      (edificios ?? []).map((b) => [String((b as { id: string }).id), String(b.name ?? '')])
+    );
+
+    const cargos: ChargeForResult[] = (cuentas ?? [])
+      .filter((c) => periodoDe(String(c.source_ref ?? '')).startsWith(String(anio)))
+      .map((c) => {
+        const lease = porContrato.get(leaseIdDe(String(c.source_ref ?? '')));
+        const desglose = desgloses.get(String(c.id));
+        return {
+          buildingId: String(lease?.building_id ?? ''),
+          rent: desglose?.rent ?? 0,
+          total: Number(c.total ?? 0),
+          paid: Number(c.paid ?? 0),
+          adminFeePercent: Number(lease?.admin_fee_percent ?? 0) || 0,
+        };
+      });
+
+    // Solo los arreglos que salen del bolsillo del propietario: los que se le recuperan
+    // al inquilino entran y salen, y contarlos como gasto haría rendir menos a una
+    // propiedad justamente por algo que no le costó nada.
+    const gastos: ExpenseForResult[] = (ordenes ?? [])
+      .filter(
+        (o) =>
+          String(o.completed_at ?? '').startsWith(String(anio)) &&
+          o.expense_state !== '' &&
+          String(o.paid_by ?? '') !== 'inquilino'
+      )
+      .map((o) => ({
+        buildingId: String(o.building_id ?? ''),
+        amount: Number(o.cost ?? 0) || 0,
+      }));
+
+    return propertyResults(cargos, gastos).map((r) => ({
+      ...r,
+      property: nombre.get(r.buildingId) ?? '—',
+    }));
   }
 
   /**
