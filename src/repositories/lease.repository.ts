@@ -4,8 +4,10 @@ import { buildingTable, unitTable } from '@coongro/properties/server';
 import { and, asc, desc, eq, getTableColumns, isNull, sql } from 'drizzle-orm';
 
 import { guaranteeTable } from '../schema/guarantee.js';
+import { indexAdjustmentTable } from '../schema/index-adjustment.js';
 import { leaseTable } from '../schema/lease.js';
 import type { LeaseRow, NewLeaseRow } from '../schema/lease.js';
+import { describeRentChange } from '../services/rent-change.js';
 
 /**
  * Días antes del vencimiento en que un contrato pasa a «por vencer». Dos meses es
@@ -13,6 +15,9 @@ import type { LeaseRow, NewLeaseRow } from '../schema/lease.js';
  * propietario se entera tarde para negociar o para buscar reemplazo.
  */
 const DEFAULT_EXPIRY_WARNING_DAYS = 60;
+
+/** Hoy como DateKey. */
+const hoy = (): string => new Date().toISOString().slice(0, 10);
 
 /** Día siguiente a un DateKey. Una renovación arranca cuando termina el anterior. */
 function siguienteDia(date: string): string {
@@ -219,10 +224,44 @@ export class LeaseRepository {
       let created = false;
 
       if (leaseId) {
+        // El precio de ANTES, leído dentro de la misma transacción que lo pisa: si se
+        // leyera afuera, dos ediciones simultáneas anotarían las dos el mismo valor
+        // previo y el historial mostraría un salto que nunca existió.
+        const previas = await tx
+          .select({ rent_amount: leaseTable.rent_amount })
+          .from(leaseTable)
+          .where(eq(leaseTable.id, leaseId))
+          .limit(1);
+
         await tx
           .update(leaseTable)
           .set(contrato as never)
           .where(eq(leaseTable.id, leaseId));
+
+        // Una suba pactada a mano se anota en el mismo historial que las del índice:
+        // el contrato editado y nada más deja cargos viejos que no cuadran con su
+        // precio actual, sin nada que explique la diferencia.
+        const cambio = describeRentChange({
+          previousRent: previas[0]?.rent_amount,
+          newRent: contrato.rent_amount,
+          effectiveDate: hoy(),
+        });
+        if (cambio) {
+          await tx.insert(indexAdjustmentTable).values({
+            lease_id: leaseId,
+            index_code: 'manual',
+            // Nace aplicada: el cambio ya está hecho sobre el contrato en esta misma
+            // transacción. Dejarla `pending` mostraría en Actualizaciones una propuesta
+            // para subir a un monto que el contrato ya tiene.
+            status: 'applied',
+            effective_date: cambio.effectiveDate,
+            rate_percent: cambio.ratePercent,
+            previous_rent: cambio.previousRent,
+            new_rent: cambio.newRent,
+            applied_at: new Date().toISOString(),
+            notes: `Cambio pactado — ${cambio.detail}`,
+          } as never);
+        }
       } else {
         const filas = await tx
           .insert(leaseTable)

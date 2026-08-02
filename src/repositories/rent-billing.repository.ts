@@ -1,12 +1,23 @@
-import { AccountLineRepository, AccountRepository } from '@coongro/billing/server';
+import {
+  accountLineTable,
+  AccountLineRepository,
+  AccountRepository,
+  PaymentRepository,
+} from '@coongro/billing/server';
 import { convertToArs, describeRate } from '@coongro/indices';
 import { FxRateRepository } from '@coongro/indices/server';
+import {
+  expenseForWorkOrder,
+  workOrderRef,
+  WorkOrderRepository,
+} from '@coongro/maintenance/server';
 import type { ModuleDatabaseAPI } from '@coongro/plugin-sdk';
 import {
   BuildingExpenseRepository,
   BuildingRepository,
   UnitRepository,
 } from '@coongro/properties/server';
+import { eq } from 'drizzle-orm';
 
 import type { GuaranteeRow } from '../schema/guarantee.js';
 import {
@@ -19,11 +30,22 @@ import type { ExpenseSettlement } from '../services/expenses.js';
 import { proposeLateFee, type LateFeePolicy } from '../services/late-fee.js';
 import type { LeaseCharge } from '../services/lease-charges.js';
 import { periodTotals, type PeriodTotals } from '../services/period-totals.js';
+import { chargeForTenantExpense } from '../services/tenant-expense.js';
 
 import { GuaranteeRepository } from './guarantee.repository.js';
 import { IndexAdjustmentRepository } from './index-adjustment.repository.js';
 import { LeaseChargeRepository } from './lease-charge.repository.js';
 import { LeaseRepository, type LeaseListRow } from './lease.repository.js';
+
+/**
+ * Con qué origen entra en el recibo un arreglo que paga el inquilino.
+ *
+ * Es su propio `source_type` y no `mantenimiento` —el que usa el egreso al proveedor—
+ * porque son las dos puntas del mismo gasto y conviven en la misma base: una sale de la
+ * caja del propietario, la otra se la cobra al inquilino. Distinguirlas es lo que
+ * permite preguntar «cuánto gasté» sin contar el recupero como si fuera otro gasto.
+ */
+const TENANT_EXPENSE_SOURCE = 'gasto_a_cargo';
 
 /**
  * La cobranza de los alquileres: los cargos de un período con el contrato al que
@@ -286,6 +308,134 @@ export class RentBillingRepository {
   }
 
   /**
+   * Le suma al recibo del inquilino los arreglos que quedaron a cargo suyo.
+   *
+   * Cierra el circuito que dejaba abierto el cierre de una orden: el propietario le paga
+   * al plomero (eso lo registra `maintenance` como egreso) y acá recupera esa plata
+   * poniéndola en el recibo de quien la tiene que pagar. Sin este paso el campo «Lo paga:
+   * el inquilino» no era más que una anotación — el gasto lo terminaba absorbiendo el
+   * propietario.
+   *
+   * Es un barrido y no una consecuencia inmediata del cierre a propósito: cuando la orden
+   * se cierra puede no haber ningún recibo al que sumarle el gasto (el del mes ya se
+   * cobró, el siguiente no se emitió). Volviendo a preguntar cada vez que se genera un
+   * mes, el gasto entra solo en cuanto aparece dónde ponerlo, sin que nadie se acuerde.
+   *
+   * Repetirlo no cobra dos veces: cada línea lleva `workorder:<id>` y se saltea toda
+   * orden que ya figure en algún recibo.
+   *
+   * También RETIRA lo que dejó de corresponder. Marcar «lo paga el inquilino» por error
+   * y corregirlo tiene que poder deshacerse: sin esto el gasto quedaba en su recibo para
+   * siempre, y la única forma de sacarlo era borrar la línea a mano desde la cuenta.
+   */
+  async chargeTenantWorkOrders({ today }: { today?: string } = {}): Promise<{
+    charged: Array<{ order: string; amount: string }>;
+    /** Lo que se retiró de un recibo porque la orden dejó de estar a cargo del inquilino. */
+    removed: string[];
+  }> {
+    const hoy = today ?? new Date().toISOString().slice(0, 10);
+    const ordenes = await new WorkOrderRepository(this.db).list();
+
+    const aCargoDelInquilino = ordenes.filter(
+      (o) => String(o.paid_by ?? '') === 'inquilino' && expenseForWorkOrder(o, hoy) !== null
+    );
+    const removed = await this.retirarGastosQueYaNoCorresponden(
+      new Set(aCargoDelInquilino.map((o) => workOrderRef(o.id)))
+    );
+    if (aCargoDelInquilino.length === 0) return { charged: [], removed };
+
+    // Lo ya cargado se pregunta UNA vez para todas las órdenes: preguntarlo por orden
+    // haría una consulta por cada arreglo del historial cada vez que se genera un mes.
+    const yaCargadas = await this.refsYaCobradas();
+    const contratos = await new LeaseRepository(this.db).list();
+    const lineas = new AccountLineRepository(this.db);
+    const charged: Array<{ order: string; amount: string }> = [];
+
+    for (const orden of aCargoDelInquilino) {
+      const ref = workOrderRef(orden.id);
+      if (yaCargadas.has(ref)) continue;
+
+      const gasto = expenseForWorkOrder(orden, hoy);
+      if (!gasto) continue;
+
+      // El gasto va al contrato que ocupa la unidad hoy, no al inquilino que la ocupaba
+      // cuando se reportó: si se fue, la deuda se le reclama por otro camino y no
+      // apareciéndole en el recibo a quien entró después.
+      const contrato = contratos.find(
+        (l) => l.unit_id === orden.unit_id && (l.state === 'vigente' || l.state === 'por_vencer')
+      );
+      if (!contrato) continue;
+
+      const destino = chargeForTenantExpense(
+        await this.chargesForLease({ leaseId: contrato.id }),
+        hoy
+      );
+      // Sin recibo cobrable el gasto espera: lo levanta la próxima generación de mes.
+      if (!destino) continue;
+
+      await lineas.add({
+        accountId: destino.id,
+        description: gasto.description,
+        unitPrice: gasto.amount,
+        sourceType: TENANT_EXPENSE_SOURCE,
+        sourceRef: ref,
+      });
+      charged.push({ order: orden.title, amount: gasto.amount });
+    }
+
+    return { charged, removed };
+  }
+
+  /** Las órdenes que ya figuran en algún recibo, para no cobrarlas de nuevo. */
+  private async refsYaCobradas(): Promise<Set<string>> {
+    const filas = await this.db.ormQuery((tx) =>
+      tx
+        .select({ source_ref: accountLineTable.source_ref })
+        .from(accountLineTable)
+        .where(eq(accountLineTable.source_type, TENANT_EXPENSE_SOURCE))
+    );
+    return new Set((filas ?? []).map((f) => String(f.source_ref ?? '')).filter(Boolean));
+  }
+
+  /**
+   * Saca del recibo los gastos cuyas órdenes ya no están a cargo del inquilino.
+   *
+   * Un recibo que YA recibió un pago no se toca: la otra persona pagó contra un total,
+   * y bajárselo después le dejaría un saldo a favor que nadie decidió. Ese caso se
+   * resuelve a mano —con una nota de crédito o devolviéndolo—, que es lo que
+   * corresponde cuando la plata ya se movió.
+   */
+  private async retirarGastosQueYaNoCorresponden(vigentes: Set<string>): Promise<string[]> {
+    const filas = await this.db.ormQuery((tx) =>
+      tx
+        .select({
+          id: accountLineTable.id,
+          source_ref: accountLineTable.source_ref,
+          description: accountLineTable.description,
+          account_id: accountLineTable.account_id,
+        })
+        .from(accountLineTable)
+        .where(eq(accountLineTable.source_type, TENANT_EXPENSE_SOURCE))
+    );
+
+    const sobrantes = (filas ?? []).filter((f) => !vigentes.has(String(f.source_ref ?? '')));
+    if (sobrantes.length === 0) return [];
+
+    const pagos = new PaymentRepository(this.db);
+    const retiradas: string[] = [];
+    for (const linea of sobrantes) {
+      const cobrado = await pagos.listByAccount({ accountId: String(linea.account_id) });
+      if (cobrado.length > 0) continue;
+
+      await this.db.ormQuery((tx) =>
+        tx.delete(accountLineTable).where(eq(accountLineTable.id, linea.id))
+      );
+      retiradas.push(String(linea.description ?? ''));
+    }
+    return retiradas;
+  }
+
+  /**
    * Emite los cargos de alquiler de un mes: uno por contrato vigente, con el alquiler,
    * las expensas del período y los conceptos pactados de cada uno.
    *
@@ -314,7 +464,7 @@ export class RentBillingRepository {
       this.conceptosPorContrato(),
     ]);
 
-    return generateCharges({
+    const resultado = await generateCharges({
       period,
       leases: leases as unknown as Parameters<typeof generateCharges>[0]['leases'],
       // El servicio puro escribe a través de este puente. Contra el repositorio de
@@ -332,6 +482,19 @@ export class RentBillingRepository {
       settlements,
       extras,
     });
+
+    // Recién emitidos los recibos del mes, los arreglos que estaban esperando dónde
+    // caer ya tienen destino. Va después y no dentro de la generación porque un fallo
+    // acá no puede dejar el mes sin facturar: el gasto vuelve a intentarse el mes que
+    // viene, pero el alquiler se cobra una sola vez.
+    try {
+      await this.chargeTenantWorkOrders();
+    } catch {
+      // Silencioso a propósito: el resultado que se muestra es el de la facturación
+      // del mes, y un arreglo que no entró se recupera solo en la próxima corrida.
+    }
+
+    return resultado;
   }
 
   /**

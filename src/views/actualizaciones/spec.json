@@ -113,7 +113,34 @@
             "key": "index_code",
             "label": "Índice",
             "display": "pill",
-            "tone": "outline"
+            "tone": "outline",
+            "values": [
+              {
+                "value": "ICL",
+                "label": "ICL"
+              },
+              {
+                "value": "IPC",
+                "label": "IPC"
+              },
+              {
+                "value": "casa_propia",
+                "label": "Casa Propia"
+              },
+              {
+                "value": "manual",
+                "label": "Pactada",
+                "tone": "neutral"
+              },
+              {
+                "value": "fijo",
+                "label": "Fijo"
+              },
+              {
+                "value": "otro",
+                "label": "Otro"
+              }
+            ]
           },
           {
             "key": "rate_percent",
@@ -210,6 +237,20 @@
             "24,12",
             "29,52",
             "2025-09-01"
+          ],
+          [
+            "1°B",
+            "Belgrano 1240",
+            "Ana María Ruiz",
+            "manual",
+            "10,81",
+            "586612",
+            "650000",
+            "2026-08-02",
+            "applied",
+            "",
+            "",
+            ""
           ]
         ],
         "filters": [

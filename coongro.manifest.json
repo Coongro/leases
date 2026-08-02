@@ -412,6 +412,13 @@
         "handler": "./dist/tasks/expiries.js",
         "export": "expiries",
         "scope": "tenant"
+      },
+      {
+        "id": "tenant-expenses",
+        "cron": "0 8 * * *",
+        "handler": "./dist/tasks/tenant-expenses.js",
+        "export": "tenantExpenses",
+        "scope": "tenant"
       }
     ],
     "copilotCapabilities": [
@@ -462,7 +469,15 @@
               "key": "index_code",
               "name": "indexCode",
               "label": "Índice",
-              "format": "text"
+              "format": "text",
+              "values": [
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" },
+                { "value": "manual", "label": "Pactada" },
+                { "value": "fijo", "label": "Fijo" },
+                { "value": "otro", "label": "Otro" }
+              ]
             },
             {
               "key": "rate_percent",
@@ -547,7 +562,15 @@
               "key": "index_code",
               "name": "indexCode",
               "label": "Índice",
-              "format": "text"
+              "format": "text",
+              "values": [
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" },
+                { "value": "manual", "label": "Pactada" },
+                { "value": "fijo", "label": "Fijo" },
+                { "value": "otro", "label": "Otro" }
+              ]
             },
             {
               "key": "rate_percent",
@@ -1346,7 +1369,15 @@
               "key": "index_code",
               "name": "indexCode",
               "label": "Índice",
-              "format": "text"
+              "format": "text",
+              "values": [
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" },
+                { "value": "manual", "label": "Pactada" },
+                { "value": "fijo", "label": "Fijo" },
+                { "value": "otro", "label": "Otro" }
+              ]
             },
             {
               "key": "rate_percent",
@@ -1429,7 +1460,15 @@
               "key": "index_code",
               "name": "indexCode",
               "label": "Índice",
-              "format": "text"
+              "format": "text",
+              "values": [
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" },
+                { "value": "manual", "label": "Pactada" },
+                { "value": "fijo", "label": "Fijo" },
+                { "value": "otro", "label": "Otro" }
+              ]
             },
             {
               "key": "rate_percent",
@@ -1512,7 +1551,15 @@
               "key": "index_code",
               "name": "indexCode",
               "label": "Índice",
-              "format": "text"
+              "format": "text",
+              "values": [
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" },
+                { "value": "manual", "label": "Pactada" },
+                { "value": "fijo", "label": "Fijo" },
+                { "value": "otro", "label": "Otro" }
+              ]
             },
             {
               "key": "rate_percent",
@@ -1592,7 +1639,15 @@
               "key": "index_code",
               "name": "indexCode",
               "label": "Índice",
-              "format": "text"
+              "format": "text",
+              "values": [
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" },
+                { "value": "manual", "label": "Pactada" },
+                { "value": "fijo", "label": "Fijo" },
+                { "value": "otro", "label": "Otro" }
+              ]
             },
             {
               "key": "rate_percent",
@@ -1674,7 +1729,15 @@
               "key": "index_code",
               "name": "indexCode",
               "label": "Índice",
-              "format": "text"
+              "format": "text",
+              "values": [
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" },
+                { "value": "manual", "label": "Pactada" },
+                { "value": "fijo", "label": "Fijo" },
+                { "value": "otro", "label": "Otro" }
+              ]
             },
             {
               "key": "rate_percent",
@@ -2637,7 +2700,15 @@
               "key": "index_code",
               "name": "indexCode",
               "label": "Índice",
-              "format": "text"
+              "format": "text",
+              "values": [
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" },
+                { "value": "manual", "label": "Pactada" },
+                { "value": "fijo", "label": "Fijo" },
+                { "value": "otro", "label": "Otro" }
+              ]
             },
             {
               "key": "rate_percent",
