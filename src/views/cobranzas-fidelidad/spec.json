@@ -316,6 +316,7 @@
       },
       {
         "hook": "onAction",
+        "key": "leases.billing.generateForPeriod",
         "mode": "command",
         "action": "leases.billing.generateForPeriod",
         "effect": "write",
@@ -323,6 +324,19 @@
         "preconditions": [
           "El período se toma del selector de mes de la pantalla.",
           "Es idempotente: los cargos que ya existían no se duplican."
+        ]
+      },
+      {
+        "hook": "onAction",
+        "key": "leases.billing.chargeLateFee",
+        "mode": "command",
+        "action": "leases.billing.chargeLateFee",
+        "effect": "write",
+        "confirmation": "always",
+        "preconditions": [
+          "Requiere el id de la cuenta de un cargo con saldo vencido.",
+          "El monto lo calcula el servidor con el saldo y el porcentaje pactado en el contrato.",
+          "Si el cargo no tiene punitorio para cobrar, no escribe nada."
         ]
       }
     ]

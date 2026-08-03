@@ -54,6 +54,13 @@ interface GeneracionResult {
   skipped: number;
 }
 
+/** Lo que devuelve el cobro del punitorio: si hubo algo que cobrar, y por cuánto. */
+interface PunitorioResult {
+  charged: boolean;
+  amount: string;
+  detail: string;
+}
+
 export const customHandlers: CustomHandlers = {
   /**
    * Los cargos del mes, con el punitorio que le correspondería a cada uno. Se
@@ -124,9 +131,10 @@ export const customHandlers: CustomHandlers = {
   },
 
   /**
-   * Genera los cargos del período. Es idempotente: si ya estaban generados no se
-   * duplican, y por eso el aviso distingue cuántos se crearon de cuántos ya existían
-   * — que el botón "no haga nada" es un resultado válido y hay que decirlo.
+   * Dos operaciones del período, cada una en su propia rama `actionId === '...'`:
+   * emitir el mes entero y cobrarle el punitorio a UN cargo. Separadas así, el
+   * contrato headless declara y verifica una `key` por rama, y el agente ve las dos
+   * capacidades en vez de un solo botón ambiguo.
    */
   onAction: async (actionId, { execute, toast, record, reload }) => {
     // Cobrar el punitorio de una fila: lo propone la tabla, lo confirma la persona.
@@ -135,14 +143,11 @@ export const customHandlers: CustomHandlers = {
       // El monto lo calcula el servidor con el saldo y el porcentaje del contrato: la
       // pantalla elige el cargo, no cuánto se cobra.
       const politica = await lateFeePolicy();
-      const r = await execute<{ charged: boolean; amount: string; detail: string }>(
-        'leases.billing.chargeLateFee',
-        {
-          accountId: String(record.id),
-          graceDays: politica.graceDays,
-          applyLateFee: politica.apply,
-        }
-      );
+      const r = await execute<PunitorioResult>('leases.billing.chargeLateFee', {
+        accountId: String(record.id),
+        graceDays: politica.graceDays,
+        applyLateFee: politica.apply,
+      });
       if (!r.charged) {
         toast?.info('Sin punitorio', 'Este cargo no tiene punitorio para cobrar.');
         return;
@@ -155,23 +160,28 @@ export const customHandlers: CustomHandlers = {
       return;
     }
 
-    const r = await execute<GeneracionResult>('leases.billing.generateForPeriod', {
-      period: periodo,
-      usdHouse: await usdHouse(),
-    });
-    if (r.created === 0 && r.skipped === 0) {
-      toast?.info('Sin contratos', `Ningún contrato corresponde a ${periodo}.`);
-      return;
+    // Emitir el mes entero. Es idempotente: si ya estaban generados no se duplican, y
+    // por eso el aviso distingue cuántos se crearon de cuántos ya existían — que el
+    // botón "no haga nada" es un resultado válido y hay que decirlo.
+    if (actionId === 'leases.billing.generateForPeriod') {
+      const r = await execute<GeneracionResult>('leases.billing.generateForPeriod', {
+        period: periodo,
+        usdHouse: await usdHouse(),
+      });
+      if (r.created === 0 && r.skipped === 0) {
+        toast?.info('Sin contratos', `Ningún contrato corresponde a ${periodo}.`);
+        return;
+      }
+      if (r.created === 0) {
+        toast?.info('Ya estaban generados', `Los ${r.skipped} cargos de ${periodo} ya existían.`);
+        return;
+      }
+      toast?.success(
+        'Cargos generados',
+        r.skipped > 0
+          ? `${r.created} nuevos; ${r.skipped} ya existían.`
+          : plural(r.created, 'cargo generado', 'cargos generados')
+      );
     }
-    if (r.created === 0) {
-      toast?.info('Ya estaban generados', `Los ${r.skipped} cargos de ${periodo} ya existían.`);
-      return;
-    }
-    toast?.success(
-      'Cargos generados',
-      r.skipped > 0
-        ? `${r.created} nuevos; ${r.skipped} ya existían.`
-        : plural(r.created, 'cargo generado', 'cargos generados')
-    );
   },
 };

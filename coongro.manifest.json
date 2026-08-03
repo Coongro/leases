@@ -145,42 +145,94 @@
       {
         "module": "./dist/repositories/lease.repository.js",
         "export": "LeaseRepository",
-        "prefix": "leases.contracts"
+        "prefix": "leases.contracts",
+        "actions": [
+          "list",
+          "getDetail",
+          "save",
+          "getTenant",
+          "saveTenant",
+          "listTenants",
+          "renew",
+          "terminate",
+          "getById",
+          "create",
+          "update",
+          "delete",
+          "restore"
+        ]
       },
       {
         "module": "./dist/repositories/lease-tenant.repository.js",
         "export": "LeaseTenantRepository",
-        "prefix": "leases.coTenants"
+        "prefix": "leases.coTenants",
+        "actions": ["list", "getById", "create", "update", "delete", "restore"]
       },
       {
         "module": "./dist/repositories/guarantee.repository.js",
         "export": "GuaranteeRepository",
-        "prefix": "leases.guarantees"
+        "prefix": "leases.guarantees",
+        "actions": ["list", "getById", "create", "update", "delete", "restore"]
       },
       {
         "module": "./dist/repositories/index-adjustment.repository.js",
         "export": "IndexAdjustmentRepository",
-        "prefix": "leases.adjustments"
+        "prefix": "leases.adjustments",
+        "actions": [
+          "list",
+          "forLease",
+          "listDetailed",
+          "overview",
+          "detect",
+          "apply",
+          "cancel",
+          "getById",
+          "create",
+          "update",
+          "delete"
+        ]
       },
       {
         "module": "./dist/repositories/notice-log.repository.js",
         "export": "NoticeLogRepository",
-        "prefix": "leases.notices"
+        "prefix": "leases.notices",
+        "actions": ["list", "getById", "create"]
       },
       {
         "module": "./dist/repositories/lease-charge.repository.js",
         "export": "LeaseChargeRepository",
-        "prefix": "leases.charges"
+        "prefix": "leases.charges",
+        "actions": ["list", "forLease", "getById", "create", "update", "delete"]
       },
       {
         "module": "./dist/repositories/rent-billing.repository.js",
         "export": "RentBillingRepository",
-        "prefix": "leases.billing"
+        "prefix": "leases.billing",
+        "actions": [
+          "chargesForPeriod",
+          "periodSummary",
+          "propertyResults",
+          "chargeTenantWorkOrders",
+          "generateForPeriod",
+          "chargeLateFee",
+          "dashboard",
+          "yearSeries",
+          "chargesForLease",
+          "contractFile",
+          "tenantFile"
+        ]
       },
       {
         "module": "./dist/repositories/expiry-alert.repository.js",
         "export": "ExpiryAlertRepository",
-        "prefix": "leases.expiries"
+        "prefix": "leases.expiries",
+        "actions": [
+          "scan",
+          "list",
+          "pendingCount",
+          "acknowledge",
+          "unacknowledge"
+        ]
       }
     ],
     "settings": {
@@ -442,7 +494,6 @@
       {
         "id": "leases.adjustments.list",
         "action": "leases.adjustments.list",
-        "generatedBy": "builder",
         "title": "Listar Actualizaciones",
         "description": "Obtiene Actualizaciones disponibles para el cliente actual.",
         "effect": "read",
@@ -536,12 +587,12 @@
           "identifierKey": "id",
           "defaultLimit": 20,
           "maxLimit": 50
-        }
+        },
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.adjustments.getById",
         "action": "leases.adjustments.getById",
-        "generatedBy": "builder",
         "title": "Consultar Actualización",
         "description": "Obtiene un registro de Actualización por su ID.",
         "effect": "read",
@@ -627,12 +678,12 @@
             }
           ],
           "identifierKey": "id"
-        }
+        },
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.charges.list",
         "action": "leases.charges.list",
-        "generatedBy": "builder",
         "title": "Listar Concepto del contrato",
         "description": "Obtiene Concepto del contrato disponibles para el cliente actual.",
         "effect": "read",
@@ -689,12 +740,12 @@
           "identifierKey": "id",
           "defaultLimit": 10,
           "maxLimit": 50
-        }
+        },
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.charges.getById",
         "action": "leases.charges.getById",
-        "generatedBy": "builder",
         "title": "Consultar Concepto del contrato",
         "description": "Obtiene un registro de Concepto del contrato por su ID.",
         "effect": "read",
@@ -743,12 +794,12 @@
             }
           ],
           "identifierKey": "id"
-        }
+        },
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.charges.create",
         "action": "leases.charges.create",
-        "generatedBy": "builder",
         "title": "Crear Concepto del contrato",
         "description": "Crea Concepto del contrato con los mismos campos disponibles en el formulario del cliente.",
         "effect": "write",
@@ -833,12 +884,12 @@
             }
           ],
           "identifierKey": "id"
-        }
+        },
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.charges.update",
         "action": "leases.charges.update",
-        "generatedBy": "builder",
         "title": "Actualizar Concepto del contrato",
         "description": "Actualiza los campos editables de Concepto del contrato.",
         "effect": "write",
@@ -923,12 +974,12 @@
             }
           ],
           "identifierKey": "id"
-        }
+        },
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.contracts.list",
         "action": "leases.contracts.list",
-        "generatedBy": "builder",
         "title": "Listar Contrato",
         "description": "Obtiene Contrato disponibles para el cliente actual.",
         "effect": "read",
@@ -1016,12 +1067,12 @@
           "identifierKey": "id",
           "defaultLimit": 20,
           "maxLimit": 50
-        }
+        },
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.contracts.getById",
         "action": "leases.contracts.getById",
-        "generatedBy": "builder",
         "title": "Consultar Contrato",
         "description": "Obtiene un registro de Contrato por su ID.",
         "effect": "read",
@@ -1101,12 +1152,12 @@
             }
           ],
           "identifierKey": "id"
-        }
+        },
+        "generatedBy": "agentic-graph"
       },
       {
-        "id": "leases.delegate.properties_units_list",
+        "id": "properties.units.list",
         "action": "properties.units.list",
-        "generatedBy": "builder",
         "title": "Listar Unidad",
         "description": "Obtiene Unidad disponibles para el cliente actual.",
         "effect": "read",
@@ -1139,12 +1190,12 @@
           "identifierKey": "id",
           "defaultLimit": 20,
           "maxLimit": 50
-        }
+        },
+        "generatedBy": "agentic-graph"
       },
       {
-        "id": "leases.delegate.properties_units_getById",
+        "id": "properties.units.getById",
         "action": "properties.units.getById",
-        "generatedBy": "builder",
         "title": "Consultar Unidad",
         "description": "Obtiene un registro de Unidad por su ID.",
         "effect": "read",
@@ -1169,12 +1220,12 @@
             }
           ],
           "identifierKey": "id"
-        }
+        },
+        "generatedBy": "agentic-graph"
       },
       {
-        "id": "leases.delegate.contacts_list",
+        "id": "contacts.list",
         "action": "contacts.list",
-        "generatedBy": "builder",
         "title": "Listar Inquilino",
         "description": "Obtiene Inquilino disponibles para el cliente actual.",
         "effect": "read",
@@ -1207,12 +1258,12 @@
           "identifierKey": "id",
           "defaultLimit": 20,
           "maxLimit": 50
-        }
+        },
+        "generatedBy": "agentic-graph"
       },
       {
-        "id": "leases.delegate.contacts_getById",
+        "id": "contacts.getById",
         "action": "contacts.getById",
-        "generatedBy": "builder",
         "title": "Consultar Inquilino",
         "description": "Obtiene un registro de Inquilino por su ID.",
         "effect": "read",
@@ -1237,12 +1288,12 @@
             }
           ],
           "identifierKey": "id"
-        }
+        },
+        "generatedBy": "agentic-graph"
       },
       {
-        "id": "leases.delegate.contacts_search",
+        "id": "contacts.search",
         "action": "contacts.search",
-        "generatedBy": "builder",
         "title": "Buscar Inquilino",
         "description": "Busca Inquilino por texto para el cliente actual.",
         "effect": "read",
@@ -1277,12 +1328,12 @@
           "identifierKey": "id",
           "defaultLimit": 20,
           "maxLimit": 50
-        }
+        },
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.expiries.list",
         "action": "leases.expiries.list",
-        "generatedBy": "builder",
         "title": "Listar Vencimientos",
         "description": "Obtiene Vencimientos disponibles para el cliente actual.",
         "effect": "read",
@@ -1347,7 +1398,8 @@
           "identifierKey": "id",
           "defaultLimit": 20,
           "maxLimit": 50
-        }
+        },
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.adjustments.detect",
@@ -1361,6 +1413,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "record",
           "fields": [
@@ -1435,7 +1488,7 @@
           ],
           "identifierKey": "id"
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.adjustments.apply",
@@ -1526,7 +1579,7 @@
           ],
           "identifierKey": "id"
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.adjustments.cancel",
@@ -1617,7 +1670,7 @@
           ],
           "identifierKey": "id"
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.adjustments.listDetailed",
@@ -1631,6 +1684,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -1707,7 +1761,7 @@
           "defaultLimit": 20,
           "maxLimit": 50
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.adjustments.overview",
@@ -1721,6 +1775,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -1797,7 +1852,7 @@
           "defaultLimit": 20,
           "maxLimit": 50
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.billing.generateForPeriod",
@@ -1811,6 +1866,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "record",
           "fields": [
@@ -1871,7 +1927,7 @@
           ],
           "identifierKey": "id"
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.billing.chargeLateFee",
@@ -1952,7 +2008,7 @@
           ],
           "identifierKey": "id"
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.billing.chargesForPeriod",
@@ -1966,6 +2022,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -2028,7 +2085,7 @@
           "defaultLimit": 20,
           "maxLimit": 50
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.billing.periodSummary",
@@ -2042,6 +2099,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -2104,7 +2162,7 @@
           "defaultLimit": 20,
           "maxLimit": 50
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.contracts.save",
@@ -2450,7 +2508,7 @@
           ],
           "identifierKey": "id"
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.billing.dashboard",
@@ -2464,6 +2522,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -2526,7 +2585,7 @@
           "defaultLimit": 20,
           "maxLimit": 50
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.billing.yearSeries",
@@ -2540,6 +2599,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -2602,7 +2662,7 @@
           "defaultLimit": 20,
           "maxLimit": 50
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.billing.contractFile",
@@ -2616,6 +2676,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -2678,7 +2739,7 @@
           "defaultLimit": 20,
           "maxLimit": 50
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.adjustments.forLease",
@@ -2692,6 +2753,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -2768,7 +2830,7 @@
           "defaultLimit": 20,
           "maxLimit": 50
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.billing.chargesForLease",
@@ -2782,6 +2844,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -2844,7 +2907,7 @@
           "defaultLimit": 20,
           "maxLimit": 50
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.charges.forLease",
@@ -2858,6 +2921,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -2897,7 +2961,7 @@
           "defaultLimit": 10,
           "maxLimit": 50
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.billing.tenantFile",
@@ -2911,6 +2975,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -2973,7 +3038,7 @@
           "defaultLimit": 20,
           "maxLimit": 50
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.contracts.getTenant",
@@ -2987,6 +3052,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -3057,7 +3123,7 @@
           "defaultLimit": 20,
           "maxLimit": 50
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.contracts.saveTenant",
@@ -3403,7 +3469,7 @@
           ],
           "identifierKey": "id"
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.contracts.listTenants",
@@ -3417,6 +3483,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -3487,7 +3554,7 @@
           "defaultLimit": 20,
           "maxLimit": 50
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.contracts.getDetail",
@@ -3501,6 +3568,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -3571,7 +3639,7 @@
           "defaultLimit": 20,
           "maxLimit": 50
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.contracts.renew",
@@ -3917,7 +3985,7 @@
           ],
           "identifierKey": "id"
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.contracts.terminate",
@@ -4263,7 +4331,7 @@
           ],
           "identifierKey": "id"
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.billing.propertyResults",
@@ -4277,6 +4345,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -4339,7 +4408,7 @@
           "defaultLimit": 20,
           "maxLimit": 50
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.expiries.scan",
@@ -4353,6 +4422,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "record",
           "fields": [
@@ -4398,7 +4468,7 @@
           ],
           "identifierKey": "id"
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.expiries.acknowledge",
@@ -4460,7 +4530,7 @@
           ],
           "identifierKey": "id"
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
       },
       {
         "id": "leases.expiries.pendingCount",
@@ -4474,6 +4544,7 @@
           "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -4521,9 +4592,245 @@
           "defaultLimit": 20,
           "maxLimit": 50
         },
-        "generatedBy": "builder"
+        "generatedBy": "agentic-graph"
+      },
+      {
+        "id": "leases.contracts.delete",
+        "action": "leases.contracts.delete",
+        "title": "Delete",
+        "description": "Ejecuta leases.contracts.delete.",
+        "effect": "destructive",
+        "confirmation": "always",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "ID del registro.",
+              "ref": { "resource": "leases.contracts" }
+            }
+          },
+          "required": ["id"],
+          "additionalProperties": false
+        },
+        "generatedBy": "agentic-graph"
+      },
+      {
+        "id": "leases.coTenants.list",
+        "action": "leases.coTenants.list",
+        "title": "List",
+        "description": "Ejecuta leases.coTenants.list.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "description": "Cantidad de resultados."
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Resultados a saltear."
+            }
+          },
+          "additionalProperties": false
+        },
+        "generatedBy": "agentic-graph"
+      },
+      {
+        "id": "leases.coTenants.getById",
+        "action": "leases.coTenants.getById",
+        "title": "Get By ID",
+        "description": "Ejecuta leases.coTenants.getById.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "ID del registro.",
+              "ref": { "resource": "leases.coTenants" }
+            }
+          },
+          "required": ["id"],
+          "additionalProperties": false
+        },
+        "generatedBy": "agentic-graph"
+      },
+      {
+        "id": "leases.guarantees.list",
+        "action": "leases.guarantees.list",
+        "title": "List",
+        "description": "Ejecuta leases.guarantees.list.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "description": "Cantidad de resultados."
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Resultados a saltear."
+            }
+          },
+          "additionalProperties": false
+        },
+        "generatedBy": "agentic-graph"
+      },
+      {
+        "id": "leases.guarantees.getById",
+        "action": "leases.guarantees.getById",
+        "title": "Get By ID",
+        "description": "Ejecuta leases.guarantees.getById.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "ID del registro.",
+              "ref": { "resource": "leases.guarantees" }
+            }
+          },
+          "required": ["id"],
+          "additionalProperties": false
+        },
+        "generatedBy": "agentic-graph"
+      },
+      {
+        "id": "leases.adjustments.delete",
+        "action": "leases.adjustments.delete",
+        "title": "Delete",
+        "description": "Ejecuta leases.adjustments.delete.",
+        "effect": "destructive",
+        "confirmation": "always",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "ID del registro.",
+              "ref": { "resource": "leases.adjustments" }
+            }
+          },
+          "required": ["id"],
+          "additionalProperties": false
+        },
+        "generatedBy": "agentic-graph"
+      },
+      {
+        "id": "leases.notices.list",
+        "action": "leases.notices.list",
+        "title": "List",
+        "description": "Ejecuta leases.notices.list.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "description": "Cantidad de resultados."
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Resultados a saltear."
+            }
+          },
+          "additionalProperties": false
+        },
+        "generatedBy": "agentic-graph"
+      },
+      {
+        "id": "leases.notices.getById",
+        "action": "leases.notices.getById",
+        "title": "Get By ID",
+        "description": "Ejecuta leases.notices.getById.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "ID del registro.",
+              "ref": { "resource": "leases.notices" }
+            }
+          },
+          "required": ["id"],
+          "additionalProperties": false
+        },
+        "generatedBy": "agentic-graph"
+      },
+      {
+        "id": "leases.charges.delete",
+        "action": "leases.charges.delete",
+        "title": "Delete",
+        "description": "Ejecuta leases.charges.delete.",
+        "effect": "destructive",
+        "confirmation": "always",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "ID del registro.",
+              "ref": { "resource": "leases.charges" }
+            }
+          },
+          "required": ["id"],
+          "additionalProperties": false
+        },
+        "generatedBy": "agentic-graph"
+      },
+      {
+        "id": "leases.billing.chargeTenantWorkOrders",
+        "action": "leases.billing.chargeTenantWorkOrders",
+        "title": "Pasar los gastos a cargo del inquilino a su recibo",
+        "description": "Barre las órdenes de trabajo marcadas «lo paga el inquilino» y suma cada gasto al primer recibo no cobrado y no vencido. También retira del recibo lo que dejó de corresponder porque se corrigió quién paga. Es idempotente: cada línea lleva workorder:<id> y no se cobra dos veces. Corre sola al generar el mes y por cron a las 8.",
+        "effect": "write",
+        "confirmation": "always",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "today": {
+              "type": "string",
+              "description": "Fecha de corte en formato YYYY-MM-DD. Si se omite, se usa el día de hoy."
+            }
+          },
+          "additionalProperties": false
+        },
+        "generatedBy": "agentic-graph"
+      },
+      {
+        "id": "leases.expiries.unacknowledge",
+        "action": "leases.expiries.unacknowledge",
+        "title": "Volver a avisar de un vencimiento",
+        "description": "Deshace el acuse de un aviso: vuelve a la lista de pendientes. Es la contracara de leases.expiries.acknowledge, para cuando se marcó como visto por error.",
+        "effect": "write",
+        "confirmation": "always",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Identificador del aviso de vencimiento acusado."
+            }
+          },
+          "required": ["id"],
+          "additionalProperties": false
+        },
+        "generatedBy": "agentic-graph"
       }
-    ]
+    ],
+    "copilotCatalogFingerprint": "87d34eae2e090de247f7e2a48ed63d48",
+    "copilotCatalogContentFingerprint": "76fa2209a31c5e4f38d53cf07faae288"
   },
   "initView": "leases.dashboard-alquileres-fidelidad.open",
   "entry": "./dist/server.js"

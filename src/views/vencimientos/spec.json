@@ -237,6 +237,7 @@
       },
       {
         "hook": "onAction",
+        "key": "leases.expiries.scan",
         "mode": "command",
         "action": "leases.expiries.scan",
         "resource": "leases.expiries",
@@ -244,7 +245,20 @@
         "confirmation": "always",
         "preconditions": [
           "Solo recalcula la lista: no modifica certificados ni contratos.",
-          "El acuse de una fila es la otra acción del mismo hook: leases.expiries.acknowledge."
+          "Reabre solo los avisos cuya fecha de vencimiento cambió."
+        ]
+      },
+      {
+        "hook": "onAction",
+        "key": "leases.expiries.acknowledge",
+        "mode": "command",
+        "action": "leases.expiries.acknowledge",
+        "resource": "leases.expiries",
+        "effect": "write",
+        "confirmation": "always",
+        "preconditions": [
+          "Requiere el id de un aviso abierto.",
+          "Saca el aviso de la lista sin borrarlo: el barrido lo reabre si el vencimiento cambia."
         ]
       }
     ]

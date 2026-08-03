@@ -6,10 +6,10 @@
  * `use-vencimientos.ts`, `index.ts`) invocan estos puntos de extensión si
  * existen — acá va lo que el diseño no puede expresar.
  *
- * Los tres puntos son adaptadores: el barrido y la cuenta los hace el servidor
- * (`leases.expiries.scan` / `.list` / `.pendingCount`) y acá solo se decide cómo
- * contarlo. Es el mismo barrido que corre solo cada mañana, así que el botón y el
- * reloj no pueden dar resultados distintos.
+ * Todos los puntos son adaptadores: el barrido, la cuenta y el acuse los hace el
+ * servidor (`leases.expiries.scan` / `.list` / `.pendingCount` / `.acknowledge`) y acá
+ * solo se decide cómo contarlo. Es el mismo barrido que corre solo cada mañana, así que
+ * el botón y el reloj no pueden dar resultados distintos.
  */
 import { formatDateKey, plural, type CustomHandlers } from '@coongro/plugin-sdk';
 
@@ -62,9 +62,14 @@ export const customHandlers: CustomHandlers = {
   },
 
   /**
-   * Dos acciones distintas: revisar toda la cartera (el botón de arriba) y decir «ya lo
-   * sé» sobre una fila. El acuse saca el aviso de la lista pero no lo borra: si el
-   * vencimiento cambia —se renovó y volvió a vencer— el barrido lo reabre solo.
+   * Dos operaciones distintas, no una con variantes: revisar toda la cartera (el botón
+   * de arriba) y decir «ya lo sé» sobre una fila. Cada una vive en su propia rama
+   * `actionId === '...'` porque así el contrato headless las declara y verifica por
+   * separado —una `key` por rama—, y así el agente ve dos capacidades en vez de un
+   * botón que hace dos cosas según dónde se lo toque.
+   *
+   * Fusionarlas en un comando del servidor sería inventar una operación que el negocio
+   * no tiene: acusar UN aviso y barrer la cartera entera no comparten ni el sujeto.
    */
   onAction: async (actionId, { execute, record, toast, reload }) => {
     if (actionId === 'leases.expiries.acknowledge') {
@@ -80,22 +85,24 @@ export const customHandlers: CustomHandlers = {
       return;
     }
 
-    const r = await execute<ScanSummary>('leases.expiries.scan');
-    reload?.();
+    if (actionId === 'leases.expiries.scan') {
+      const r = await execute<ScanSummary>('leases.expiries.scan');
+      reload?.();
 
-    if (r.detected === 0) {
-      toast?.success('Todo al día', `Se revisaron ${r.scanned} registros y no vence nada.`);
-      return;
+      if (r.detected === 0) {
+        toast?.success('Todo al día', `Se revisaron ${r.scanned} registros y no vence nada.`);
+        return;
+      }
+      // Se distingue lo nuevo de lo que ya estaba: que el botón "no encuentre nada nuevo"
+      // es un resultado válido y hay que poder decirlo.
+      const partes = [
+        r.created > 0 ? `${plural(r.created, 'aviso nuevo', 'avisos nuevos')}` : '',
+        r.resolved > 0 ? `${plural(r.resolved, 'resuelto', 'resueltos')}` : '',
+      ].filter(Boolean);
+      toast?.info(
+        `${plural(r.detected, 'vencimiento pendiente', 'vencimientos pendientes')}`,
+        partes.length ? partes.join(' · ') : 'Sin cambios desde la última revisión.'
+      );
     }
-    // Se distingue lo nuevo de lo que ya estaba: que el botón "no encuentre nada nuevo"
-    // es un resultado válido y hay que poder decirlo.
-    const partes = [
-      r.created > 0 ? `${plural(r.created, 'aviso nuevo', 'avisos nuevos')}` : '',
-      r.resolved > 0 ? `${plural(r.resolved, 'resuelto', 'resueltos')}` : '',
-    ].filter(Boolean);
-    toast?.info(
-      `${plural(r.detected, 'vencimiento pendiente', 'vencimientos pendientes')}`,
-      partes.length ? partes.join(' · ') : 'Sin cambios desde la última revisión.'
-    );
   },
 };
