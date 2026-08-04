@@ -9,7 +9,6 @@
 
 import type { CustomHandlers } from '@coongro/plugin-sdk';
 
-import { marcarUnidad } from '../../data/ocupacion.js';
 const texto = (v: unknown): string => String(v ?? '').trim();
 
 /** Suma días a un `YYYY-MM-DD`. */
@@ -82,6 +81,5 @@ export const customHandlers: CustomHandlers = {
       adjustmentMonths: Number(values.adjustmentMonths) || null,
       notes: texto(values.notes) || null,
     });
-    await marcarUnidad(String(record?.unit_id ?? ''), 'ocupada');
   },
 };

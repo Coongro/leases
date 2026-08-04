@@ -130,5 +130,21 @@
     "submitLabel": "Renovar contrato",
     "successTitle": "Contrato renovado",
     "successMessage": "Se creó el contrato nuevo y el anterior quedó cerrado."
+  },
+  "headless": {
+    "handlers": [
+      {
+        "hook": "onInit",
+        "mode": "query",
+        "action": "leases.contracts.getDetail"
+      },
+      {
+        "hook": "onSubmit",
+        "mode": "command",
+        "action": "leases.contracts.renew",
+        "effect": "write",
+        "confirmation": "always"
+      }
+    ]
   }
 }

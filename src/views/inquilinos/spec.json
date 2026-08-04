@@ -134,5 +134,15 @@
         }
       }
     }
-  ]
+  ],
+  "headless": {
+    "handlers": [
+      {
+        "hook": "loadData",
+        "mode": "query",
+        "action": "leases.contracts.listTenants",
+        "resource": "leases.contracts"
+      }
+    ]
+  }
 }

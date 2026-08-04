@@ -288,6 +288,129 @@
                   }
                 }
               ]
+            },
+            {
+              "id": "sec_conceptos",
+              "kind": "container",
+              "ctype": "section",
+              "label": "Conceptos que se facturan",
+              "icon": "ReceiptText",
+              "children": [
+                {
+                  "id": "btn_concepto",
+                  "kind": "component",
+                  "comp": "Button",
+                  "align": "right",
+                  "props": {
+                    "label": "Agregar concepto",
+                    "variant": "secondary",
+                    "action": {
+                      "id": "openForm",
+                      "label": "Agregar concepto",
+                      "target": "leases.concepto-del-contrato.open"
+                    }
+                  }
+                },
+                {
+                  "id": "tbl_conceptos",
+                  "kind": "component",
+                  "comp": "DataTable",
+                  "props": {
+                    "view": "list",
+                    "subtitle": "type",
+                    "pageSize": "10",
+                    "rowAction": {
+                      "id": "openForm",
+                      "label": "Editar concepto",
+                      "target": "leases.concepto-del-contrato.open"
+                    },
+                    "columns": [
+                      {
+                        "key": "label",
+                        "label": "Concepto"
+                      },
+                      {
+                        "key": "type",
+                        "label": "Tipo",
+                        "display": "pill",
+                        "values": [
+                          {
+                            "value": "abl",
+                            "label": "ABL / inmobiliario",
+                            "tone": "neutral",
+                            "icon": "Landmark"
+                          },
+                          {
+                            "value": "servicio",
+                            "label": "Servicio",
+                            "tone": "neutral",
+                            "icon": "Droplets"
+                          },
+                          {
+                            "value": "expensas",
+                            "label": "Expensas",
+                            "tone": "neutral",
+                            "icon": "Building2"
+                          },
+                          {
+                            "value": "descuento",
+                            "label": "Descuento",
+                            "tone": "success",
+                            "icon": "TicketPercent"
+                          },
+                          {
+                            "value": "otro",
+                            "label": "Otro",
+                            "tone": "outline",
+                            "icon": "Receipt"
+                          }
+                        ]
+                      },
+                      {
+                        "key": "valid_to",
+                        "label": "Hasta",
+                        "emptyLabel": "Sin vencimiento"
+                      },
+                      {
+                        "key": "amount",
+                        "label": "Por mes",
+                        "display": "mono",
+                        "format": "money"
+                      }
+                    ],
+                    "cells": [
+                      [
+                        "ABL",
+                        "abl",
+                        "",
+                        "18000"
+                      ],
+                      [
+                        "Aguas Santafesinas",
+                        "servicio",
+                        "",
+                        "9500"
+                      ],
+                      [
+                        "Cochera",
+                        "servicio",
+                        "2026-07",
+                        "12000"
+                      ],
+                      [
+                        "Bonificación por pago adelantado",
+                        "descuento",
+                        "",
+                        "15000"
+                      ]
+                    ],
+                    "filters": [],
+                    "actions": [],
+                    "emptyTitle": "Solo se factura el alquiler",
+                    "emptySub": "Agregá ABL, agua o una bonificación para que salgan en el cargo del mes."
+                  }
+                }
+              ]
             }
           ]
         },
@@ -379,5 +502,37 @@
         }
       ]
     }
-  ]
+  ],
+  "headless": {
+    "handlers": [
+      {
+        "hook": "loadLiveValues",
+        "mode": "query",
+        "action": "leases.billing.contractFile"
+      },
+      {
+        "hook": "loadDataFor",
+        "key": "tbl_ajustes",
+        "mode": "query",
+        "action": "leases.adjustments.forLease",
+        "resource": "leases.adjustments",
+        "outputBlockId": "tbl_ajustes"
+      },
+      {
+        "hook": "loadDataFor",
+        "key": "tbl_cargos",
+        "mode": "query",
+        "action": "leases.billing.chargesForLease",
+        "outputBlockId": "tbl_cargos"
+      },
+      {
+        "hook": "loadDataFor",
+        "key": "tbl_conceptos",
+        "mode": "query",
+        "action": "leases.charges.forLease",
+        "resource": "leases.charges",
+        "outputBlockId": "tbl_conceptos"
+      }
+    ]
+  }
 }

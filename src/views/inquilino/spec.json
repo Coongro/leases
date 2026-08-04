@@ -411,5 +411,21 @@
         }
       ]
     }
-  ]
+  ],
+  "headless": {
+    "handlers": [
+      {
+        "hook": "onInit",
+        "mode": "query",
+        "action": "leases.contracts.getTenant"
+      },
+      {
+        "hook": "onSubmit",
+        "mode": "command",
+        "action": "leases.contracts.saveTenant",
+        "effect": "write",
+        "confirmation": "always"
+      }
+    ]
+  }
 }

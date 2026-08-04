@@ -220,3 +220,23 @@ describe('expensas en el cargo del mes', () => {
     expect(execute.mock.calls[0][1].lines[1].subtotal).toBe('72000');
   });
 });
+
+describe('el período es obligatorio y tiene forma', () => {
+  // Sin esta comprobación, generar el mes sin período moría con «Cannot read
+  // properties of undefined (reading 'slice')»: un stack que no dice qué falta,
+  // sobre la operación que emite los recibos de todos los inquilinos.
+  const execute = vi.fn();
+
+  it('sin período, lo dice en vez de romperse por dentro', async () => {
+    await expect(
+      generateCharges({ period: undefined as unknown as string, leases: [], execute })
+    ).rejects.toThrow(/no es un período válido/);
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  it('con un mes escrito de cualquier otra forma, también', async () => {
+    await expect(generateCharges({ period: 'agosto 2026', leases: [], execute })).rejects.toThrow(
+      /«agosto 2026».*2026-08/s
+    );
+  });
+});

@@ -1,0 +1,266 @@
+{
+  "specVersion": 1,
+  "kind": "blank",
+  "title": "Vencimientos",
+  "data": {
+    "repositoryPrefix": "leases.expiries"
+  },
+  "blocks": [
+    {
+      "id": "ph",
+      "kind": "component",
+      "comp": "PageHeader",
+      "props": {
+        "kicker": "OPERACIÓN",
+        "title": "Vencimientos",
+        "subtitle": "Lo que hay que renovar: certificados del inmueble, contratos que terminan y pólizas de caución.",
+        "actionLabel": "Revisar vencimientos",
+        "action": {
+          "id": "serverAction",
+          "label": "Revisar vencimientos",
+          "target": "leases.expiries.scan",
+          "confirm": "Se revisa toda la cartera y se actualiza la lista. No modifica ningún certificado ni contrato: solo mira fechas."
+        }
+      }
+    },
+    {
+      "id": "row_kpi",
+      "kind": "container",
+      "ctype": "columns",
+      "alias": "Resumen",
+      "cols": [
+        {
+          "fr": 0.34,
+          "children": [
+            {
+              "id": "k1",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Vencidos",
+                "value": "0",
+                "sub": "hay que resolverlos ya",
+                "icon": "TriangleAlert",
+                "tone": "danger"
+              }
+            }
+          ]
+        },
+        {
+          "fr": 0.33,
+          "children": [
+            {
+              "id": "k2",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Por vencer",
+                "value": "0",
+                "sub": "entran en la ventana de aviso",
+                "icon": "CalendarClock",
+                "tone": "warning"
+              }
+            }
+          ]
+        },
+        {
+          "fr": 0.33,
+          "children": [
+            {
+              "id": "k3",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Última revisión",
+                "value": "—",
+                "sub": "se revisa sola cada mañana",
+                "icon": "RefreshCw",
+                "tone": "neutral"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tbl",
+      "kind": "component",
+      "comp": "DataTable",
+      "props": {
+        "view": "table",
+        "density": "compact",
+        "mobile": "cards",
+        "pageSize": "20",
+        "subtitle": "message",
+        "columns": [
+          {
+            "key": "level",
+            "label": "Estado",
+            "display": "pill",
+            "values": [
+              {
+                "value": "vencido",
+                "label": "Vencido",
+                "tone": "danger",
+                "icon": "TriangleAlert"
+              },
+              {
+                "value": "por_vencer",
+                "label": "Por vencer",
+                "tone": "warning",
+                "icon": "Clock"
+              }
+            ]
+          },
+          {
+            "key": "kind",
+            "label": "Qué vence",
+            "display": "pill",
+            "values": [
+              {
+                "value": "certificado",
+                "label": "Certificado",
+                "tone": "outline",
+                "icon": "ShieldCheck"
+              },
+              {
+                "value": "contrato",
+                "label": "Contrato",
+                "tone": "outline",
+                "icon": "FileText"
+              },
+              {
+                "value": "garantia",
+                "label": "Garantía",
+                "tone": "outline",
+                "icon": "Umbrella"
+              }
+            ]
+          },
+          {
+            "key": "label",
+            "label": "Detalle"
+          },
+          {
+            "key": "message",
+            "label": "Cuándo"
+          },
+          {
+            "key": "expires_at",
+            "label": "Vence",
+            "format": "date"
+          },
+          {
+            "key": "first_seen_at",
+            "label": "Se avisa desde",
+            "format": "date",
+            "visible": false
+          }
+        ],
+        "cells": [
+          [
+            "vencido",
+            "certificado",
+            "Instalación de gas · Belgrano 1240",
+            "Vencido hace 61 días",
+            "2026-06-01",
+            "2026-06-02"
+          ],
+          [
+            "por_vencer",
+            "garantia",
+            "Seguro de caución · Belgrano 1240 · 1°B",
+            "Vence en 9 días",
+            "2026-08-10",
+            "2026-06-27"
+          ],
+          [
+            "por_vencer",
+            "contrato",
+            "Contrato · Belgrano 1240 · 1°B · Ana María Ruiz",
+            "Vence en 19 días",
+            "2026-08-20",
+            "2026-06-21"
+          ],
+          [
+            "por_vencer",
+            "certificado",
+            "Ascensor · Belgrano 1240",
+            "Vence en 45 días",
+            "2026-09-15",
+            "2026-07-17"
+          ]
+        ],
+        "filters": [
+          {
+            "column": "level",
+            "label": "Estado",
+            "kind": "select",
+            "options": []
+          },
+          {
+            "column": "kind",
+            "label": "Qué vence",
+            "kind": "select",
+            "options": []
+          }
+        ],
+        "actions": [
+          {
+            "label": "Ya lo sé",
+            "icon": "Check",
+            "action": {
+              "id": "serverAction",
+              "label": "Ya lo sé",
+              "target": "leases.expiries.acknowledge"
+            }
+          }
+        ],
+        "emptyTitle": "No hay nada por vencer",
+        "emptySub": "Cuando un certificado, un contrato o una póliza entren en su ventana de aviso, aparecen acá."
+      }
+    }
+  ],
+  "headless": {
+    "handlers": [
+      {
+        "hook": "loadData",
+        "mode": "query",
+        "action": "leases.expiries.list",
+        "resource": "leases.expiries"
+      },
+      {
+        "hook": "loadLiveValues",
+        "mode": "query",
+        "action": "leases.expiries.pendingCount",
+        "resource": "leases.expiries"
+      },
+      {
+        "hook": "onAction",
+        "key": "leases.expiries.scan",
+        "mode": "command",
+        "action": "leases.expiries.scan",
+        "resource": "leases.expiries",
+        "effect": "write",
+        "confirmation": "always",
+        "preconditions": [
+          "Solo recalcula la lista: no modifica certificados ni contratos.",
+          "Reabre solo los avisos cuya fecha de vencimiento cambió."
+        ]
+      },
+      {
+        "hook": "onAction",
+        "key": "leases.expiries.acknowledge",
+        "mode": "command",
+        "action": "leases.expiries.acknowledge",
+        "resource": "leases.expiries",
+        "effect": "write",
+        "confirmation": "always",
+        "preconditions": [
+          "Requiere el id de un aviso abierto.",
+          "Saca el aviso de la lista sin borrarlo: el barrido lo reabre si el vencimiento cambia."
+        ]
+      }
+    ]
+  }
+}

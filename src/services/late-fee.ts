@@ -74,3 +74,50 @@ export function calcLateFee({
     detail: `${atraso} día${atraso === 1 ? '' : 's'} de atraso al ${tasa}% diario`,
   };
 }
+
+/** Lo que se le propone cobrar a un cargo vencido. */
+export interface Punitorio {
+  /** Monto propuesto, en pesos enteros. `0` = no corresponde. */
+  amount: string;
+  /** Explicación para el recibo y para la propuesta («12 días de atraso al 0,5% diario»). */
+  detail: string;
+  daysLate: number;
+}
+
+/** Días de gracia y si el negocio quiere que se proponga punitorio. */
+export interface LateFeePolicy {
+  graceDays: number;
+  apply: 'propose' | 'off';
+}
+
+/**
+ * Propone el punitorio de un cargo. Devuelve monto 0 cuando no corresponde —el
+ * contrato no pactó punitorio, el cargo está al día o la política lo tiene apagado—
+ * para que la vista muestre siempre la misma columna y no baile entre filas.
+ *
+ * Vive con `calcLateFee` y no en `src/data/` porque es una decisión de negocio pura:
+ * la calcula igual el servidor cuando responde una consulta que la pantalla cuando
+ * arma la tabla, y así no hay dos versiones de cuánto se le cobra a alguien.
+ */
+export function proposeLateFee(
+  cargo: {
+    due_date?: string | null;
+    balance: string;
+    status: string;
+    late_fee_percent?: string | null;
+  },
+  policy: LateFeePolicy,
+  asOf: string = new Date().toISOString().slice(0, 10)
+): Punitorio {
+  if (policy.apply === 'off' || !cargo.due_date || cargo.status === 'paid') {
+    return { amount: '0', detail: '', daysLate: 0 };
+  }
+  const r = calcLateFee({
+    balance: cargo.balance,
+    dueDate: cargo.due_date,
+    asOf,
+    dailyPercent: cargo.late_fee_percent ?? '0',
+    graceDays: policy.graceDays,
+  });
+  return { amount: r.amount, detail: r.detail, daysLate: r.daysLate };
+}

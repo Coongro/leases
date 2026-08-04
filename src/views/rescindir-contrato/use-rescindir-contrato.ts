@@ -28,7 +28,7 @@ export function useRescindirContratoView() {
   const [values, setValues] = useState<Record<string, any>>({
     terminationDate: null,
     reason: null,
-    notes: null,
+    termination_detail: null,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const setField = useCallback((k: string, v: any) => {
@@ -111,9 +111,12 @@ export function useRescindirContratoView() {
         );
         return;
       }
-      toast.success('Contrato rescindido', 'Se guardó la fecha de fin. Deja de generar cargos.');
+      toast.success(
+        'Contrato rescindido',
+        'Se guardó la fecha de fin. Deja de generar cargos y la unidad queda vacante.'
+      );
       setEditingId(null);
-      setValues({ terminationDate: null, reason: null, notes: null });
+      setValues({ terminationDate: null, reason: null, termination_detail: null });
       closeDialog();
     } catch (err) {
       toast.error('Error', err instanceof Error ? err.message : 'No se pudo guardar');

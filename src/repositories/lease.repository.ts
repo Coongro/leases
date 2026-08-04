@@ -3,8 +3,11 @@ import type { ModuleDatabaseAPI } from '@coongro/plugin-sdk';
 import { buildingTable, unitTable } from '@coongro/properties/server';
 import { and, asc, desc, eq, getTableColumns, isNull, sql } from 'drizzle-orm';
 
+import { guaranteeTable } from '../schema/guarantee.js';
+import { indexAdjustmentTable } from '../schema/index-adjustment.js';
 import { leaseTable } from '../schema/lease.js';
 import type { LeaseRow, NewLeaseRow } from '../schema/lease.js';
+import { describeRentChange } from '../services/rent-change.js';
 
 /**
  * Días antes del vencimiento en que un contrato pasa a «por vencer». Dos meses es
@@ -12,6 +15,9 @@ import type { LeaseRow, NewLeaseRow } from '../schema/lease.js';
  * propietario se entera tarde para negociar o para buscar reemplazo.
  */
 const DEFAULT_EXPIRY_WARNING_DAYS = 60;
+
+/** Hoy como DateKey. */
+const hoy = (): string => new Date().toISOString().slice(0, 10);
 
 /** Día siguiente a un DateKey. Una renovación arranca cuando termina el anterior. */
 function siguienteDia(date: string): string {
@@ -42,6 +48,71 @@ export interface LeaseListRow extends LeaseRow {
     | 'rescindido'
     | 'renovado';
 }
+
+/**
+ * Datos personales que pide un contrato de locación (nacionalidad, estado civil,
+ * cónyuge, forma jurídica). Viajan en `contacts.metadata` porque son vocabulario de
+ * alquileres y `contacts` es un plugin compartido.
+ */
+const TENANT_METADATA_KEYS = [
+  'kind',
+  'nationality',
+  'marital_status',
+  'spouse_name',
+  'spouse_document',
+  'occupation',
+  'legal_representative',
+  'legal_form',
+  'phone_alt',
+  'city',
+  'zip_code',
+  'province',
+] as const;
+
+/** Lo que manda el formulario de inquilino: columnas del contacto + sus datos personales. */
+export interface TenantInput {
+  name?: unknown;
+  document_type?: unknown;
+  document_number?: unknown;
+  email?: unknown;
+  phone?: unknown;
+  address?: unknown;
+  [clave: string]: unknown;
+}
+
+/** Lo que manda el formulario de contrato: el contrato y los campos de su garantía. */
+export interface ContractInput {
+  unit_id?: unknown;
+  tenant_contact_id?: unknown;
+  contract_type?: unknown;
+  start_date?: unknown;
+  end_date?: unknown;
+  rent_amount?: unknown;
+  expenses_amount?: unknown;
+  currency?: unknown;
+  due_day?: unknown;
+  due_day_type?: unknown;
+  adjustment_index?: unknown;
+  adjustment_months?: unknown;
+  late_fee_percent?: unknown;
+  penalty_months?: unknown;
+  deposit_amount?: unknown;
+  deposit_status?: unknown;
+  /** Campos de la garantía: viven en su propia tabla, no en el contrato. */
+  guarantee_type?: unknown;
+  guarantor_contact_id?: unknown;
+  guarantee_notes?: unknown;
+}
+
+const texto = (v: unknown): string => String(v ?? '').trim();
+
+/** Importe opcional: vacío es `null`, no cero — un cero dice algo distinto. */
+const numero = (v: unknown): string | null => {
+  const s = texto(v);
+  if (!s) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? String(n) : null;
+};
 
 export class LeaseRepository {
   constructor(private readonly db: ModuleDatabaseAPI) {}
@@ -102,6 +173,253 @@ export class LeaseRepository {
   async getDetail({ id }: { id: string }): Promise<LeaseListRow | undefined> {
     const rows = await this.list();
     return rows.find((r) => r.id === id);
+  }
+
+  /**
+   * Firma o edita un contrato: el contrato, su garantía y la ocupación de la unidad.
+   *
+   * Es UN comando y no tres llamadas porque las tres cosas pasan en el mismo acto. Si
+   * se publicaran por separado, quien las use —la web, el Copilot, un import— tendría
+   * que acordarse de las tres y del orden; la primera vez que se olvide una, queda un
+   * contrato sin respaldo cargado o una unidad que figura vacante con alguien viviendo
+   * adentro.
+   *
+   * Todo va en una sola transacción: un contrato a medias es peor que ninguno.
+   */
+  async save({ id, data }: { id?: string | null; data: ContractInput }): Promise<{
+    id: string;
+    created: boolean;
+  }> {
+    const unitId = texto(data.unit_id);
+    const tenantId = texto(data.tenant_contact_id);
+    if (!unitId) throw new Error('El contrato necesita una unidad.');
+    if (!tenantId) throw new Error('El contrato necesita un inquilino.');
+
+    // Las tres columnas que la tabla exige y el formulario siempre manda. Sin
+    // esto, faltar una terminaba en «invalid input syntax for type numeric: ""»
+    // o en un `not-null constraint` de la base: un error que no dice qué falta
+    // ni sobre qué contrato, justo en el acto que fija cuánto se cobra.
+    const desde = texto(data.start_date);
+    const hasta = texto(data.end_date);
+    const alquiler = texto(data.rent_amount);
+    if (!desde) throw new Error('El contrato necesita desde cuándo rige.');
+    if (!hasta) throw new Error('El contrato necesita hasta cuándo rige.');
+    if (!alquiler) throw new Error('El contrato necesita con qué alquiler arranca.');
+
+    const contrato = {
+      unit_id: unitId,
+      tenant_contact_id: tenantId,
+      // Nace vigente: el borrador es para lo que se guarda a medio cargar, y este
+      // formulario exige lo necesario para que el contrato exista.
+      status: 'vigente',
+      contract_type: texto(data.contract_type) || 'determinado',
+      start_date: desde,
+      end_date: hasta,
+      rent_amount: alquiler,
+      expenses_amount: numero(data.expenses_amount),
+      currency: texto(data.currency) || 'ARS',
+      due_day: Number(data.due_day) || 1,
+      due_day_type: texto(data.due_day_type) || 'fixed',
+      adjustment_index: texto(data.adjustment_index) || null,
+      adjustment_months: Number(data.adjustment_months) || null,
+      late_fee_percent: numero(data.late_fee_percent),
+      penalty_months: Number(data.penalty_months) || null,
+      deposit_amount: numero(data.deposit_amount),
+      deposit_status: texto(data.deposit_status) || null,
+    };
+
+    const tipoGarantia = texto(data.guarantee_type);
+
+    return this.db.ormQuery(async (tx) => {
+      let leaseId = texto(id);
+      let created = false;
+
+      if (leaseId) {
+        // El precio de ANTES, leído dentro de la misma transacción que lo pisa: si se
+        // leyera afuera, dos ediciones simultáneas anotarían las dos el mismo valor
+        // previo y el historial mostraría un salto que nunca existió.
+        const previas = await tx
+          .select({ rent_amount: leaseTable.rent_amount })
+          .from(leaseTable)
+          .where(eq(leaseTable.id, leaseId))
+          .limit(1);
+
+        await tx
+          .update(leaseTable)
+          .set(contrato as never)
+          .where(eq(leaseTable.id, leaseId));
+
+        // Una suba pactada a mano se anota en el mismo historial que las del índice:
+        // el contrato editado y nada más deja cargos viejos que no cuadran con su
+        // precio actual, sin nada que explique la diferencia.
+        const cambio = describeRentChange({
+          previousRent: previas[0]?.rent_amount,
+          newRent: contrato.rent_amount,
+          effectiveDate: hoy(),
+        });
+        if (cambio) {
+          await tx.insert(indexAdjustmentTable).values({
+            lease_id: leaseId,
+            index_code: 'manual',
+            // Nace aplicada: el cambio ya está hecho sobre el contrato en esta misma
+            // transacción. Dejarla `pending` mostraría en Actualizaciones una propuesta
+            // para subir a un monto que el contrato ya tiene.
+            status: 'applied',
+            effective_date: cambio.effectiveDate,
+            rate_percent: cambio.ratePercent,
+            previous_rent: cambio.previousRent,
+            new_rent: cambio.newRent,
+            applied_at: new Date().toISOString(),
+            notes: `Cambio pactado — ${cambio.detail}`,
+          } as never);
+        }
+      } else {
+        const filas = await tx
+          .insert(leaseTable)
+          .values(contrato as never)
+          .returning({ id: leaseTable.id });
+        leaseId = String(filas[0]?.id ?? '');
+        if (!leaseId) throw new Error('No se pudo crear el contrato.');
+        created = true;
+      }
+
+      // La unidad pasa a estar alquilada. Sin esto la ficha de la propiedad seguiría
+      // mostrándola vacante con un contrato vigente encima.
+      await tx
+        .update(unitTable)
+        .set({ status: 'ocupada' } as never)
+        .where(eq(unitTable.id, unitId));
+
+      // La garantía solo se crea al firmar: al editar un contrato ya firmado se toca
+      // desde su propia ficha, porque sobrevive a la renovación.
+      if (created && tipoGarantia) {
+        await tx.insert(guaranteeTable).values({
+          lease_id: leaseId,
+          type: tipoGarantia,
+          guarantor_contact_id: texto(data.guarantor_contact_id) || null,
+          notes: texto(data.guarantee_notes) || null,
+          // El depósito en garantía es la garantía misma: su monto se guarda también
+          // acá para que la garantía se explique sola.
+          amount: tipoGarantia === 'deposito' ? numero(data.deposit_amount) : null,
+          archived: false,
+        } as never);
+      }
+
+      return { id: leaseId, created };
+    });
+  }
+
+  /**
+   * Un inquilino con la forma que espera su formulario: las columnas del contacto y sus
+   * datos personales sacados de `metadata`, todos al mismo nivel.
+   *
+   * El listado (`listTenants`) devuelve el documento ya concatenado para mostrar y no
+   * trae domicilio ni `metadata`: prefillear con eso dejaría media ficha en blanco y
+   * guardar borraría lo que no se volvió a cargar.
+   */
+  async getTenant({ id }: { id: string }): Promise<Record<string, unknown>> {
+    const rows = await this.db.ormQuery((tx) =>
+      tx
+        .select({
+          id: contactTable.id,
+          name: contactTable.name,
+          document_type: contactTable.document_type,
+          document_number: contactTable.document_number,
+          email: contactTable.email,
+          phone: contactTable.phone,
+          address: contactTable.address,
+          metadata: contactTable.metadata,
+        })
+        .from(contactTable)
+        .where(eq(contactTable.id, id))
+        .limit(1)
+    );
+    const fila = rows[0] as
+      | (Record<string, unknown> & { metadata?: Record<string, unknown> })
+      | undefined;
+    if (!fila) return {};
+
+    const { metadata, ...columnas } = fila;
+    const extras: Record<string, unknown> = {};
+    for (const clave of TENANT_METADATA_KEYS) {
+      const valor = (metadata ?? {})[clave];
+      if (valor !== null && valor !== undefined) extras[clave] = valor;
+    }
+    return { ...columnas, ...extras };
+  }
+
+  /**
+   * Alta y edición de un inquilino, en una sola operación.
+   *
+   * Es un comando y no un CRUD por las mismas tres reglas que el propietario: qué va en
+   * columnas y qué en `metadata`, no pisar lo que otro rol le cargó al mismo contacto, y
+   * fijar el tipo solo cuando nace. La misma persona puede ser inquilina de una unidad y
+   * propietaria de otra.
+   */
+  async saveTenant({
+    id,
+    data,
+  }: {
+    id?: string | null;
+    data: TenantInput;
+  }): Promise<{ id: string; created: boolean }> {
+    const nombre = texto(data.name);
+    if (!nombre) throw new Error('El inquilino necesita un nombre.');
+
+    // `metadata` es de todo el contacto: ahí conviven los datos de cobro que le cargó
+    // «Propietario» y lo que guarde cualquier otro kit. Se parte de la CRUDA —no de la
+    // aplanada que devuelve `getTenant`— y solo se tocan las claves propias.
+    const metadata: Record<string, unknown> = { ...(await this.metadataDeContacto(id)) };
+    for (const clave of TENANT_METADATA_KEYS) {
+      const valor = texto(data[clave]);
+      if (valor) metadata[clave] = valor;
+      else delete metadata[clave];
+    }
+
+    const columnas = {
+      name: nombre,
+      document_type: texto(data.document_type) || null,
+      document_number: texto(data.document_number) || null,
+      email: texto(data.email) || null,
+      phone: texto(data.phone) || null,
+      address: texto(data.address) || null,
+      metadata,
+    };
+
+    if (id) {
+      await this.db.ormQuery((tx) =>
+        tx
+          .update(contactTable)
+          .set(columnas as never)
+          .where(eq(contactTable.id, id))
+      );
+      return { id, created: false };
+    }
+
+    const creados = await this.db.ormQuery((tx) =>
+      tx
+        .insert(contactTable)
+        .values({ ...columnas, type: 'tenant', is_active: true } as never)
+        .returning({ id: contactTable.id })
+    );
+    const nuevo = creados[0]?.id;
+    if (!nuevo) throw new Error('No se pudo crear el inquilino.');
+    return { id: String(nuevo), created: true };
+  }
+
+  /** La `metadata` cruda del contacto, para no pisar lo que le puso otro rol. */
+  private async metadataDeContacto(id?: string | null): Promise<Record<string, unknown>> {
+    if (!id) return {};
+    const rows = await this.db.ormQuery((tx) =>
+      tx
+        .select({ metadata: contactTable.metadata })
+        .from(contactTable)
+        .where(eq(contactTable.id, id))
+        .limit(1)
+    );
+    // `metadata` es jsonb sin tipar en el schema de contacts, así que llega como
+    // `unknown`: hay que declarar su forma para poder mezclarla con las claves propias.
+    return (rows[0]?.metadata ?? {}) as Record<string, unknown>;
   }
 
   /**
@@ -199,6 +517,15 @@ export class LeaseRepository {
     adjustmentMonths?: number | null;
     notes?: string | null;
   }): Promise<LeaseRow[]> {
+    // Una renovación sin plazo o sin monto no es un contrato. Se comprueba acá
+    // porque estos dos valores viajan derecho al insert: sin la guarda, faltar
+    // uno terminaba en «UNDEFINED_VALUE: Undefined values are not allowed» de
+    // la base, que no dice cuál falta ni sobre qué operación.
+    if (!endDate) throw new Error('La renovación necesita hasta cuándo se extiende el contrato.');
+    if (rentAmount === undefined || rentAmount === null || rentAmount === '') {
+      throw new Error('La renovación necesita con qué alquiler arranca el período nuevo.');
+    }
+
     const previo = await this.getById({ id });
     if (!previo) throw new Error('El contrato no existe.');
     if (previo.status === 'renovado') throw new Error('Este contrato ya fue renovado.');
@@ -238,12 +565,20 @@ export class LeaseRepository {
         .returning()
     );
 
-    await this.db.ormQuery((tx) =>
-      tx
+    await this.db.ormQuery(async (tx) => {
+      await tx
         .update(leaseTable)
         .set({ status: 'renovado' } as unknown as Partial<NewLeaseRow>)
-        .where(eq(leaseTable.id, id))
-    );
+        .where(eq(leaseTable.id, id));
+
+      // La unidad sigue alquilada: el contrato cambió, el inquilino no se fue.
+      if (previo.unit_id) {
+        await tx
+          .update(unitTable)
+          .set({ status: 'ocupada' } as never)
+          .where(eq(unitTable.id, previo.unit_id));
+      }
+    });
 
     return nuevo;
   }
@@ -266,6 +601,11 @@ export class LeaseRepository {
     terminationDate: string;
     notes?: string | null;
   }): Promise<LeaseRow[]> {
+    // Sin fecha, la rescisión no se puede asentar: es el dato que decide desde
+    // cuándo la unidad queda libre y hasta cuándo se cobra. Sin esta guarda el
+    // update mandaba undefined y la base cortaba con «UNDEFINED_VALUE».
+    if (!terminationDate) throw new Error('La rescisión necesita la fecha en que termina.');
+
     const previo = await this.getById({ id });
     if (!previo) throw new Error('El contrato no existe.');
     if (previo.termination_date) throw new Error('Este contrato ya está rescindido.');
@@ -273,8 +613,8 @@ export class LeaseRepository {
       throw new Error('La rescisión no puede ser anterior al inicio del contrato.');
     }
 
-    return this.db.ormQuery((tx) =>
-      tx
+    return this.db.ormQuery(async (tx) => {
+      const filas = await tx
         .update(leaseTable)
         .set({
           termination_date: terminationDate,
@@ -282,8 +622,20 @@ export class LeaseRepository {
           notes: notes ?? previo.notes,
         } as unknown as Partial<NewLeaseRow>)
         .where(eq(leaseTable.id, id))
-        .returning()
-    );
+        .returning();
+
+      // La unidad vuelve a estar disponible. Va en el mismo acto que la rescisión: si
+      // quedara para una segunda llamada, un corte en el medio dejaría la unidad
+      // figurando ocupada sin nadie viviendo adentro.
+      if (previo.unit_id) {
+        await tx
+          .update(unitTable)
+          .set({ status: 'vacante' } as never)
+          .where(eq(unitTable.id, previo.unit_id));
+      }
+
+      return filas;
+    });
   }
 
   async getById({ id }: { id: string }): Promise<LeaseRow | undefined> {

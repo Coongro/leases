@@ -7,9 +7,9 @@
  * existen — acá va lo que el diseño no puede expresar.
  */
 
-import { formatMoney, plural, sharedLoad, type CustomHandlers } from '@coongro/plugin-sdk';
+import { formatMoney, plural, type CustomHandlers } from '@coongro/plugin-sdk';
 
-import { datosDelPanel, serieDelAnio, type PanelData } from '../../data/panel.js';
+import { lateFeePolicy } from '../../data/settings.js';
 
 const mesActual = (): string => {
   const d = new Date();
@@ -17,12 +17,34 @@ const mesActual = (): string => {
 };
 let periodo = mesActual();
 
-/**
- * Los cuatro bloques del panel piden lo mismo al montarse (indicadores, dos tablas
- * y el gráfico del mes): `sharedLoad` comparte la consulta EN CURSO entre ellos.
- */
-const panel = (period: string): Promise<PanelData> =>
-  sharedLoad(`panel:${period}`, () => datosDelPanel(period));
+/** El estado del negocio, tal como lo devuelve `leases.billing.dashboard`. */
+interface Panel {
+  propiedades: number;
+  unidades: number;
+  ocupadas: number;
+  vacantes: number;
+  ocupacionPct: number;
+  contratosActivos: number;
+  porVencer: Array<{
+    unit: string | null;
+    property: string | null;
+    tenant: string | null;
+    end_date: string;
+  }>;
+  ajustesPendientes: Array<{ unit: string; index: string; new_rent: string }>;
+  facturado: number;
+  cobrado: number;
+  porCobrar: number;
+  vencido: number;
+  cargosImpagos: number;
+}
+
+/** Un mes del gráfico anual, tal como lo devuelve `leases.billing.yearSeries`. */
+interface PuntoDelAnio {
+  label: string;
+  paid: number;
+  unpaid: number;
+}
 
 /** «en 47 días» / «vence mañana» — el tiempo que queda dicho como lo diría una persona. */
 function faltan(dk?: string): string {
@@ -58,8 +80,13 @@ export const customHandlers: CustomHandlers = {
     reload();
   },
 
-  loadLiveValues: async () => {
-    const d = await panel(periodo);
+  loadLiveValues: async ({ execute }) => {
+    const politica = await lateFeePolicy();
+    const d = await execute<Panel>('leases.billing.dashboard', {
+      period: periodo,
+      graceDays: politica.graceDays,
+      applyLateFee: politica.apply,
+    });
     const proximo = d.porVencer[0];
 
     return {
@@ -95,24 +122,26 @@ export const customHandlers: CustomHandlers = {
   },
 
   loadDataFor: {
-    tbl_venc: async () => {
-      const d = await panel(periodo);
+    tbl_venc: async ({ execute }) => {
+      const d = await execute<Panel>('leases.billing.dashboard', { period: periodo });
       return d.porVencer.map((l) => ({
         tenant: l.tenant ?? '—',
         unit: [l.property, l.unit].filter(Boolean).join(' · '),
         end_date: l.end_date,
       }));
     },
-    tbl_aj: async () => {
-      const d = await panel(periodo);
+    tbl_aj: async ({ execute }) => {
+      const d = await execute<Panel>('leases.billing.dashboard', { period: periodo });
       return d.ajustesPendientes;
     },
   },
 
   loadChartFor: {
     // El año, mes a mes: cada barra se parte en lo cobrado y lo que quedó impago.
-    chart_anio: async () => {
-      const serie = await serieDelAnio(Number(periodo.slice(0, 4)));
+    chart_anio: async ({ execute }) => {
+      const serie = await execute<PuntoDelAnio[]>('leases.billing.yearSeries', {
+        year: Number(periodo.slice(0, 4)),
+      });
       return serie.map((m) => ({
         label: m.label,
         parts: [
@@ -124,8 +153,8 @@ export const customHandlers: CustomHandlers = {
 
     // El mes elegido: en qué estado está lo facturado. Los colores son los mismos
     // que usan los indicadores de arriba — el vencido es rojo en toda la vista.
-    chart_mes: async () => {
-      const d = await panel(periodo);
+    chart_mes: async ({ execute }) => {
+      const d = await execute<Panel>('leases.billing.dashboard', { period: periodo });
       return [
         { label: 'Cobrado', value: d.cobrado, color: 'var(--cg-teal)' },
         { label: 'Por cobrar', value: d.porCobrar, color: 'var(--cg-gold)' },
