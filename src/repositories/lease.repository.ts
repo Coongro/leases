@@ -195,6 +195,17 @@ export class LeaseRepository {
     if (!unitId) throw new Error('El contrato necesita una unidad.');
     if (!tenantId) throw new Error('El contrato necesita un inquilino.');
 
+    // Las tres columnas que la tabla exige y el formulario siempre manda. Sin
+    // esto, faltar una terminaba en «invalid input syntax for type numeric: ""»
+    // o en un `not-null constraint` de la base: un error que no dice qué falta
+    // ni sobre qué contrato, justo en el acto que fija cuánto se cobra.
+    const desde = texto(data.start_date);
+    const hasta = texto(data.end_date);
+    const alquiler = texto(data.rent_amount);
+    if (!desde) throw new Error('El contrato necesita desde cuándo rige.');
+    if (!hasta) throw new Error('El contrato necesita hasta cuándo rige.');
+    if (!alquiler) throw new Error('El contrato necesita con qué alquiler arranca.');
+
     const contrato = {
       unit_id: unitId,
       tenant_contact_id: tenantId,
@@ -202,9 +213,9 @@ export class LeaseRepository {
       // formulario exige lo necesario para que el contrato exista.
       status: 'vigente',
       contract_type: texto(data.contract_type) || 'determinado',
-      start_date: texto(data.start_date),
-      end_date: texto(data.end_date),
-      rent_amount: texto(data.rent_amount),
+      start_date: desde,
+      end_date: hasta,
+      rent_amount: alquiler,
       expenses_amount: numero(data.expenses_amount),
       currency: texto(data.currency) || 'ARS',
       due_day: Number(data.due_day) || 1,
@@ -506,6 +517,15 @@ export class LeaseRepository {
     adjustmentMonths?: number | null;
     notes?: string | null;
   }): Promise<LeaseRow[]> {
+    // Una renovación sin plazo o sin monto no es un contrato. Se comprueba acá
+    // porque estos dos valores viajan derecho al insert: sin la guarda, faltar
+    // uno terminaba en «UNDEFINED_VALUE: Undefined values are not allowed» de
+    // la base, que no dice cuál falta ni sobre qué operación.
+    if (!endDate) throw new Error('La renovación necesita hasta cuándo se extiende el contrato.');
+    if (rentAmount === undefined || rentAmount === null || rentAmount === '') {
+      throw new Error('La renovación necesita con qué alquiler arranca el período nuevo.');
+    }
+
     const previo = await this.getById({ id });
     if (!previo) throw new Error('El contrato no existe.');
     if (previo.status === 'renovado') throw new Error('Este contrato ya fue renovado.');
@@ -581,6 +601,11 @@ export class LeaseRepository {
     terminationDate: string;
     notes?: string | null;
   }): Promise<LeaseRow[]> {
+    // Sin fecha, la rescisión no se puede asentar: es el dato que decide desde
+    // cuándo la unidad queda libre y hasta cuándo se cobra. Sin esta guarda el
+    // update mandaba undefined y la base cortaba con «UNDEFINED_VALUE».
+    if (!terminationDate) throw new Error('La rescisión necesita la fecha en que termina.');
+
     const previo = await this.getById({ id });
     if (!previo) throw new Error('El contrato no existe.');
     if (previo.termination_date) throw new Error('Este contrato ya está rescindido.');
