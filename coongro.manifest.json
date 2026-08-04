@@ -193,12 +193,6 @@
         ]
       },
       {
-        "module": "./dist/repositories/notice-log.repository.js",
-        "export": "NoticeLogRepository",
-        "prefix": "leases.notices",
-        "actions": ["list", "getById", "create"]
-      },
-      {
         "module": "./dist/repositories/lease-charge.repository.js",
         "export": "LeaseChargeRepository",
         "prefix": "leases.charges",
@@ -4725,50 +4719,6 @@
         "generatedBy": "agentic-graph"
       },
       {
-        "id": "leases.notices.list",
-        "action": "leases.notices.list",
-        "title": "List",
-        "description": "Ejecuta leases.notices.list.",
-        "effect": "read",
-        "confirmation": "never",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "limit": {
-              "type": "integer",
-              "description": "Cantidad de resultados."
-            },
-            "offset": {
-              "type": "integer",
-              "description": "Resultados a saltear."
-            }
-          },
-          "additionalProperties": false
-        },
-        "generatedBy": "agentic-graph"
-      },
-      {
-        "id": "leases.notices.getById",
-        "action": "leases.notices.getById",
-        "title": "Get By ID",
-        "description": "Ejecuta leases.notices.getById.",
-        "effect": "read",
-        "confirmation": "never",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "description": "ID del registro.",
-              "ref": { "resource": "leases.notices" }
-            }
-          },
-          "required": ["id"],
-          "additionalProperties": false
-        },
-        "generatedBy": "agentic-graph"
-      },
-      {
         "id": "leases.charges.delete",
         "action": "leases.charges.delete",
         "title": "Delete",
@@ -4829,8 +4779,8 @@
         "generatedBy": "agentic-graph"
       }
     ],
-    "copilotCatalogFingerprint": "87d34eae2e090de247f7e2a48ed63d48",
-    "copilotCatalogContentFingerprint": "76fa2209a31c5e4f38d53cf07faae288"
+    "copilotCatalogFingerprint": "41f4fb8d54506a3f555e1b5360e4071b",
+    "copilotCatalogContentFingerprint": "0c23d3e6ec17169d23c241066e258c8c"
   },
   "initView": "leases.dashboard-alquileres-fidelidad.open",
   "entry": "./dist/server.js"

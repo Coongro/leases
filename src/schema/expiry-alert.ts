@@ -5,11 +5,10 @@ import { boolean, index, pgTable, text, timestamp, uniqueIndex, uuid } from 'dri
  * Lo que está por vencer en la cartera: certificados del inmueble, contratos que llegan
  * al fin del plazo y pólizas de caución.
  *
- * Es una tabla aparte de `module_leases_notice_logs` y no la misma: la bitácora guarda
- * **qué se le comunicó a una persona** y es inmutable a propósito (su valor es servir de
- * respaldo). Esto es otra cosa —el estado de lo que hay que renovar—, se recalcula todos
- * los días y se puede marcar como visto. Mezclarlas dejaría a la bitácora sin poder
- * probar nada.
+ * Es **estado recalculable**, no bitácora: cada barrido la vuelve a derivar de los datos
+ * de origen y una fila se puede marcar como vista. Si alguna vez hace falta registrar qué
+ * se le comunicó a una persona, eso va en otra tabla y es inmutable — un respaldo que se
+ * recalcula todos los días no respalda nada.
  *
  * Se recalcula con upsert y no borrando todo: `first_seen_at` sobrevive a cada barrido,
  * así se sabe desde cuándo se viene avisando de algo que nadie atendió. Un `delete` +
