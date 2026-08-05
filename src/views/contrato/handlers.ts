@@ -18,6 +18,12 @@ import type { CustomHandlers } from '@coongro/plugin-sdk';
 import { contractDefaults } from '../../data/settings.js';
 
 export const customHandlers: CustomHandlers = {
+  // Cómo se lee cada unidad en el desplegable —«Belgrano 1240 · 1°A» con su detalle
+  // debajo— NO se decide acá: es diseño del campo y se elige en el Builder («Texto de
+  // cada opción» y «Subtítulo de cada opción»). Un contrato firmado contra la unidad
+  // equivocada arrastra la ocupación, los cargos y la liquidación al inmueble de otro
+  // dueño, así que esto importa — pero es una decisión de diseño, no de código.
+
   /**
    * Prefill de un contrato nuevo con lo que el propietario configuró: su moneda, su
    * día de vencimiento, su índice. Repetirlo en cada alta es tiempo perdido y una
