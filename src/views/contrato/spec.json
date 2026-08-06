@@ -20,6 +20,8 @@
           "fieldType": "ref",
           "label": "Unidad",
           "refEntity": "properties.units",
+          "refDisplay": "label",
+          "refSubtitle": "detail",
           "validations": [
             "required"
           ]

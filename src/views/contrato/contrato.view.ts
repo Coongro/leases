@@ -65,7 +65,15 @@ export function ContratoView() {
                     clearable: true,
                   },
                   ...(refOptions['unit_id'] ?? []).map((r: any) =>
-                    h(UI.SelectItem, { key: String(r.id), value: String(r.id) }, refLabel(r))
+                    h(
+                      UI.SelectItem,
+                      {
+                        key: String(r.id),
+                        value: String(r.id),
+                        subtitle: String(r['detail'] ?? ''),
+                      },
+                      String(r['label'] ?? refLabel(r))
+                    )
                   )
                 ),
                 errors['unit_id']
