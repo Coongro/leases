@@ -76,3 +76,23 @@ describe('líneas del cargo', () => {
     expect(lines).toHaveLength(0);
   });
 });
+
+describe('el tipo manda sobre el signo', () => {
+  it('un descuento resta aunque nadie haya cargado el signo', () => {
+    // Quien da de alta una bonificación no tiene por qué pensar en números negativos.
+    // Si dependiera del signo, el día que se olvide se le COBRARÍA al inquilino.
+    const lines = chargeLinesForPeriod({
+      charges: [{ type: 'descuento', label: 'Bonificación', amount: '15000' }],
+      period: '2026-09',
+    });
+    expect(lines[0].subtotal).toBe('-15000');
+  });
+
+  it('un concepto normal suma aunque venga con signo raro', () => {
+    const lines = chargeLinesForPeriod({
+      charges: [{ type: 'abl', label: 'ABL', amount: '18000', sign: '1' }],
+      period: '2026-09',
+    });
+    expect(lines[0].subtotal).toBe('18000');
+  });
+});

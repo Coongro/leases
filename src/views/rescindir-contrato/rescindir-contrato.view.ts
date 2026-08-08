@@ -57,7 +57,7 @@ export function RescindirContratoView() {
             h(
               'div',
               { style: { fontSize: '13px', lineHeight: 1.5 } },
-              'Se guarda la fecha real de fin. El plazo pactado no se modifica: la diferencia entre ambos es lo que fundamenta la multa por rescisión anticipada, si el contrato la prevé.'
+              'Se guarda la fecha real de fin. El plazo pactado no se modifica: la diferencia entre ambos es lo que fundamenta la multa por rescisión anticipada, si el contrato la prevé. La unidad vuelve a figurar vacante.'
             )
           )
         )
@@ -163,22 +163,25 @@ export function RescindirContratoView() {
                 { style: { flex: '1 1 100%', minWidth: 0 } },
                 h(
                   UI.Label,
-                  { htmlFor: 'notes', style: { display: 'block', marginBottom: '6px' } },
+                  {
+                    htmlFor: 'termination_detail',
+                    style: { display: 'block', marginBottom: '6px' },
+                  },
                   'Detalle'
                 ),
                 h(UI.Input, {
-                  id: 'notes',
+                  id: 'termination_detail',
                   type: 'text',
-                  value: String(values['notes'] ?? ''),
+                  value: String(values['termination_detail'] ?? ''),
                   placeholder:
                     'Ej: entregó las llaves el 20/07, se descuenta la multa del depósito',
-                  onChange: (e: any) => setField('notes', e.target.value),
+                  onChange: (e: any) => setField('termination_detail', e.target.value),
                 }),
-                errors['notes']
+                errors['termination_detail']
                   ? h(
                       'div',
                       { style: { fontSize: '12px', color: 'var(--cg-danger)', marginTop: '4px' } },
-                      errors['notes']
+                      errors['termination_detail']
                     )
                   : null
               )

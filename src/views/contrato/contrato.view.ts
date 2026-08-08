@@ -65,7 +65,15 @@ export function ContratoView() {
                     clearable: true,
                   },
                   ...(refOptions['unit_id'] ?? []).map((r: any) =>
-                    h(UI.SelectItem, { key: String(r.id), value: String(r.id) }, refLabel(r))
+                    h(
+                      UI.SelectItem,
+                      {
+                        key: String(r.id),
+                        value: String(r.id),
+                        subtitle: String(r['detail'] ?? ''),
+                      },
+                      String(r['label'] ?? refLabel(r))
+                    )
                   )
                 ),
                 errors['unit_id']
@@ -473,6 +481,46 @@ export function ContratoView() {
               ),
               h(
                 'div',
+                { 'data-cg-block-id': 'f_admin_fee', style: { display: 'contents' } },
+                h(
+                  'div',
+                  { style: { flex: '1 1 260px', minWidth: 0 } },
+                  h(
+                    UI.Label,
+                    {
+                      htmlFor: 'admin_fee_percent',
+                      style: { display: 'block', marginBottom: '6px' },
+                    },
+                    'Honorario de administración (%)'
+                  ),
+                  h(UI.Input, {
+                    id: 'admin_fee_percent',
+                    type: 'number',
+                    value: values['admin_fee_percent'] ?? '',
+                    placeholder: 'Ej: 8',
+                    onChange: (e: any) =>
+                      setField(
+                        'admin_fee_percent',
+                        e.target.value === '' ? null : Number(e.target.value)
+                      ),
+                  }),
+                  errors['admin_fee_percent']
+                    ? h(
+                        'div',
+                        {
+                          style: { fontSize: '12px', color: 'var(--cg-danger)', marginTop: '4px' },
+                        },
+                        errors['admin_fee_percent']
+                      )
+                    : null
+                )
+              )
+            ),
+            h(
+              'div',
+              { style: { display: 'flex', gap: '14px', alignItems: 'flex-start' } },
+              h(
+                'div',
                 { 'data-cg-block-id': 'f_index', style: { display: 'contents' } },
                 h(
                   'div',
@@ -510,43 +558,45 @@ export function ContratoView() {
                       )
                     : null
                 )
-              )
-            ),
-            h(
-              'div',
-              { 'data-cg-block-id': 'f_period', style: { display: 'contents' } },
+              ),
               h(
                 'div',
-                { style: { flex: '1 1 100%', minWidth: 0 } },
+                { 'data-cg-block-id': 'f_period', style: { display: 'contents' } },
                 h(
-                  UI.Label,
-                  {
-                    htmlFor: 'adjustment_months',
-                    style: { display: 'block', marginBottom: '6px' },
-                  },
-                  'Se actualiza cada',
-                  h('span', { style: { color: 'var(--cg-danger)' } }, ' *')
-                ),
-                h(
-                  UI.Select,
-                  {
-                    value: String(values['adjustment_months'] ?? ''),
-                    onValueChange: (v: string) => setField('adjustment_months', v),
-                    placeholder: 'Elegir…',
-                    clearable: true,
-                  },
-                  h(UI.SelectItem, { key: '3', value: '3' }, '3 meses'),
-                  h(UI.SelectItem, { key: '4', value: '4' }, '4 meses'),
-                  h(UI.SelectItem, { key: '6', value: '6' }, '6 meses'),
-                  h(UI.SelectItem, { key: '12', value: '12' }, '12 meses')
-                ),
-                errors['adjustment_months']
-                  ? h(
-                      'div',
-                      { style: { fontSize: '12px', color: 'var(--cg-danger)', marginTop: '4px' } },
-                      errors['adjustment_months']
-                    )
-                  : null
+                  'div',
+                  { style: { flex: '1 1 260px', minWidth: 0 } },
+                  h(
+                    UI.Label,
+                    {
+                      htmlFor: 'adjustment_months',
+                      style: { display: 'block', marginBottom: '6px' },
+                    },
+                    'Se actualiza cada',
+                    h('span', { style: { color: 'var(--cg-danger)' } }, ' *')
+                  ),
+                  h(
+                    UI.Select,
+                    {
+                      value: String(values['adjustment_months'] ?? ''),
+                      onValueChange: (v: string) => setField('adjustment_months', v),
+                      placeholder: 'Elegir…',
+                      clearable: true,
+                    },
+                    h(UI.SelectItem, { key: '3', value: '3' }, '3 meses'),
+                    h(UI.SelectItem, { key: '4', value: '4' }, '4 meses'),
+                    h(UI.SelectItem, { key: '6', value: '6' }, '6 meses'),
+                    h(UI.SelectItem, { key: '12', value: '12' }, '12 meses')
+                  ),
+                  errors['adjustment_months']
+                    ? h(
+                        'div',
+                        {
+                          style: { fontSize: '12px', color: 'var(--cg-danger)', marginTop: '4px' },
+                        },
+                        errors['adjustment_months']
+                      )
+                    : null
+                )
               )
             )
           )

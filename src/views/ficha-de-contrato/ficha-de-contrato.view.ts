@@ -28,7 +28,17 @@ export function FichaDeContratoView() {
       danger: 'danger-soft',
       outline: 'outline',
     })[tone] ?? fallback;
-  const { t1, t2, metric } = useFichaDeContratoView();
+  const {
+    pendingConfirm,
+    askConfirm,
+    cancelConfirm,
+    runConfirmed,
+    t1,
+    t2,
+    t3,
+    runServerAction,
+    metric,
+  } = useFichaDeContratoView();
 
   // ── tabla 1: render propio sobre su estado t1 ──
   const renderTable1 = (() => {
@@ -207,9 +217,6 @@ export function FichaDeContratoView() {
           onSortChange,
           pagination: { page, pageSize: 10, total: visibleRows.length },
           onPageChange: setPage,
-          onRowClick: (row: any) => {
-            views.open('leases.renovar-contrato.open', { record: row }, { mode: 'sheet' });
-          },
           density: 'compact' as const,
           mobileRender: (row: any) =>
             h(
@@ -440,9 +447,6 @@ export function FichaDeContratoView() {
           onSortChange,
           pagination: { page, pageSize: 10, total: visibleRows.length },
           onPageChange: setPage,
-          onRowClick: (row: any) => {
-            views.open('leases.renovar-contrato.open', { record: row }, { mode: 'sheet' });
-          },
           density: 'compact' as const,
           mobileRender: (row: any) =>
             h(
@@ -489,6 +493,331 @@ export function FichaDeContratoView() {
           emptyState: {
             title: 'Sin cargos generados',
             description: 'Generá el mes desde Cobranzas.',
+            filteredTitle: 'Sin resultados',
+            filteredDescription: 'Probá con otros términos o ajustá los filtros.',
+          },
+        })
+      );
+    return renderTable;
+  })();
+  // ── tabla 3: render propio sobre su estado t3 ──
+  const renderTable3 = (() => {
+    const {
+      loading,
+      visibleRows,
+      sort,
+      onSortChange,
+      cellValue,
+      search,
+      setSearch,
+      clearFilters,
+      page,
+      setPage,
+      pagedRows,
+      SUB_COL,
+      ITEM_COLS,
+    } = t3;
+    const cellText = (row: any, c: any) => {
+      const v = cellValue(row, c);
+      return v === null || v === undefined
+        ? ''
+        : typeof v === 'object'
+          ? JSON.stringify(v)
+          : String(v);
+    };
+    const TONE_VARIANT: Record<string, string> = {
+      neutral: 'neutral-soft',
+      success: 'success-soft',
+      warning: 'warning-soft',
+      danger: 'danger-soft',
+      outline: 'outline',
+    };
+    const enumVal = (c: any, raw: string) => (c.values ?? []).find((e: any) => e.value === raw);
+    const formatMoney = (raw: string) => {
+      const n = Number(raw);
+      return isNaN(n) ? raw : '$' + n.toLocaleString('es-AR');
+    };
+    const renderCell = (row: any, c: any) => {
+      const raw = cellText(row, c);
+      if (raw === '' && c.emptyLabel) {
+        return h(
+          'span',
+          {
+            style: {
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: 'var(--cg-text-muted)',
+            },
+          },
+          c.emptyIcon ? h(UI.DynamicIcon, { icon: c.emptyIcon, size: 15 }) : null,
+          c.emptyLabel
+        );
+      }
+      const ev = enumVal(c, raw);
+      const label = c.format === 'money' ? formatMoney(raw) : (ev?.label ?? raw);
+      const shown = raw !== '' ? (c.prefix ?? '') + label + (c.suffix ?? '') : label;
+      if (c.display === 'avatar') {
+        const initial = (String(raw).trim().charAt(0) || '?').toUpperCase();
+        return h(
+          'span',
+          { style: { display: 'inline-flex', alignItems: 'center', gap: '8px', minWidth: 0 } },
+          h(
+            'span',
+            {
+              style: {
+                width: '26px',
+                height: '26px',
+                borderRadius: '50%',
+                flexShrink: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'var(--cg-gold-soft)',
+                border: '1px solid var(--cg-gold-lt)',
+                color: 'var(--cg-gold-deep)',
+                fontWeight: 700,
+                fontSize: '11px',
+              },
+            },
+            initial
+          ),
+          h('span', null, shown)
+        );
+      }
+      const iconName = ev?.icon;
+      const icon = iconName ? h(UI.DynamicIcon, { icon: iconName, size: 16 }) : null;
+      if (c.display === 'pill') {
+        return label
+          ? h(
+              UI.Badge,
+              {
+                variant: TONE_VARIANT[ev?.tone ?? c.tone ?? 'neutral'] ?? 'neutral-soft',
+                size: 'compact',
+                icon,
+              },
+              label
+            )
+          : '';
+      }
+      if (c.display === 'progress') {
+        const n = Math.max(0, Math.min(100, Number(cellValue(row, c)) || 0));
+        return h(
+          'div',
+          { style: { display: 'flex', alignItems: 'center', gap: '8px', minWidth: '90px' } },
+          h(
+            'div',
+            {
+              style: {
+                flex: '1 1 0',
+                height: '6px',
+                borderRadius: '999px',
+                background: 'var(--cg-bg-secondary)',
+                overflow: 'hidden',
+              },
+            },
+            h('div', {
+              style: {
+                width: n + '%',
+                height: '100%',
+                borderRadius: '999px',
+                background: 'var(--cg-gold)',
+              },
+            })
+          ),
+          h(
+            'span',
+            { style: { fontSize: '12px', color: 'var(--cg-text-muted)' } },
+            Math.round(n) + '%'
+          )
+        );
+      }
+      if (c.display === 'mono')
+        return h(
+          'span',
+          { style: { fontFamily: 'ui-monospace, monospace', fontSize: '12px' } },
+          shown
+        );
+      return icon
+        ? h(
+            'span',
+            { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
+            icon,
+            shown
+          )
+        : shown;
+    };
+    const ROW_ACTIONS = [
+      {
+        label: 'Eliminar',
+        variant: 'destructive' as const,
+        icon: 'Trash2',
+        onClick: (row: any) => {
+          askConfirm(
+            'Eliminar',
+            'El concepto deja de sumarse al cargo del mes. Lo que ya se facturó no cambia.',
+            'Eliminar',
+            () => {
+              ((row: any) => {
+                void runServerAction('leases.charges.delete', { id: row.id }, row);
+              })(row);
+            }
+          );
+        },
+      },
+    ];
+    // eslint-disable-next-line sonarjs/prefer-immediate-return
+    const renderTable = () =>
+      h(
+        'div',
+        {
+          style: {
+            background: 'var(--cg-bg)',
+            border: '1px solid var(--cg-border)',
+            borderRadius: '14px',
+            padding: '20px',
+          },
+        },
+        h(UI.DataTable, {
+          data: pagedRows,
+          rowKey: (row: any) => String(row.id ?? JSON.stringify(row)),
+          loading,
+          columns: ITEM_COLS.map((c, ci) => ({
+            key: c.key,
+            header: c.label,
+            sortable: true,
+            render: (row: any) =>
+              ci === 0 && SUB_COL
+                ? h(
+                    'div',
+                    { style: { display: 'flex', flexDirection: 'column' as const, gap: '2px' } },
+                    h('div', null, renderCell(row, c)),
+                    h(
+                      'div',
+                      { style: { fontSize: '12px', color: 'var(--cg-text-muted)' } },
+                      renderCell(row, SUB_COL)
+                    )
+                  )
+                : renderCell(row, c),
+          })),
+          searchPlaceholder: 'Buscar…',
+          searchValue: search,
+          onSearchChange: setSearch,
+          sortKey: sort?.k ?? null,
+          sortDirection: sort ? (sort.d > 0 ? 'asc' : 'desc') : null,
+          onSortChange,
+          pagination: { page, pageSize: 10, total: visibleRows.length },
+          onPageChange: setPage,
+          onRowClick: (row: any) => {
+            views.open('leases.concepto-del-contrato.open', { record: row }, { mode: 'dialog' });
+          },
+          actions: ROW_ACTIONS,
+          view: 'list' as const,
+          renderItem: (row: any) =>
+            h(
+              'div',
+              { style: { display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 } },
+              h(
+                'div',
+                {
+                  style: {
+                    minWidth: 0,
+                    flex: '1 1 auto',
+                    display: 'flex',
+                    flexDirection: 'column' as const,
+                    gap: '2px',
+                  },
+                },
+                h(
+                  'div',
+                  null,
+                  h(
+                    'div',
+                    { style: { fontSize: '14px', fontWeight: 600, color: 'var(--cg-text)' } },
+                    renderCell(row, ITEM_COLS[0])
+                  ),
+                  SUB_COL
+                    ? h(
+                        'div',
+                        {
+                          style: {
+                            fontSize: '12px',
+                            color: 'var(--cg-text-muted)',
+                            marginTop: '1px',
+                          },
+                        },
+                        renderCell(row, SUB_COL)
+                      )
+                    : null
+                ),
+                ITEM_COLS.length > 2
+                  ? h(
+                      'div',
+                      {
+                        style: {
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          flexWrap: 'wrap' as const,
+                          fontSize: '12.5px',
+                          color: 'var(--cg-text-muted)',
+                        },
+                      },
+                      ...ITEM_COLS.slice(1, ITEM_COLS.length - 1).map((c) =>
+                        h(
+                          'span',
+                          { key: c.key, style: { display: 'inline-flex', minWidth: 0 } },
+                          renderCell(row, c)
+                        )
+                      )
+                    )
+                  : null
+              ),
+              ITEM_COLS.length > 1
+                ? h(
+                    'div',
+                    { style: { flexShrink: 0, display: 'flex', alignItems: 'center' } },
+                    renderCell(row, ITEM_COLS[ITEM_COLS.length - 1])
+                  )
+                : null,
+              h(
+                'div',
+                {
+                  style: {
+                    display: 'flex',
+                    gap: '4px',
+                    justifyContent: 'flex-end',
+                    borderTop: '1px solid var(--cg-border-light)',
+                    paddingTop: '8px',
+                    marginTop: '2px',
+                  },
+                },
+                ...ROW_ACTIONS.filter((a2: any) => !a2.hidden?.(row)).map((a2: any) =>
+                  h(
+                    UI.Button,
+                    {
+                      key: a2.label,
+                      size: 'sm' as const,
+                      variant:
+                        a2.variant === 'destructive'
+                          ? ('destructive' as const)
+                          : ('ghost' as const),
+                      onClick: (e: any) => {
+                        e.stopPropagation();
+                        a2.onClick(row);
+                      },
+                    },
+                    a2.label
+                  )
+                )
+              )
+            ),
+          onClearFilters: () => {
+            clearFilters();
+          },
+          emptyState: {
+            title: 'Solo se factura el alquiler',
+            description: 'Agregá ABL, agua o una bonificación para que salgan en el cargo del mes.',
             filteredTitle: 'Sin resultados',
             filteredDescription: 'Probá con otros términos o ajustá los filtros.',
           },
@@ -1124,6 +1453,87 @@ export function FichaDeContratoView() {
                   )
                 )
               )
+            ),
+            h(
+              'div',
+              { 'data-cg-block-id': 'sec_conceptos', style: { display: 'contents' } },
+              h(
+                'section',
+                null,
+                h(
+                  'div',
+                  {
+                    style: {
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      marginBottom: '12px',
+                    },
+                  },
+                  h('span', {
+                    style: {
+                      width: '16px',
+                      height: '2px',
+                      background: 'var(--cg-accent)',
+                      borderRadius: '2px',
+                    },
+                  }),
+                  h(UI.DynamicIcon, {
+                    icon: 'ReceiptText',
+                    size: 15,
+                    style: { color: 'var(--cg-text-muted)' },
+                  }),
+                  h(
+                    'span',
+                    {
+                      style: {
+                        fontSize: '11px',
+                        fontWeight: 500,
+                        letterSpacing: '.08em',
+                        textTransform: 'uppercase' as const,
+                        color: 'var(--cg-text-muted)',
+                      },
+                    },
+                    'Conceptos que se facturan'
+                  )
+                ),
+                h(
+                  'div',
+                  {
+                    style: {
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '16px',
+                      alignItems: 'stretch',
+                    },
+                  },
+                  h(
+                    'div',
+                    { 'data-cg-block-id': 'btn_concepto', style: { display: 'contents' } },
+                    h(
+                      'div',
+                      { style: { display: 'flex', justifyContent: 'flex-end' } },
+                      h(
+                        UI.Button,
+                        {
+                          variant: 'secondary',
+                          onClick: () => {
+                            views.open('leases.concepto-del-contrato.open', undefined, {
+                              mode: 'dialog',
+                            });
+                          },
+                        },
+                        'Agregar concepto'
+                      )
+                    )
+                  ),
+                  h(
+                    'div',
+                    { 'data-cg-block-id': 'tbl_conceptos', style: { display: 'contents' } },
+                    renderTable3()
+                  )
+                )
+              )
             )
           ),
           h(
@@ -1546,6 +1956,18 @@ export function FichaDeContratoView() {
           )
         )
       )
-    )
+    ),
+    h(UI.ConfirmDialog, {
+      open: !!pendingConfirm,
+      onOpenChange: (o: boolean) => {
+        if (!o) cancelConfirm();
+      },
+      title: pendingConfirm?.title ?? '',
+      description: pendingConfirm?.message ?? '',
+      confirmLabel: pendingConfirm?.confirmLabel ?? 'Confirmar',
+      onConfirm: () => {
+        runConfirmed();
+      },
+    })
   );
 }

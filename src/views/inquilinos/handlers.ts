@@ -18,4 +18,19 @@ import { actions } from '@coongro/plugin-sdk';
  */
 export const customHandlers: CustomHandlers = {
   loadData: () => actions.execute<unknown[]>('leases.contracts.listTenants'),
+
+  /**
+   * Dar de baja a un inquilino cargado por error.
+   *
+   * La fila ES el contacto, así que su `id` es el `contactId` que pide la
+   * operación. Con contratos firmados el servidor corta y explica por qué; ese
+   * mensaje sube tal cual, porque dice qué hacer primero.
+   */
+  onAction: async (actionId, { execute, record, toast, reload }) => {
+    if (actionId === 'leases.contracts.deleteTenant') {
+      await execute('leases.contracts.deleteTenant', { contactId: record?.id });
+      toast.success('Inquilino dado de baja', '');
+      reload();
+    }
+  },
 };

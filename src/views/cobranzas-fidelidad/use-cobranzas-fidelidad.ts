@@ -140,13 +140,20 @@ export function useCobranzasFidelidadView() {
     { key: 'rent', label: 'Alquiler', display: 'mono', format: 'money' },
     { key: 'expenses', label: 'Expensas', display: 'mono', format: 'money' },
     {
-      key: 'late_fee',
-      label: 'Punitorio',
+      key: 'other',
+      label: 'Otros conceptos',
       display: 'mono',
       format: 'money',
-      emptyLabel: 'Sin punitorio',
+      emptyLabel: 'Sin otros conceptos',
     },
-    { key: 'late_fee_detail', label: 'Cálculo del punitorio', emptyLabel: '—' },
+    {
+      key: 'late_fee',
+      label: 'Punitorio a proponer',
+      display: 'mono',
+      format: 'money',
+      emptyLabel: 'Sin punitorio para proponer',
+    },
+    { key: 'late_fee_detail', label: 'Cálculo de esa propuesta', emptyLabel: '—' },
   ];
   // el subtítulo se muda bajo el título: fuera de las columnas propias
   const SUB_COL = COLUMNS.find((c) => c.key === 'property');

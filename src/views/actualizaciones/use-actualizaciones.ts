@@ -65,6 +65,27 @@ export function useActualizacionesView() {
     },
     [metrics]
   );
+
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    title: string;
+    message: string;
+    confirmLabel: string;
+    run: () => void;
+  } | null>(null);
+  const askConfirm = useCallback(
+    (title: string, message: string, confirmLabel: string, run: () => void) => {
+      setPendingConfirm({ title, message, confirmLabel, run });
+    },
+    []
+  );
+  const cancelConfirm = useCallback(() => {
+    setPendingConfirm(null);
+  }, []);
+  const runConfirmed = useCallback(() => {
+    const pend = pendingConfirm;
+    setPendingConfirm(null);
+    pend?.run();
+  }, [pendingConfirm]);
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -141,7 +162,20 @@ export function useActualizacionesView() {
     { key: 'unit', label: 'Unidad', emptyLabel: '—' },
     { key: 'property', label: 'Propiedad', emptyLabel: '—' },
     { key: 'tenant', label: 'Inquilino', emptyLabel: '—' },
-    { key: 'index_code', label: 'Índice', display: 'pill', tone: 'outline' },
+    {
+      key: 'index_code',
+      label: 'Índice',
+      display: 'pill',
+      values: [
+        { value: 'ICL', label: 'ICL' },
+        { value: 'IPC', label: 'IPC' },
+        { value: 'casa_propia', label: 'Casa Propia' },
+        { value: 'manual', label: 'Pactada', tone: 'neutral' },
+        { value: 'fijo', label: 'Fijo' },
+        { value: 'otro', label: 'Otro' },
+      ],
+      tone: 'outline',
+    },
     { key: 'rate_percent', label: 'Variación', display: 'mono', suffix: '%' },
     { key: 'previous_rent', label: 'Alquiler actual', display: 'mono', format: 'money' },
     { key: 'new_rent', label: 'Nuevo alquiler', display: 'mono', format: 'money' },
@@ -277,8 +311,8 @@ export function useActualizacionesView() {
       toast.success('Eliminado', 'El registro se eliminó correctamente');
       setPendingDelete(null);
       void load();
-    } catch {
-      toast.error('Error', 'No se pudo eliminar');
+    } catch (err) {
+      toast.error('Error', err instanceof Error ? err.message : 'No se pudo eliminar');
     } finally {
       setDeleting(false);
     }
@@ -319,6 +353,10 @@ export function useActualizacionesView() {
   return {
     metric,
     reloadMetrics,
+    pendingConfirm,
+    askConfirm,
+    cancelConfirm,
+    runConfirmed,
     sort,
     onSortChange,
     filters,
