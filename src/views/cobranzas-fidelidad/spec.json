@@ -15,9 +15,9 @@
         "action": {
           "id": "serverAction",
           "label": "Generar cargos del mes",
-          "target": "leases.billing.generateForPeriod",
-          "confirm": "Se generan los cargos de todos los contratos vigentes del período. Si ya estaban generados, no se duplican."
-        }
+          "target": "leases.billing.generateForPeriod"
+        },
+        "confirm": "Se generan los cargos de todos los contratos vigentes del período. Si ya estaban generados, no se duplican."
       }
     },
     {

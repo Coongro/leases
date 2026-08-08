@@ -1,12 +1,20 @@
-import { contactTable } from '@coongro/contacts/server';
+import { AccountRepository } from '@coongro/billing/server';
+import { ContactRepository, contactTable } from '@coongro/contacts/server';
 import type { ModuleDatabaseAPI } from '@coongro/plugin-sdk';
 import { buildingTable, unitTable } from '@coongro/properties/server';
 import { and, asc, desc, eq, getTableColumns, isNull, sql } from 'drizzle-orm';
 
 import { guaranteeTable } from '../schema/guarantee.js';
+import type { NewGuaranteeRow } from '../schema/guarantee.js';
 import { indexAdjustmentTable } from '../schema/index-adjustment.js';
-import { leaseTable } from '../schema/lease.js';
+import { leaseChargeTable } from '../schema/lease-charge.js';
+import type { NewLeaseChargeRow } from '../schema/lease-charge.js';
+import { leaseTenantTable } from '../schema/lease-tenant.js';
+import type { NewLeaseTenantRow } from '../schema/lease-tenant.js';
 import type { LeaseRow, NewLeaseRow } from '../schema/lease.js';
+import { leaseTable } from '../schema/lease.js';
+import { RENT_SOURCE } from '../services/charge-generation.js';
+import { leaseDeletionBlockedMessage, type LeaseMovements } from '../services/lease-deletion.js';
 import { describeRentChange } from '../services/rent-change.js';
 
 /**
@@ -481,12 +489,54 @@ export class LeaseRepository {
         .where(
           and(
             isNull(contactTable.deleted_at),
-            sql`exists (select 1 from ${leaseTable} l5
-              where l5.tenant_contact_id = ${c} and l5.deleted_at is null)`
+            // Con contrato, o cargado desde acá con «Nuevo inquilino» (que marca el
+            // contacto como `tenant`). El «o» importa: pidiendo solo lo primero, un
+            // inquilino cargado por error —sin contrato todavía— no aparecía en
+            // ninguna pantalla, así que no había forma de corregirlo ni de darlo de
+            // baja. Quedaba invisible, que es peor que quedar mal.
+            sql`(
+              exists (select 1 from ${leaseTable} l5
+                where l5.tenant_contact_id = ${c} and l5.deleted_at is null)
+              or ${contactTable}."type" = 'tenant'
+            )`
           )
         )
         .orderBy(asc(contactTable.name))
     );
+  }
+
+  /**
+   * Da de baja a un inquilino cargado por error.
+   *
+   * Mismo criterio que con un propietario: la persona vive en `contacts`, que es
+   * compartido y no sabe de alquileres, así que la baja se pide acá — donde se
+   * puede contestar si firmó algo.
+   *
+   * Con contratos a su nombre no se borra. No es solo que queden huérfanos: el
+   * contrato es la prueba de lo que se pactó, y la persona que lo firmó es parte
+   * de esa prueba. Si el contrato tampoco debió existir, primero se borra el
+   * contrato —que tiene su propia regla— y después la persona.
+   */
+  async deleteTenant({ contactId }: { contactId: string }): Promise<{ deleted: boolean }> {
+    const contratos = await this.db.ormQuery((tx) =>
+      tx
+        .select({ id: leaseTable.id })
+        .from(leaseTable)
+        .where(and(eq(leaseTable.tenant_contact_id, contactId), isNull(leaseTable.deleted_at)))
+    );
+
+    if (contratos.length > 0) {
+      const cuantos =
+        contratos.length === 1
+          ? 'un contrato a su nombre'
+          : `${contratos.length} contratos a su nombre`;
+      throw new Error(
+        `Esta persona tiene ${cuantos}: darla de baja dejaría el contrato sin quién lo firmó. Si el contrato tampoco corresponde, eliminalo primero desde Contratos.`
+      );
+    }
+
+    await new ContactRepository(this.db).softDelete({ id: contactId });
+    return { deleted: true };
   }
 
   /**
@@ -655,19 +705,97 @@ export class LeaseRepository {
     );
   }
 
-  // Los dos .set() van casteados: drizzle 0.38.x deja fuera de `$inferInsert` las columnas
+  /**
+   * Borra un contrato que nunca debió existir, con todo lo que es parte de él.
+   *
+   * NO es rescindir: rescindir conserva la historia de un contrato que existió y
+   * se terminó antes; esto es para el que se cargó mal. La regla que separa una
+   * cosa de la otra —si ya movió plata o cambió el alquiler— vive en
+   * `services/lease-deletion.ts`, y acá se le traen los dos números que necesita.
+   *
+   * Los cotitulares, la garantía, los conceptos y las actualizaciones PENDIENTES
+   * se dan de baja con él y con su misma marca de tiempo: son partes del contrato,
+   * no registros que le sobrevivan. Las aplicadas no hace falta tocarlas — su sola
+   * existencia ya frenó la baja más arriba.
+   */
+  // Los .set() van casteados: drizzle 0.38.x deja fuera de `$inferInsert` las columnas
   // nullable, así que el tipo del update no reconoce `deleted_at` y el typecheck falla.
   async delete({ id }: { id: string }): Promise<LeaseRow[]> {
-    return this.db.ormQuery((tx) =>
-      tx
+    const movements = await this.movementsOf(id);
+    const blocked = leaseDeletionBlockedMessage(await this.labelOf(id), movements);
+    if (blocked) throw new Error(blocked);
+
+    return this.db.ormQuery(async (tx) => {
+      const deleted_at = new Date().toISOString();
+      const bajaLogica = { deleted_at, is_active: false };
+
+      await tx
+        .update(leaseTenantTable)
+        .set(bajaLogica as unknown as Partial<NewLeaseTenantRow>)
+        .where(and(eq(leaseTenantTable.lease_id, id), isNull(leaseTenantTable.deleted_at)));
+      await tx
+        .update(guaranteeTable)
+        .set(bajaLogica as unknown as Partial<NewGuaranteeRow>)
+        .where(and(eq(guaranteeTable.lease_id, id), isNull(guaranteeTable.deleted_at)));
+      await tx
+        .update(leaseChargeTable)
+        .set(bajaLogica as unknown as Partial<NewLeaseChargeRow>)
+        .where(and(eq(leaseChargeTable.lease_id, id), isNull(leaseChargeTable.deleted_at)));
+      // Las actualizaciones no tienen baja lógica: se borran de verdad. Solo las
+      // pendientes — que son propuestas que nadie confirmó.
+      await tx
+        .delete(indexAdjustmentTable)
+        .where(
+          and(eq(indexAdjustmentTable.lease_id, id), eq(indexAdjustmentTable.status, 'pending'))
+        );
+
+      return tx
         .update(leaseTable)
-        .set({
-          deleted_at: new Date().toISOString(),
-          is_active: false,
-        } as unknown as Partial<NewLeaseRow>)
+        .set(bajaLogica as unknown as Partial<NewLeaseRow>)
         .where(eq(leaseTable.id, id))
-        .returning()
+        .returning();
+    });
+  }
+
+  /**
+   * Cuánto vivió este contrato: períodos liquidados y actualizaciones aplicadas.
+   *
+   * Los períodos salen de `billing` —las cuentas de alquiler se referencian como
+   * `<leaseId>:<período>`— porque la liquidación no es nuestra: la administra ese
+   * plugin y preguntarle es la única forma de no contestar de memoria.
+   */
+  private async movementsOf(id: string): Promise<LeaseMovements> {
+    const aplicadas = await this.db.ormQuery((tx) =>
+      tx
+        .select({ id: indexAdjustmentTable.id })
+        .from(indexAdjustmentTable)
+        .where(
+          and(eq(indexAdjustmentTable.lease_id, id), eq(indexAdjustmentTable.status, 'applied'))
+        )
     );
+
+    const cuentas = await new AccountRepository(this.db).listWithTotals({ source: RENT_SOURCE });
+    const liquidados = (cuentas ?? []).filter((cuenta) =>
+      String(cuenta.source_ref ?? '').startsWith(`${id}:`)
+    );
+
+    return { billedPeriods: liquidados.length, appliedAdjustments: aplicadas.length };
+  }
+
+  /** Cómo nombrar el contrato en el mensaje: por su unidad, que es como se lo reconoce. */
+  private async labelOf(id: string): Promise<{ label: string | null }> {
+    const rows = await this.db.ormQuery((tx) =>
+      tx
+        .select({ unit: unitTable.name, building: buildingTable.name })
+        .from(leaseTable)
+        .leftJoin(unitTable, eq(unitTable.id, leaseTable.unit_id))
+        .leftJoin(buildingTable, eq(buildingTable.id, unitTable.building_id))
+        .where(eq(leaseTable.id, id))
+        .limit(1)
+    );
+    const fila = rows[0];
+    if (!fila) return { label: null };
+    return { label: [fila.building, fila.unit].filter(Boolean).join(' · ') || null };
   }
 
   async restore({ id }: { id: string }): Promise<LeaseRow[]> {

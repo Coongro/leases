@@ -280,7 +280,25 @@ export class IndexAdjustmentRepository {
     );
   }
 
+  /**
+   * Borra una actualización que no debió proponerse. **Es borrado físico**: esta
+   * tabla no tiene baja lógica, así que de acá no se vuelve.
+   *
+   * Por eso se niega con una que ya se aplicó. Una actualización aplicada no es
+   * una propuesta: es el registro de que el alquiler pasó de un monto a otro en
+   * una fecha, y es lo que se mira cuando el inquilino pregunta por qué le
+   * aumentó. Para deshacer sus efectos está «Cancelar», que la marca como
+   * cancelada y deja el rastro; borrarla haría desaparecer el aumento sin que
+   * quede dicho en ningún lado que existió.
+   */
   async delete({ id }: { id: string }): Promise<void> {
+    const actual = await this.getById({ id });
+    if (actual?.status === 'applied') {
+      throw new Error(
+        'Esta actualización ya se aplicó: el alquiler cambió por ella y borrarla haría desaparecer el aumento sin dejar rastro. Si hay que dar marcha atrás, usá «Cancelar», que lo revierte y deja registrado que pasó.'
+      );
+    }
+
     await this.db.ormQuery((tx) =>
       tx.delete(indexAdjustmentTable).where(eq(indexAdjustmentTable.id, id))
     );

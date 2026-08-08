@@ -4,7 +4,14 @@
  * ⚠️ ARCHIVO REGENERABLE: se reescribe al guardar el diseño en el Builder.
  * La lógica custom va en `handlers.ts` (nunca se pisa). Diseño: `spec.json`.
  */
-import { actions, getHostReact, usePlugin, views, type LiveValues } from '@coongro/plugin-sdk';
+import {
+  actions,
+  events,
+  getHostReact,
+  usePlugin,
+  views,
+  type LiveValues,
+} from '@coongro/plugin-sdk';
 
 import { customHandlers } from './handlers.js';
 
@@ -59,6 +66,27 @@ export function useFichaDeContratoView() {
     [metrics]
   );
 
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    title: string;
+    message: string;
+    confirmLabel: string;
+    run: () => void;
+  } | null>(null);
+  const askConfirm = useCallback(
+    (title: string, message: string, confirmLabel: string, run: () => void) => {
+      setPendingConfirm({ title, message, confirmLabel, run });
+    },
+    []
+  );
+  const cancelConfirm = useCallback(() => {
+    setPendingConfirm(null);
+  }, []);
+  const runConfirmed = useCallback(() => {
+    const pend = pendingConfirm;
+    setPendingConfirm(null);
+    pend?.run();
+  }, [pendingConfirm]);
+
   const normKey = (s: string) =>
     s
       .normalize('NFD')
@@ -100,6 +128,21 @@ export function useFichaDeContratoView() {
     }, []);
     useEffect(() => {
       void load();
+    }, [load]);
+    useEffect(() => {
+      const offs = [
+        'leases.adjustments.create',
+        'leases.adjustments.update',
+        'leases.adjustments.delete',
+        'leases.adjustments.restore',
+      ].map((id) =>
+        events.on(id, () => {
+          void load();
+        })
+      );
+      return () => {
+        for (const off of offs) off();
+      };
     }, [load]);
 
     // columnas de la tabla: key + label (+ ref/refDisplay/refPath/ref2/display/values/prefix/suffix/format/iconFrom/empty*)
@@ -233,8 +276,8 @@ export function useFichaDeContratoView() {
     );
     const removeRow = useCallback((_row: any) => {
       toast.warning(
-        'Sin entidad',
-        'Conectá un repositorio (binding de datos) en el Builder o implementá onAction en handlers.ts'
+        'Acción sin declarar',
+        'Las filas de esta tabla son de otra entidad: declarale sus acciones en el Builder o implementá onAction en handlers.ts'
       );
     }, []);
     return {
@@ -479,6 +522,21 @@ export function useFichaDeContratoView() {
     useEffect(() => {
       void load();
     }, [load]);
+    useEffect(() => {
+      const offs = [
+        'leases.charges.create',
+        'leases.charges.update',
+        'leases.charges.delete',
+        'leases.charges.restore',
+      ].map((id) =>
+        events.on(id, () => {
+          void load();
+        })
+      );
+      return () => {
+        for (const off of offs) off();
+      };
+    }, [load]);
 
     // columnas de la tabla: key + label (+ ref/refDisplay/refPath/ref2/display/values/prefix/suffix/format/iconFrom/empty*)
     const COLUMNS: {
@@ -612,8 +670,8 @@ export function useFichaDeContratoView() {
     );
     const removeRow = useCallback((_row: any) => {
       toast.warning(
-        'Sin entidad',
-        'Conectá un repositorio (binding de datos) en el Builder o implementá onAction en handlers.ts'
+        'Acción sin declarar',
+        'Las filas de esta tabla son de otra entidad: declarale sus acciones en el Builder o implementá onAction en handlers.ts'
       );
     }, []);
     return {
@@ -641,5 +699,56 @@ export function useFichaDeContratoView() {
   };
   const t3 = useTable3();
 
-  return { metric, reloadMetrics, t1, t2, t3 };
+  const reloadTables = useCallback(() => {
+    void t1.load();
+    void t2.load();
+    void t3.load();
+  }, [t1, t2, t3]);
+
+  // args opcionales: las acciones de fila pasan { id } del registro, y
+  // `record` la fila entera para el handler (el id solo no alcanza
+  // cuando la acción necesita el monto o el estado de esa fila).
+  const runServerAction = useCallback(
+    async (id: string, args?: unknown, record?: Record<string, any>) => {
+      try {
+        if (customHandlers.onAction) {
+          await customHandlers.onAction(id, {
+            execute: function exec<T = unknown>(id: string, args?: unknown): Promise<T> {
+              return actions.execute<T>(id, args);
+            },
+            toast,
+            record,
+            reload: () => {
+              void reloadTables();
+              reloadMetrics();
+            },
+          });
+        } else {
+          await actions.execute(id, args);
+        }
+        if (!customHandlers.onAction) toast.success('Listo', id);
+        void t1.load();
+        void t2.load();
+        void t3.load();
+      } catch (err) {
+        toast.error('Error', err instanceof Error ? err.message : 'Falló ' + id);
+      }
+      // deps intencionalmente fijas: el efecto corre una sola vez
+    },
+    []
+  );
+
+  return {
+    metric,
+    reloadMetrics,
+    pendingConfirm,
+    askConfirm,
+    cancelConfirm,
+    runConfirmed,
+    t1,
+    t2,
+    t3,
+    reloadTables,
+    runServerAction,
+  };
 }
