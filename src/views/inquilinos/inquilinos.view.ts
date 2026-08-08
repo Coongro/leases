@@ -17,6 +17,10 @@ const UI = getHostUI() as any;
 export function InquilinosView() {
   const isMobile = useIsMobile();
   const {
+    pendingConfirm,
+    askConfirm,
+    cancelConfirm,
+    runConfirmed,
     loading,
     visibleRows,
     COLUMNS,
@@ -35,6 +39,7 @@ export function InquilinosView() {
     IMAGE_COL,
     SUB_COL,
     ITEM_COLS,
+    runServerAction,
   } = useInquilinosView();
 
   const cellText = (row: any, c: any) => {
@@ -174,6 +179,23 @@ export function InquilinosView() {
         views.open('leases.inquilino.open', { record: row }, { mode: 'dialog' });
       },
     },
+    {
+      label: 'Eliminar',
+      variant: 'destructive' as const,
+      icon: 'Trash2',
+      onClick: (row: any) => {
+        askConfirm(
+          'Eliminar',
+          'La persona se da de baja de la cartera. Si ya firmó un contrato no se va a poder: el contrato tiene que salir primero.',
+          'Eliminar',
+          () => {
+            ((row: any) => {
+              void runServerAction('leases.contracts.deleteTenant', { id: row.id }, row);
+            })(row);
+          }
+        );
+      },
+    },
   ];
   const renderTable = () =>
     h(
@@ -235,7 +257,22 @@ export function InquilinosView() {
         },
         actions: ROW_ACTIONS,
         view: 'list' as const,
-        itemImage: (row: any) => cellText(row, IMAGE_COL),
+        itemImage: (row: any) => {
+          let v: any = cellValue(row, IMAGE_COL);
+          if (typeof v === 'string' && v.trim().startsWith('[')) {
+            try {
+              v = JSON.parse(v);
+            } catch {
+              /* no era JSON: se usa como URL */
+            }
+          }
+          // La lista se devuelve ENTERA, no solo la primera: con varias fotos la
+          // tarjeta las pasa con flechas, y recortar acá dejaría el resto invisible.
+          if (Array.isArray(v))
+            return v.filter((it: any) => it && (typeof it === 'string' || it.url));
+          if (v && typeof v === 'object') v = v.url;
+          return typeof v === 'string' ? v : '';
+        },
         imageLayout: 'avatar' as const,
         renderItem: (row: any) =>
           h(
@@ -339,7 +376,7 @@ export function InquilinosView() {
         },
         emptyState: {
           title: 'Todavía no hay inquilinos',
-          description: 'Aparecen acá cuando firmás el primer contrato.',
+          description: 'Cargá el primero o esperá a firmar un contrato.',
           filteredTitle: 'Sin resultados',
           filteredDescription: 'Probá con otros términos o ajustá los filtros.',
         },
@@ -395,6 +432,18 @@ export function InquilinosView() {
         )
       ),
       h('div', { 'data-cg-block-id': 'tbl', style: { display: 'contents' } }, renderTable())
-    )
+    ),
+    h(UI.ConfirmDialog, {
+      open: !!pendingConfirm,
+      onOpenChange: (o: boolean) => {
+        if (!o) cancelConfirm();
+      },
+      title: pendingConfirm?.title ?? '',
+      description: pendingConfirm?.message ?? '',
+      confirmLabel: pendingConfirm?.confirmLabel ?? 'Confirmar',
+      onConfirm: () => {
+        runConfirmed();
+      },
+    })
   );
 }

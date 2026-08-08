@@ -33,9 +33,21 @@ export class LeaseChargeRepository {
     );
   }
 
+  /**
+   * Un concepto por su id, siempre que siga vigente.
+   *
+   * El filtro por `deleted_at` no es cosmético: sin él, un concepto dado de baja
+   * seguía leyéndose como si nada, así que la lista dejaba de mostrarlo pero
+   * quien lo pidiera por id —una ficha, el Copilot— lo recibía igual y podía
+   * seguir operando sobre algo que para el resto del sistema ya no existe.
+   */
   async getById({ id }: { id: string }): Promise<LeaseChargeRow | undefined> {
     const rows = await this.db.ormQuery((tx) =>
-      tx.select().from(leaseChargeTable).where(eq(leaseChargeTable.id, id)).limit(1)
+      tx
+        .select()
+        .from(leaseChargeTable)
+        .where(and(eq(leaseChargeTable.id, id), isNull(leaseChargeTable.deleted_at)))
+        .limit(1)
     );
     return rows[0];
   }

@@ -410,5 +410,28 @@
         }
       ]
     }
-  ]
+  ],
+  "headless": {
+    "handlers": [
+      {
+        "hook": "loadLiveValues",
+        "mode": "query",
+        "action": "leases.billing.tenantFile"
+      },
+      {
+        "hook": "loadDataFor",
+        "key": "tbl_contratos",
+        "mode": "query",
+        "action": "leases.billing.tenantFile",
+        "outputBlockId": "tbl_contratos"
+      },
+      {
+        "hook": "loadDataFor",
+        "key": "tbl_cargos",
+        "mode": "query",
+        "action": "leases.billing.tenantFile",
+        "outputBlockId": "tbl_cargos"
+      }
+    ]
+  }
 }

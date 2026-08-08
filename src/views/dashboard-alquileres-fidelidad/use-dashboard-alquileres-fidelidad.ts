@@ -434,5 +434,10 @@ export function useDashboardAlquileresFidelidadView() {
   };
   const t2 = useTable2();
 
-  return { metric, reloadMetrics, t1, t2 };
+  const reloadTables = useCallback(() => {
+    void t1.load();
+    void t2.load();
+  }, [t1, t2]);
+
+  return { metric, reloadMetrics, t1, t2, reloadTables };
 }

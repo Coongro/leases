@@ -1,0 +1,154 @@
+{
+  "specVersion": 1,
+  "kind": "form",
+  "title": "Concepto del contrato",
+  "data": {
+    "repositoryPrefix": "leases.charges"
+  },
+  "blocks": [
+    {
+      "id": "sec_que",
+      "kind": "container",
+      "ctype": "card",
+      "label": "Qué se factura",
+      "icon": "ReceiptText",
+      "children": [
+        {
+          "id": "f_lease",
+          "kind": "field",
+          "fieldType": "ref",
+          "name": "lease_id",
+          "label": "Contrato",
+          "refEntity": "leases.contracts",
+          "placeholder": "Elegí el contrato",
+          "width": "full",
+          "validations": [
+            "required"
+          ]
+        },
+        {
+          "id": "f_type",
+          "kind": "field",
+          "fieldType": "enum",
+          "name": "type",
+          "label": "Tipo",
+          "width": "half",
+          "default": "servicio",
+          "options": [
+            {
+              "value": "abl",
+              "label": "ABL / inmobiliario",
+              "icon": "Landmark"
+            },
+            {
+              "value": "servicio",
+              "label": "Servicio",
+              "icon": "Droplets"
+            },
+            {
+              "value": "expensas",
+              "label": "Expensas",
+              "icon": "Building2"
+            },
+            {
+              "value": "descuento",
+              "label": "Descuento",
+              "icon": "TicketPercent"
+            },
+            {
+              "value": "otro",
+              "label": "Otro",
+              "icon": "Receipt"
+            }
+          ],
+          "validations": [
+            "required"
+          ],
+          "help": "«Descuento» resta del total en vez de sumar: es la forma de cargar una bonificación."
+        },
+        {
+          "id": "f_label",
+          "kind": "field",
+          "fieldType": "text",
+          "name": "label",
+          "label": "Como aparece en la factura",
+          "placeholder": "Ej: Aguas Santafesinas",
+          "width": "half",
+          "validations": [
+            "required"
+          ]
+        },
+        {
+          "id": "f_amount",
+          "kind": "field",
+          "fieldType": "money",
+          "name": "amount",
+          "label": "Importe",
+          "placeholder": "Ej: 18000",
+          "width": "half",
+          "validations": [
+            "required"
+          ],
+          "help": "Es el importe de CADA período en que corresponda, no el total."
+        }
+      ]
+    },
+    {
+      "id": "sec_vig",
+      "kind": "container",
+      "ctype": "card",
+      "label": "En qué períodos se cobra",
+      "icon": "CalendarRange",
+      "children": [
+        {
+          "id": "cal_unica",
+          "kind": "component",
+          "comp": "Callout",
+          "props": {
+            "tone": "neutral",
+            "title": "Para cobrarlo una sola vez",
+            "text": "Poné el MISMO período en los dos campos. Ej: 2026-09 y 2026-09 cobra el concepto solo en septiembre — sirve para una rotura que paga el inquilino, una multa o un ajuste puntual. Dejándolos vacíos se cobra todos los meses mientras dure el contrato."
+          }
+        },
+        {
+          "id": "f_from",
+          "kind": "field",
+          "fieldType": "text",
+          "name": "valid_from",
+          "label": "Primer período",
+          "placeholder": "Ej: 2026-09 (vacío = desde el inicio)",
+          "width": "half",
+          "validations": []
+        },
+        {
+          "id": "f_to",
+          "kind": "field",
+          "fieldType": "text",
+          "name": "valid_to",
+          "label": "Último período",
+          "placeholder": "Ej: 2027-03 (vacío = mientras dure)",
+          "width": "half",
+          "validations": []
+        },
+        {
+          "id": "f_notes",
+          "kind": "field",
+          "fieldType": "text",
+          "name": "notes",
+          "label": "Observaciones",
+          "placeholder": "Ej: lo paga el inquilino directo a la empresa",
+          "width": "full",
+          "validations": []
+        }
+      ]
+    }
+  ],
+  "headless": {
+    "handlers": [
+      {
+        "hook": "refLabel",
+        "mode": "presentation"
+      }
+    ]
+  }
+}

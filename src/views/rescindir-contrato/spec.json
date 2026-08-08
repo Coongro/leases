@@ -10,7 +10,7 @@
       "props": {
         "tone": "warning",
         "title": "El contrato deja de generar cargos",
-        "text": "Se guarda la fecha real de fin. El plazo pactado no se modifica: la diferencia entre ambos es lo que fundamenta la multa por rescisión anticipada, si el contrato la prevé."
+        "text": "Se guarda la fecha real de fin. El plazo pactado no se modifica: la diferencia entre ambos es lo que fundamenta la multa por rescisión anticipada, si el contrato la prevé. La unidad vuelve a figurar vacante."
       }
     },
     {
@@ -61,7 +61,7 @@
         {
           "id": "f_notes",
           "kind": "field",
-          "name": "notes",
+          "name": "termination_detail",
           "fieldType": "text",
           "label": "Detalle",
           "validations": [],
@@ -73,6 +73,26 @@
   "data": {
     "submitLabel": "Rescindir contrato",
     "successTitle": "Contrato rescindido",
-    "successMessage": "Se guardó la fecha de fin. Deja de generar cargos."
+    "successMessage": "Se guardó la fecha de fin. Deja de generar cargos y la unidad queda vacante."
+  },
+  "headless": {
+    "handlers": [
+      {
+        "hook": "onInit",
+        "mode": "uiOnly",
+        "reason": "Propone la fecha de rescisión a partir del contrato abierto; no consulta ni modifica datos."
+      },
+      {
+        "hook": "onSubmit",
+        "mode": "command",
+        "action": "leases.contracts.terminate",
+        "effect": "write",
+        "confirmation": "always",
+        "preconditions": [
+          "El contrato no puede estar ya rescindido.",
+          "La fecha no puede ser anterior al inicio del contrato."
+        ]
+      }
+    ]
   }
 }

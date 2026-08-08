@@ -15,8 +15,6 @@ import {
   type LiveValues,
 } from '@coongro/plugin-sdk';
 
-import { fichaDeInquilino } from '../../data/inquilino.js';
-
 /** Antigüedad como la diría una persona: «11 meses», «2 años y 3 meses». */
 function antiguedad(desde?: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(desde ?? ''));
@@ -43,11 +41,34 @@ function estado(f: { vigente?: unknown; contratos: unknown[] }): {
   return { badge: 'Todavía sin contrato', badgeTone: 'outline' };
 }
 
+/** Un contrato en la ficha: el que está vigente y los que ya pasaron. */
+interface ContratoDeInquilino {
+  id: string;
+  unit: string | null;
+  property: string | null;
+  start_date: string;
+  end_date: string;
+  rent_amount: string;
+  state: string;
+}
+
+/** La ficha del inquilino, tal como la devuelve `leases.billing.tenantFile`. */
+interface FichaInquilino {
+  contratos: ContratoDeInquilino[];
+  cargos: Array<Record<string, unknown>>;
+  vigente?: ContratoDeInquilino;
+  desde?: string;
+  facturado: number;
+  cobrado: number;
+  saldo: number;
+  impagos: number;
+}
+
 export const customHandlers: CustomHandlers = {
-  loadLiveValues: async ({ record }) => {
+  loadLiveValues: async ({ execute, record }) => {
     const id = String(record?.id ?? '');
     if (!id) return {};
-    const f = await fichaDeInquilino(id);
+    const f = await execute<FichaInquilino>('leases.billing.tenantFile', { tenantId: id });
     const e = estado(f);
     const donde = [f.vigente?.property, f.vigente?.unit].filter(Boolean).join(' · ');
     const doc = String(record?.document ?? '');
@@ -86,12 +107,16 @@ export const customHandlers: CustomHandlers = {
   },
 
   loadDataFor: {
-    tbl_contratos: async ({ record }) => {
-      const f = await fichaDeInquilino(String(record?.id ?? ''));
+    tbl_contratos: async ({ execute, record }) => {
+      const f = await execute<FichaInquilino>('leases.billing.tenantFile', {
+        tenantId: String(record?.id ?? ''),
+      });
       return f.contratos;
     },
-    tbl_cargos: async ({ record }) => {
-      const f = await fichaDeInquilino(String(record?.id ?? ''));
+    tbl_cargos: async ({ execute, record }) => {
+      const f = await execute<FichaInquilino>('leases.billing.tenantFile', {
+        tenantId: String(record?.id ?? ''),
+      });
       return f.cargos;
     },
   },

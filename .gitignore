@@ -4,3 +4,6 @@ dist/
 .env
 .env.*
 coverage/
+
+# Caché local de turbo (aparece al declarar `inputs` en el turbo.json del core)
+.turbo/

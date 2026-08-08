@@ -8,16 +8,9 @@
  */
 
 import type { CustomHandlers } from '@coongro/plugin-sdk';
-import { formatMoney, periodLabel, plural, sharedLoad, toast } from '@coongro/plugin-sdk';
+import { formatMoney, periodLabel, plural, toast } from '@coongro/plugin-sdk';
 
-import {
-  cargosDelPeriodo,
-  totalesDelPeriodo,
-  type ChargeRow,
-} from '../../data/cargosDelPeriodo.js';
-import { generarCargosDelPeriodo } from '../../data/generarCargos.js';
-import { cobrarPunitorio, politicaPunitorios, proponerPunitorio } from '../../data/punitorios.js';
-import { chargeGenerationPolicy } from '../../data/settings.js';
+import { chargeGenerationPolicy, lateFeePolicy, usdHouse } from '../../data/settings.js';
 
 /** Período que se está mirando. Arranca en el mes corriente. */
 const mesActual = (): string => {
@@ -41,42 +34,31 @@ let periodo = mesActual();
  */
 let avisado = '';
 
-/**
- * Los cargos del período, ya pasados por la política. La tabla y los indicadores
- * piden lo mismo al montarse: `sharedLoad` comparte la consulta EN CURSO, así la
- * generación automática la dispara una sola y los dos ven el resultado.
- */
-const cargos = (period: string): Promise<ChargeRow[]> =>
-  sharedLoad(`cobranzas:${period}`, () =>
-    cargosDelPeriodo(period).then(aplicarPoliticaDeGeneracion)
-  );
+/** Una fila de la tabla, tal como la devuelve `leases.billing.chargesForPeriod`. */
+type Fila = Record<string, unknown>;
 
-async function aplicarPoliticaDeGeneracion(rows: ChargeRow[]): Promise<ChargeRow[]> {
-  if (rows.length > 0 || periodo !== mesActual()) return rows;
+/** Los totales del mes, tal como los devuelve `leases.billing.periodSummary`. */
+interface Totales {
+  facturado: number;
+  cobrado: number;
+  porCobrar: number;
+  vencido: number;
+  cargos: number;
+  saldados: number;
+  vencidos: number;
+}
 
-  const politica = await chargeGenerationPolicy();
-  if (politica === 'manual') return rows;
+/** Lo que devuelve la emisión del mes: cuántos se crearon y cuántos ya existían. */
+interface GeneracionResult {
+  created: number;
+  skipped: number;
+}
 
-  if (politica === 'ask') {
-    // Un aviso por período: repetirlo en cada recarga sería ruido.
-    if (avisado !== periodo) {
-      avisado = periodo;
-      toast.info(
-        `Faltan los cargos de ${periodLabel(periodo, true)}`,
-        'Generalos con el botón de arriba cuando quieras.'
-      );
-    }
-    return rows;
-  }
-
-  const r = await generarCargosDelPeriodo(periodo);
-  if (r.created === 0) return rows;
-  const cuantos = r.created === 1 ? 'Se generó 1 cargo' : `Se generaron ${r.created} cargos`;
-  toast.success(
-    'Cargos generados',
-    `${cuantos} de ${periodLabel(periodo, true)}, sin que tuvieras que pedirlo.`
-  );
-  return cargosDelPeriodo(periodo);
+/** Lo que devuelve el cobro del punitorio: si hubo algo que cobrar, y por cuánto. */
+interface PunitorioResult {
+  charged: boolean;
+  amount: string;
+  detail: string;
 }
 
 export const customHandlers: CustomHandlers = {
@@ -86,18 +68,36 @@ export const customHandlers: CustomHandlers = {
    * setting) y del porcentaje pactado en cada contrato: dos datos que la fila
    * cruda no trae juntos.
    */
-  loadData: async () => {
-    const [rows, politica] = await Promise.all([cargos(periodo), politicaPunitorios()]);
-    return rows.map((r: ChargeRow) => {
-      const p = proponerPunitorio(r, politica);
-      return {
-        ...r,
-        late_fee: p.amount === '0' ? '' : p.amount,
-        late_fee_detail: p.detail,
-        // Marca qué filas admiten el botón de cobro (lo lee `showWhenColumn`).
-        late_fee_state: Number(p.amount) > 0 ? 'proponer' : 'no',
-      };
+  loadData: async ({ execute }) => {
+    const [politica, generacion] = await Promise.all([lateFeePolicy(), chargeGenerationPolicy()]);
+    // Emitir el mes al abrir solo se pide cuando el negocio lo configuró así Y se está
+    // mirando el mes en curso: para un mes pasado, generar sin que lo pidan sería
+    // reescribir historia.
+    const emitir = generacion === 'auto' && periodo === mesActual();
+
+    const filas = await execute<Fila[]>('leases.billing.chargesForPeriod', {
+      period: periodo,
+      graceDays: politica.graceDays,
+      applyLateFee: politica.apply,
+      generateIfMissing: emitir,
+      usdHouse: emitir ? await usdHouse() : undefined,
     });
+
+    // `ask`: se avisa una vez por período que el mes está sin emitir. Repetirlo en cada
+    // recarga sería ruido, y emitirlo sin permiso no es lo que el negocio pidió.
+    if (
+      generacion === 'ask' &&
+      filas.length === 0 &&
+      periodo === mesActual() &&
+      avisado !== periodo
+    ) {
+      avisado = periodo;
+      toast.info(
+        `Faltan los cargos de ${periodLabel(periodo, true)}`,
+        'Generalos con el botón de arriba cuando quieras.'
+      );
+    }
+    return filas;
   },
 
   /** Cambiar de mes trae los cargos de ese mes. */
@@ -111,8 +111,8 @@ export const customHandlers: CustomHandlers = {
    * cargas arrancan a la vez al montar, así que compartir una variable dejaba los
    * totales en cero hasta la siguiente recarga.
    */
-  loadLiveValues: async () => {
-    const t = totalesDelPeriodo(await cargos(periodo));
+  loadLiveValues: async ({ execute }) => {
+    const t = await execute<Totales>('leases.billing.periodSummary', { period: periodo });
     return {
       k1: {
         value: formatMoney(t.facturado),
@@ -131,45 +131,57 @@ export const customHandlers: CustomHandlers = {
   },
 
   /**
-   * Genera los cargos del período. Es idempotente: si ya estaban generados no se
-   * duplican, y por eso el aviso distingue cuántos se crearon de cuántos ya existían
-   * — que el botón "no haga nada" es un resultado válido y hay que decirlo.
+   * Dos operaciones del período, cada una en su propia rama `actionId === '...'`:
+   * emitir el mes entero y cobrarle el punitorio a UN cargo. Separadas así, el
+   * contrato headless declara y verifica una `key` por rama, y el agente ve las dos
+   * capacidades en vez de un solo botón ambiguo.
    */
-  onAction: async (actionId, { toast, record, reload }) => {
+  onAction: async (actionId, { execute, toast, record, reload }) => {
     // Cobrar el punitorio de una fila: lo propone la tabla, lo confirma la persona.
-    if (actionId === 'leases.lateFee.charge') {
-      const monto = String(record?.late_fee ?? '');
-      if (!record?.id || !monto || Number(monto) <= 0) {
+    if (actionId === 'leases.billing.chargeLateFee') {
+      if (!record?.id) return;
+      // El monto lo calcula el servidor con el saldo y el porcentaje del contrato: la
+      // pantalla elige el cargo, no cuánto se cobra.
+      const politica = await lateFeePolicy();
+      const r = await execute<PunitorioResult>('leases.billing.chargeLateFee', {
+        accountId: String(record.id),
+        graceDays: politica.graceDays,
+        applyLateFee: politica.apply,
+      });
+      if (!r.charged) {
         toast?.info('Sin punitorio', 'Este cargo no tiene punitorio para cobrar.');
         return;
       }
-      await cobrarPunitorio({
-        accountId: String(record.id),
-        amount: monto,
-        detail: String(record.late_fee_detail ?? ''),
-      });
       toast?.success(
         'Punitorio agregado',
-        `Se sumaron ${formatMoney(Number(monto))} a la cuenta por ${String(record.late_fee_detail ?? 'mora')}.`
+        `Se sumaron ${formatMoney(Number(r.amount))} a la cuenta por ${r.detail || 'mora'}.`
       );
       reload?.();
       return;
     }
 
-    const r = await generarCargosDelPeriodo(periodo);
-    if (r.created === 0 && r.skipped === 0) {
-      toast?.info('Sin contratos', `Ningún contrato corresponde a ${periodo}.`);
-      return;
+    // Emitir el mes entero. Es idempotente: si ya estaban generados no se duplican, y
+    // por eso el aviso distingue cuántos se crearon de cuántos ya existían — que el
+    // botón "no haga nada" es un resultado válido y hay que decirlo.
+    if (actionId === 'leases.billing.generateForPeriod') {
+      const r = await execute<GeneracionResult>('leases.billing.generateForPeriod', {
+        period: periodo,
+        usdHouse: await usdHouse(),
+      });
+      if (r.created === 0 && r.skipped === 0) {
+        toast?.info('Sin contratos', `Ningún contrato corresponde a ${periodo}.`);
+        return;
+      }
+      if (r.created === 0) {
+        toast?.info('Ya estaban generados', `Los ${r.skipped} cargos de ${periodo} ya existían.`);
+        return;
+      }
+      toast?.success(
+        'Cargos generados',
+        r.skipped > 0
+          ? `${r.created} nuevos; ${r.skipped} ya existían.`
+          : plural(r.created, 'cargo generado', 'cargos generados')
+      );
     }
-    if (r.created === 0) {
-      toast?.info('Ya estaban generados', `Los ${r.skipped} cargos de ${periodo} ya existían.`);
-      return;
-    }
-    toast?.success(
-      'Cargos generados',
-      r.skipped > 0
-        ? `${r.created} nuevos; ${r.skipped} ya existían.`
-        : plural(r.created, 'cargo generado', 'cargos generados')
-    );
   },
 };

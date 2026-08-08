@@ -12,5 +12,3 @@ export * from './schema/guarantee.js';
 export { GuaranteeRepository } from './repositories/guarantee.repository.js';
 export * from './schema/index-adjustment.js';
 export { IndexAdjustmentRepository } from './repositories/index-adjustment.repository.js';
-export * from './schema/notice-log.js';
-export { NoticeLogRepository } from './repositories/notice-log.repository.js';

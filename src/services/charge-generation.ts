@@ -126,6 +126,16 @@ export async function generateCharges({
    */
   extras?: Map<string, LeaseCharge[]>;
 }): Promise<GenerationResult> {
+  // Sin período no hay mes que facturar. Se comprueba acá, en la puerta, porque
+  // el primer uso está diez líneas más abajo (`period.slice`) y sin esto un
+  // llamado sin período —o con «agosto» en vez de «2026-08»— moría con
+  // «Cannot read properties of undefined (reading 'slice')»: un stack que no
+  // dice qué falta, sobre la operación que emite los recibos del mes.
+  if (!/^\d{4}-\d{2}$/.test(String(period ?? ''))) {
+    throw new Error(
+      `«${period ?? 'sin valor'}» no es un período válido: se espera el mes como «2026-08».`
+    );
+  }
   const year = Number(period.slice(0, 4));
   const holidays = await getHolidays(year, logger);
 

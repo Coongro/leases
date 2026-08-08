@@ -18,8 +18,7 @@
         "action": {
           "id": "serverAction",
           "label": "Buscar actualizaciones",
-          "target": "leases.adjustments.list",
-          "confirm": "Se revisan los contratos que cumplieron su período y se calcula el factor del índice. No se cambia ningún alquiler: cada actualización queda pendiente para que la confirmes."
+          "target": "leases.adjustments.detect"
         }
       }
     },
@@ -71,9 +70,9 @@
               "kind": "component",
               "comp": "SummaryCard",
               "props": {
-                "label": "Índice ICL",
+                "label": "Índice de referencia",
                 "value": "—",
-                "sub": "último valor del BCRA",
+                "sub": "último valor publicado",
                 "icon": "RefreshCw",
                 "tone": "success"
               }
@@ -113,7 +112,34 @@
             "key": "index_code",
             "label": "Índice",
             "display": "pill",
-            "tone": "outline"
+            "tone": "outline",
+            "values": [
+              {
+                "value": "ICL",
+                "label": "ICL"
+              },
+              {
+                "value": "IPC",
+                "label": "IPC"
+              },
+              {
+                "value": "casa_propia",
+                "label": "Casa Propia"
+              },
+              {
+                "value": "manual",
+                "label": "Pactada",
+                "tone": "neutral"
+              },
+              {
+                "value": "fijo",
+                "label": "Fijo"
+              },
+              {
+                "value": "otro",
+                "label": "Otro"
+              }
+            ]
           },
           {
             "key": "rate_percent",
@@ -210,6 +236,20 @@
             "24,12",
             "29,52",
             "2025-09-01"
+          ],
+          [
+            "1°B",
+            "Belgrano 1240",
+            "Ana María Ruiz",
+            "manual",
+            "10,81",
+            "586612",
+            "650000",
+            "2026-08-02",
+            "applied",
+            "",
+            "",
+            ""
           ]
         ],
         "filters": [
@@ -231,30 +271,65 @@
           {
             "label": "Aplicar",
             "icon": "Check",
+            "confirm": "¿Confirmás la actualización? El alquiler del contrato pasa a valer el monto nuevo desde su fecha.",
+            "successToast": "Actualización aplicada",
             "action": {
               "id": "serverAction",
               "label": "Aplicar",
-              "target": "leases.adjustments.apply",
-              "confirm": "¿Confirmás la actualización? El alquiler del contrato pasa a valer el monto nuevo desde su fecha.",
-              "successToast": "Actualización aplicada"
-            }
+              "target": "leases.adjustments.apply"
+            },
+            "showWhenColumn": "status",
+            "showWhenValues": "pending"
           },
           {
             "label": "Cancelar",
             "variant": "destructive",
             "icon": "X",
+            "confirm": "¿Descartás esta actualización? El alquiler queda como estaba.",
+            "successToast": "Actualización cancelada",
             "action": {
               "id": "serverAction",
               "label": "Cancelar",
-              "target": "leases.adjustments.cancel",
-              "confirm": "¿Descartás esta actualización? El alquiler queda como estaba.",
-              "successToast": "Actualización cancelada"
-            }
+              "target": "leases.adjustments.cancel"
+            },
+            "showWhenColumn": "status",
+            "showWhenValues": "pending, applied"
+          },
+          {
+            "label": "Eliminar",
+            "variant": "destructive",
+            "icon": "Trash2",
+            "showWhenColumn": "status",
+            "showWhenValues": "pending, cancelled"
           }
         ],
         "emptyTitle": "No hay actualizaciones esperando",
         "emptySub": "Cuando un contrato cumpla su período, la actualización aparece acá con el factor ya calculado."
       }
     }
-  ]
+  ],
+  "headless": {
+    "handlers": [
+      {
+        "hook": "loadData",
+        "mode": "query",
+        "action": "leases.adjustments.listDetailed",
+        "resource": "leases.adjustments"
+      },
+      {
+        "hook": "loadLiveValues",
+        "mode": "query",
+        "action": "leases.adjustments.overview",
+        "resource": "leases.adjustments"
+      },
+      {
+        "hook": "onAction",
+        "mode": "command",
+        "action": "leases.adjustments.detect",
+        "resource": "leases.adjustments",
+        "effect": "write",
+        "confirmation": "always"
+      }
+    ]
+  }
 }

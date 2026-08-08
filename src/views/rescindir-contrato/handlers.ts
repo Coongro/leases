@@ -9,7 +9,6 @@
 
 import type { CustomHandlers } from '@coongro/plugin-sdk';
 
-import { marcarUnidad } from '../../data/ocupacion.js';
 const texto = (v: unknown): string => String(v ?? '').trim();
 
 const MOTIVOS: Record<string, string> = {
@@ -44,14 +43,12 @@ export const customHandlers: CustomHandlers = {
     if (!id) throw new Error('No se sabe qué contrato rescindir.');
 
     const motivo = MOTIVOS[texto(values.reason)] ?? texto(values.reason);
-    const detalle = texto(values.notes);
+    const detalle = texto(values.termination_detail);
 
     await execute('leases.contracts.terminate', {
       id,
       terminationDate: texto(values.terminationDate),
       notes: [motivo, detalle].filter(Boolean).join(' — '),
     });
-    // La unidad vuelve a estar disponible.
-    await marcarUnidad(String(record?.unit_id ?? ''), 'vacante');
   },
 };

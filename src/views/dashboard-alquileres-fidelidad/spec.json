@@ -442,5 +442,47 @@
         }
       ]
     }
-  ]
+  ],
+  "headless": {
+    "handlers": [
+      {
+        "hook": "loadLiveValues",
+        "mode": "query",
+        "action": "leases.billing.dashboard"
+      },
+      {
+        "hook": "loadDataFor",
+        "key": "tbl_venc",
+        "mode": "query",
+        "action": "leases.billing.dashboard",
+        "outputBlockId": "tbl_venc"
+      },
+      {
+        "hook": "loadDataFor",
+        "key": "tbl_aj",
+        "mode": "query",
+        "action": "leases.billing.dashboard",
+        "outputBlockId": "tbl_aj"
+      },
+      {
+        "hook": "loadChartFor",
+        "key": "chart_anio",
+        "mode": "query",
+        "action": "leases.billing.yearSeries",
+        "outputBlockId": "chart_anio"
+      },
+      {
+        "hook": "loadChartFor",
+        "key": "chart_mes",
+        "mode": "query",
+        "action": "leases.billing.dashboard",
+        "outputBlockId": "chart_mes"
+      },
+      {
+        "hook": "onPeriodChange",
+        "mode": "uiOnly",
+        "reason": "Cambia el mes del panel; cada bloque recarga su serie por su propio cargador."
+      }
+    ]
+  }
 }

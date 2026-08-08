@@ -5,39 +5,65 @@
  * regenerar. Los archivos regenerables (`actualizaciones.view.ts`,
  * `use-actualizaciones.ts`, `index.ts`) invocan estos puntos de extensión si
  * existen — acá va lo que el diseño no puede expresar.
+ *
+ * Los tres puntos son adaptadores: la cuenta la hace el servidor
+ * (`leases.adjustments.overview` / `.detect` / `.apply`) y acá solo se decide cómo
+ * contarla. Es la misma detección que corre el cron todas las mañanas, así que el
+ * botón y el reloj no pueden dar resultados distintos.
  */
 
-import { formatDateKey, formatMoney, plural, type CustomHandlers } from '@coongro/plugin-sdk';
-import { actions } from '@coongro/plugin-sdk';
+import {
+  actions,
+  formatDateKey,
+  formatMoney,
+  plural,
+  type CustomHandlers,
+} from '@coongro/plugin-sdk';
 
-import { aplicarAjuste, detectarAjustes } from '../../data/detectarAjustes.js';
-import { impactoMensual, listarAjustes, type AdjustmentRow } from '../../data/listarAjustes.js';
+/** Una actualización con su contrato ya resuelto, como la lista el servidor. */
+export interface AdjustmentRow {
+  id: string;
+  lease_id: string;
+  index_code: string;
+  status: string;
+  effective_date: string;
+  previous_rent: string;
+  new_rent: string;
+  unit?: string | null;
+  property?: string | null;
+  tenant?: string | null;
+}
+
+interface AdjustmentsOverview {
+  pendientes: number;
+  impacto: number;
+  /** Último valor guardado del índice de referencia, para saber si la serie está al día. */
+  ultimoIndice?: { value?: string; value_date?: string };
+}
+
+interface DetectionResult {
+  proposed: number;
+  failed: Array<{ label: string; reason: string }>;
+}
 
 export const customHandlers: CustomHandlers = {
-  loadData: () => listarAjustes(),
+  loadData: ({ execute }) => execute<AdjustmentRow[]>('leases.adjustments.listDetailed'),
 
   loadLiveValues: async ({ execute }) => {
-    const rows = await listarAjustes();
-    const pendientes = rows.filter((r: AdjustmentRow) => r.status === 'pending');
-    const impacto = impactoMensual(rows);
-
-    // Último valor del ICL guardado. Si nunca se bajó la serie todavía, se dice eso
-    // en vez de mostrar un número viejo o inventado.
-    const ultimo = await execute<{ value?: string; value_date?: string } | undefined>(
-      'indices.values.lastValue',
-      { indexCode: 'ICL' }
-    ).catch(() => undefined);
+    const o = await execute<AdjustmentsOverview>('leases.adjustments.overview');
+    const ultimo = o.ultimoIndice;
 
     return {
       k1: {
-        value: String(pendientes.length),
-        sub: pendientes.length ? 'esperan tu confirmación' : 'no hay nada pendiente',
+        value: String(o.pendientes),
+        sub: o.pendientes ? 'esperan tu confirmación' : 'no hay nada pendiente',
       },
       k2: {
-        value: impacto > 0 ? `+${formatMoney(impacto)}` : formatMoney(0),
-        sub: pendientes.length ? 'si aplicás todas' : 'sin actualizaciones pendientes',
+        value: o.impacto > 0 ? `+${formatMoney(o.impacto)}` : formatMoney(0),
+        sub: o.pendientes ? 'si aplicás todas' : 'sin actualizaciones pendientes',
       },
       k3: {
+        // Si nunca se bajó la serie, se dice eso en vez de mostrar un número viejo.
         value: ultimo?.value ? Number(ultimo.value).toFixed(2).replace('.', ',') : '—',
         sub: ultimo?.value_date
           ? `al ${formatDateKey(ultimo.value_date)}`
@@ -50,8 +76,8 @@ export const customHandlers: CustomHandlers = {
    * Busca contratos que cumplieron su período y deja una propuesta por cada uno.
    * No cambia ningún alquiler: eso pasa recién al confirmar, fila por fila.
    */
-  onAction: async (_actionId, { toast, reload }) => {
-    const r = await detectarAjustes();
+  onAction: async (_actionId, { execute, toast, reload }) => {
+    const r = await execute<DetectionResult>('leases.adjustments.detect');
     // Lo recién calculado tiene que verse sin recargar la página.
     reload?.();
 
@@ -88,16 +114,15 @@ export async function onRowAction(
     return;
   }
   if (accion === 'Aplicar') {
-    await aplicarAjuste({ id: row.id, leaseId: row.lease_id, newRent: row.new_rent });
+    // El ajuste y el alquiler del contrato cambian juntos, en el servidor: aplicar uno
+    // sin el otro dejaría al sistema facturando el valor viejo.
+    await actions.execute('leases.adjustments.apply', { id: row.id });
     toast?.success(
       'Actualización aplicada',
       `El alquiler pasa a ${formatMoney(Number(row.new_rent))} desde el ${row.effective_date}.`
     );
     return;
   }
-  await actions.execute('leases.adjustments.update', {
-    id: row.id,
-    data: { status: 'cancelled' },
-  });
+  await actions.execute('leases.adjustments.cancel', { id: row.id });
   toast?.info('Actualización cancelada', 'El alquiler queda como estaba.');
 }

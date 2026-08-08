@@ -1,0 +1,184 @@
+{
+  "specVersion": 1,
+  "kind": "blank",
+  "title": "Resultado",
+  "data": {
+    "repositoryPrefix": "leases.billing"
+  },
+  "blocks": [
+    {
+      "id": "ph",
+      "kind": "component",
+      "comp": "PageHeader",
+      "props": {
+        "kicker": "ALQUILERES",
+        "title": "Resultado",
+        "subtitle": "Qué te dejó cada propiedad este año. El gasto se compara con el 5% que Ganancias toma como presunto."
+      }
+    },
+    {
+      "id": "row_kpi",
+      "kind": "container",
+      "ctype": "columns",
+      "alias": "El año en números",
+      "cols": [
+        {
+          "fr": 0.34,
+          "children": [
+            {
+              "id": "k1",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Neto del año",
+                "value": "$426.612",
+                "sub": "1 propiedad · después de gastos y honorarios",
+                "icon": "Scale",
+                "tone": "success"
+              }
+            }
+          ]
+        },
+        {
+          "fr": 0.33,
+          "children": [
+            {
+              "id": "k2",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Alquiler cobrado",
+                "value": "$846.612",
+                "sub": "sin expensas ni otros conceptos",
+                "icon": "TrendingUp",
+                "tone": "neutral"
+              }
+            }
+          ]
+        },
+        {
+          "fr": 0.33,
+          "children": [
+            {
+              "id": "k3",
+              "kind": "component",
+              "comp": "SummaryCard",
+              "props": {
+                "label": "Gastos a tu cargo",
+                "value": "$420.000",
+                "sub": "49,6% de lo cobrado",
+                "icon": "TrendingDown",
+                "tone": "warning"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tbl",
+      "kind": "component",
+      "comp": "DataTable",
+      "props": {
+        "view": "table",
+        "density": "compact",
+        "mobile": "cards",
+        "pageSize": "20",
+        "expandable": true,
+        "columns": [
+          {
+            "key": "property",
+            "label": "Propiedad",
+            "emptyLabel": "—"
+          },
+          {
+            "key": "rentCollected",
+            "label": "Alquiler cobrado",
+            "display": "mono",
+            "format": "money"
+          },
+          {
+            "key": "unpaidRent",
+            "label": "Sin cobrar",
+            "display": "mono",
+            "format": "money"
+          },
+          {
+            "key": "expenses",
+            "label": "Gastos a tu cargo",
+            "display": "mono",
+            "format": "money"
+          },
+          {
+            "key": "net",
+            "label": "Neto",
+            "display": "mono",
+            "format": "money"
+          },
+          {
+            "key": "expenseRatio",
+            "label": "% de la renta",
+            "display": "mono",
+            "suffix": "%"
+          },
+          {
+            "key": "adminFee",
+            "label": "Honorarios de administración",
+            "visible": false,
+            "display": "mono",
+            "format": "money"
+          }
+        ],
+        "cells": [
+          [
+            "Belgrano 1240",
+            "846612",
+            "846612",
+            "420000",
+            "426612",
+            "49,61",
+            "0"
+          ],
+          [
+            "Salta 870",
+            "1240000",
+            "0",
+            "62000",
+            "1178000",
+            "5",
+            "0"
+          ],
+          [
+            "Rivadavia 3300",
+            "0",
+            "0",
+            "240000",
+            "-240000",
+            "0",
+            "0"
+          ]
+        ],
+        "filters": [],
+        "actions": [],
+        "emptyTitle": "Todavía no hay resultado que mostrar",
+        "emptySub": "Cuando cobres el primer alquiler vas a ver acá qué te deja cada propiedad."
+      }
+    }
+  ],
+  "headless": {
+    "handlers": [
+      {
+        "hook": "loadData",
+        "mode": "query",
+        "action": "leases.billing.propertyResults",
+        "resource": "leases.billing"
+      },
+      {
+        "hook": "loadLiveValues",
+        "mode": "query",
+        "action": "leases.billing.propertyResults",
+        "resource": "leases.billing"
+      }
+    ]
+  }
+}

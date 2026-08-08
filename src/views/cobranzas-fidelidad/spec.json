@@ -15,9 +15,9 @@
         "action": {
           "id": "serverAction",
           "label": "Generar cargos del mes",
-          "target": "leases.contracts.list",
-          "confirm": "Se generan los cargos de todos los contratos vigentes del período. Si ya estaban generados, no se duplican."
-        }
+          "target": "leases.billing.generateForPeriod"
+        },
+        "confirm": "Se generan los cargos de todos los contratos vigentes del período. Si ya estaban generados, no se duplican."
       }
     },
     {
@@ -202,16 +202,24 @@
             "format": "money"
           },
           {
-            "key": "late_fee",
-            "label": "Punitorio",
+            "key": "other",
+            "label": "Otros conceptos",
             "visible": false,
             "display": "mono",
             "format": "money",
-            "emptyLabel": "Sin punitorio"
+            "emptyLabel": "Sin otros conceptos"
+          },
+          {
+            "key": "late_fee",
+            "label": "Punitorio a proponer",
+            "visible": false,
+            "display": "mono",
+            "format": "money",
+            "emptyLabel": "Sin punitorio para proponer"
           },
           {
             "key": "late_fee_detail",
-            "label": "Cálculo del punitorio",
+            "label": "Cálculo de esa propuesta",
             "visible": false,
             "emptyLabel": "—"
           },
@@ -233,7 +241,8 @@
             "0",
             "paid",
             "420000",
-            "65000"
+            "65000",
+            "0"
           ],
           [
             "2°A",
@@ -245,7 +254,8 @@
             "260000",
             "partial",
             "400000",
-            "60000"
+            "60000",
+            "0"
           ],
           [
             "1°C",
@@ -257,7 +267,8 @@
             "505000",
             "overdue",
             "435000",
-            "70000"
+            "70000",
+            "95000"
           ]
         ],
         "filters": [
@@ -275,7 +286,7 @@
             "action": {
               "id": "serverAction",
               "label": "Cobrar punitorio",
-              "target": "leases.lateFee.charge"
+              "target": "leases.billing.chargeLateFee"
             },
             "showWhenColumn": "late_fee_state",
             "showWhenValues": "proponer"
@@ -285,5 +296,49 @@
         "emptySub": "Generá los cargos del mes desde el botón de arriba."
       }
     }
-  ]
+  ],
+  "headless": {
+    "handlers": [
+      {
+        "hook": "loadData",
+        "mode": "query",
+        "action": "leases.billing.chargesForPeriod"
+      },
+      {
+        "hook": "loadLiveValues",
+        "mode": "query",
+        "action": "leases.billing.periodSummary"
+      },
+      {
+        "hook": "onPeriodChange",
+        "mode": "uiOnly",
+        "reason": "Cambia el mes que se está mirando; los datos se vuelven a pedir por loadData."
+      },
+      {
+        "hook": "onAction",
+        "key": "leases.billing.generateForPeriod",
+        "mode": "command",
+        "action": "leases.billing.generateForPeriod",
+        "effect": "write",
+        "confirmation": "always",
+        "preconditions": [
+          "El período se toma del selector de mes de la pantalla.",
+          "Es idempotente: los cargos que ya existían no se duplican."
+        ]
+      },
+      {
+        "hook": "onAction",
+        "key": "leases.billing.chargeLateFee",
+        "mode": "command",
+        "action": "leases.billing.chargeLateFee",
+        "effect": "write",
+        "confirmation": "always",
+        "preconditions": [
+          "Requiere el id de la cuenta de un cargo con saldo vencido.",
+          "El monto lo calcula el servidor con el saldo y el porcentaje pactado en el contrato.",
+          "Si el cargo no tiene punitorio para cobrar, no escribe nada."
+        ]
+      }
+    ]
+  }
 }
