@@ -1,6 +1,6 @@
 {
   "name": "@coongro/leases",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "type": "module",
   "description": "Contratos de alquiler: plazo, precio y periodicidad de actualización, inquilinos y garantías. Registra el vínculo entre una unidad y quien la alquila, con su depósito, su día de vencimiento y las renovaciones.",
   "main": "dist/index.js",
