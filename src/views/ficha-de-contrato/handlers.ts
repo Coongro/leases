@@ -213,4 +213,23 @@ export const customHandlers: CustomHandlers = {
         leaseId: String(record?.id ?? ''),
       }),
   },
+
+  /**
+   * Sacar un concepto del contrato.
+   *
+   * Va acá y no por el aviso automático del motor porque ese muestra el id crudo
+   * de la action; quien está mirando la ficha necesita leer que se borró el
+   * concepto. El id sale de la FILA —cada concepto es una fila de la tabla—, no
+   * del registro de la vista, que es el contrato.
+   *
+   * Los períodos ya liquidados no se tocan: el concepto deja de sumarse de acá en
+   * adelante, y lo que ya se le facturó al inquilino queda como está.
+   */
+  onAction: async (actionId, { execute, record, toast, reload }) => {
+    if (actionId === 'leases.charges.delete') {
+      await execute('leases.charges.delete', { id: record?.id });
+      toast.success('Concepto eliminado', '');
+      reload();
+    }
+  },
 };

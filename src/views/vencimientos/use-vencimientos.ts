@@ -275,8 +275,8 @@ export function useVencimientosView() {
       toast.success('Eliminado', 'El registro se eliminó correctamente');
       setPendingDelete(null);
       void load();
-    } catch {
-      toast.error('Error', 'No se pudo eliminar');
+    } catch (err) {
+      toast.error('Error', err instanceof Error ? err.message : 'No se pudo eliminar');
     } finally {
       setDeleting(false);
     }

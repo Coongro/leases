@@ -4,7 +4,7 @@
  * ⚠️ ARCHIVO REGENERABLE: se reescribe al guardar el diseño en el Builder.
  * La lógica custom va en `handlers.ts` (nunca se pisa). Diseño: `spec.json`.
  */
-import { getHostReact, getHostUI, useIsMobile } from '@coongro/plugin-sdk';
+import { getHostReact, getHostUI, useIsMobile, usePlugin } from '@coongro/plugin-sdk';
 
 import { useActualizacionesView } from './use-actualizaciones.js';
 
@@ -16,10 +16,20 @@ const UI = getHostUI() as any;
 
 export function ActualizacionesView() {
   const isMobile = useIsMobile();
+  const { toast } = usePlugin();
   const {
+    pendingConfirm,
+    askConfirm,
+    cancelConfirm,
+    runConfirmed,
     loading,
     visibleRows,
     COLUMNS,
+    removeRow,
+    pendingDelete,
+    deleting,
+    confirmDelete,
+    cancelDelete,
     sort,
     onSortChange,
     cellValue,
@@ -193,16 +203,51 @@ export function ActualizacionesView() {
       label: 'Aplicar',
       icon: 'Check',
       onClick: (row: any) => {
-        void runServerAction('leases.adjustments.apply', { id: row.id }, row);
+        askConfirm(
+          'Aplicar',
+          '¿Confirmás la actualización? El alquiler del contrato pasa a valer el monto nuevo desde su fecha.',
+          'Aplicar',
+          () => {
+            ((row: any) => {
+              ((row: any) => {
+                void runServerAction('leases.adjustments.apply', { id: row.id }, row);
+              })(row);
+              toast.success('Actualización aplicada', '');
+            })(row);
+          }
+        );
       },
+      hidden: (row: any) => !['pending'].includes(String(row?.['status'] ?? '')),
     },
     {
       label: 'Cancelar',
       variant: 'destructive' as const,
       icon: 'X',
       onClick: (row: any) => {
-        void runServerAction('leases.adjustments.cancel', { id: row.id }, row);
+        askConfirm(
+          'Cancelar',
+          '¿Descartás esta actualización? El alquiler queda como estaba.',
+          'Cancelar',
+          () => {
+            ((row: any) => {
+              ((row: any) => {
+                void runServerAction('leases.adjustments.cancel', { id: row.id }, row);
+              })(row);
+              toast.success('Actualización cancelada', '');
+            })(row);
+          }
+        );
       },
+      hidden: (row: any) => !['pending', 'applied'].includes(String(row?.['status'] ?? '')),
+    },
+    {
+      label: 'Eliminar',
+      variant: 'destructive' as const,
+      icon: 'Trash2',
+      onClick: (row: any) => {
+        void removeRow(row);
+      },
+      hidden: (row: any) => !['pending', 'cancelled'].includes(String(row?.['status'] ?? '')),
     },
   ];
   const renderTable = () =>
@@ -354,6 +399,35 @@ export function ActualizacionesView() {
                     },
                   },
                   renderCell(row, c)
+                )
+              )
+            ),
+            h(
+              'div',
+              {
+                style: {
+                  display: 'flex',
+                  gap: '4px',
+                  justifyContent: 'flex-end',
+                  borderTop: '1px solid var(--cg-border-light)',
+                  paddingTop: '8px',
+                  marginTop: '2px',
+                },
+              },
+              ...ROW_ACTIONS.filter((a2: any) => !a2.hidden?.(row)).map((a2: any) =>
+                h(
+                  UI.Button,
+                  {
+                    key: a2.label,
+                    size: 'sm' as const,
+                    variant:
+                      a2.variant === 'destructive' ? ('destructive' as const) : ('ghost' as const),
+                    onClick: (e: any) => {
+                      e.stopPropagation();
+                      a2.onClick(row);
+                    },
+                  },
+                  a2.label
                 )
               )
             )
@@ -689,6 +763,31 @@ export function ActualizacionesView() {
         )
       ),
       h('div', { 'data-cg-block-id': 'tbl', style: { display: 'contents' } }, renderTable())
-    )
+    ),
+    h(UI.ConfirmDialog, {
+      open: !!pendingDelete,
+      onOpenChange: (o: boolean) => {
+        if (!o) cancelDelete();
+      },
+      title: 'Eliminar registro',
+      description: '¿Seguro que querés eliminar este registro? No se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      loading: deleting,
+      onConfirm: () => {
+        void confirmDelete();
+      },
+    }),
+    h(UI.ConfirmDialog, {
+      open: !!pendingConfirm,
+      onOpenChange: (o: boolean) => {
+        if (!o) cancelConfirm();
+      },
+      title: pendingConfirm?.title ?? '',
+      description: pendingConfirm?.message ?? '',
+      confirmLabel: pendingConfirm?.confirmLabel ?? 'Confirmar',
+      onConfirm: () => {
+        runConfirmed();
+      },
+    })
   );
 }

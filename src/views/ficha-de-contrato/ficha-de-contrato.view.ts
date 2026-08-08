@@ -28,7 +28,17 @@ export function FichaDeContratoView() {
       danger: 'danger-soft',
       outline: 'outline',
     })[tone] ?? fallback;
-  const { t1, t2, t3, metric } = useFichaDeContratoView();
+  const {
+    pendingConfirm,
+    askConfirm,
+    cancelConfirm,
+    runConfirmed,
+    t1,
+    t2,
+    t3,
+    runServerAction,
+    metric,
+  } = useFichaDeContratoView();
 
   // ── tabla 1: render propio sobre su estado t1 ──
   const renderTable1 = (() => {
@@ -207,9 +217,6 @@ export function FichaDeContratoView() {
           onSortChange,
           pagination: { page, pageSize: 10, total: visibleRows.length },
           onPageChange: setPage,
-          onRowClick: (row: any) => {
-            views.open('leases.renovar-contrato.open', { record: row }, { mode: 'sheet' });
-          },
           density: 'compact' as const,
           mobileRender: (row: any) =>
             h(
@@ -440,9 +447,6 @@ export function FichaDeContratoView() {
           onSortChange,
           pagination: { page, pageSize: 10, total: visibleRows.length },
           onPageChange: setPage,
-          onRowClick: (row: any) => {
-            views.open('leases.renovar-contrato.open', { record: row }, { mode: 'sheet' });
-          },
           density: 'compact' as const,
           mobileRender: (row: any) =>
             h(
@@ -643,6 +647,25 @@ export function FichaDeContratoView() {
           )
         : shown;
     };
+    const ROW_ACTIONS = [
+      {
+        label: 'Eliminar',
+        variant: 'destructive' as const,
+        icon: 'Trash2',
+        onClick: (row: any) => {
+          askConfirm(
+            'Eliminar',
+            'El concepto deja de sumarse al cargo del mes. Lo que ya se facturó no cambia.',
+            'Eliminar',
+            () => {
+              ((row: any) => {
+                void runServerAction('leases.charges.delete', { id: row.id }, row);
+              })(row);
+            }
+          );
+        },
+      },
+    ];
     // eslint-disable-next-line sonarjs/prefer-immediate-return
     const renderTable = () =>
       h(
@@ -688,6 +711,7 @@ export function FichaDeContratoView() {
           onRowClick: (row: any) => {
             views.open('leases.concepto-del-contrato.open', { record: row }, { mode: 'dialog' });
           },
+          actions: ROW_ACTIONS,
           view: 'list' as const,
           renderItem: (row: any) =>
             h(
@@ -755,7 +779,38 @@ export function FichaDeContratoView() {
                     { style: { flexShrink: 0, display: 'flex', alignItems: 'center' } },
                     renderCell(row, ITEM_COLS[ITEM_COLS.length - 1])
                   )
-                : null
+                : null,
+              h(
+                'div',
+                {
+                  style: {
+                    display: 'flex',
+                    gap: '4px',
+                    justifyContent: 'flex-end',
+                    borderTop: '1px solid var(--cg-border-light)',
+                    paddingTop: '8px',
+                    marginTop: '2px',
+                  },
+                },
+                ...ROW_ACTIONS.filter((a2: any) => !a2.hidden?.(row)).map((a2: any) =>
+                  h(
+                    UI.Button,
+                    {
+                      key: a2.label,
+                      size: 'sm' as const,
+                      variant:
+                        a2.variant === 'destructive'
+                          ? ('destructive' as const)
+                          : ('ghost' as const),
+                      onClick: (e: any) => {
+                        e.stopPropagation();
+                        a2.onClick(row);
+                      },
+                    },
+                    a2.label
+                  )
+                )
+              )
             ),
           onClearFilters: () => {
             clearFilters();
@@ -1901,6 +1956,18 @@ export function FichaDeContratoView() {
           )
         )
       )
-    )
+    ),
+    h(UI.ConfirmDialog, {
+      open: !!pendingConfirm,
+      onOpenChange: (o: boolean) => {
+        if (!o) cancelConfirm();
+      },
+      title: pendingConfirm?.title ?? '',
+      description: pendingConfirm?.message ?? '',
+      confirmLabel: pendingConfirm?.confirmLabel ?? 'Confirmar',
+      onConfirm: () => {
+        runConfirmed();
+      },
+    })
   );
 }

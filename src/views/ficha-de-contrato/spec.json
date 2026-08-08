@@ -405,7 +405,19 @@
                       ]
                     ],
                     "filters": [],
-                    "actions": [],
+                    "actions": [
+                      {
+                        "label": "Eliminar",
+                        "variant": "destructive",
+                        "icon": "Trash2",
+                        "confirm": "El concepto deja de sumarse al cargo del mes. Lo que ya se facturó no cambia.",
+                        "action": {
+                          "id": "serverAction",
+                          "label": "Eliminar",
+                          "target": "leases.charges.delete"
+                        }
+                      }
+                    ],
                     "emptyTitle": "Solo se factura el alquiler",
                     "emptySub": "Agregá ABL, agua o una bonificación para que salgan en el cargo del mes."
                   }
@@ -532,6 +544,15 @@
         "action": "leases.charges.forLease",
         "resource": "leases.charges",
         "outputBlockId": "tbl_conceptos"
+      },
+      {
+        "hook": "onAction",
+        "key": "leases.charges.delete",
+        "mode": "command",
+        "action": "leases.charges.delete",
+        "resource": "leases.charges",
+        "effect": "destructive",
+        "confirmation": "always"
       }
     ]
   }

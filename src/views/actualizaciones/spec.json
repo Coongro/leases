@@ -18,8 +18,7 @@
         "action": {
           "id": "serverAction",
           "label": "Buscar actualizaciones",
-          "target": "leases.adjustments.detect",
-          "confirm": "Se revisan los contratos que cumplieron su período y se calcula el factor del índice. No se cambia ningún alquiler: cada actualización queda pendiente para que la confirmes."
+          "target": "leases.adjustments.detect"
         }
       }
     },
@@ -272,25 +271,36 @@
           {
             "label": "Aplicar",
             "icon": "Check",
+            "confirm": "¿Confirmás la actualización? El alquiler del contrato pasa a valer el monto nuevo desde su fecha.",
+            "successToast": "Actualización aplicada",
             "action": {
               "id": "serverAction",
               "label": "Aplicar",
-              "target": "leases.adjustments.apply",
-              "confirm": "¿Confirmás la actualización? El alquiler del contrato pasa a valer el monto nuevo desde su fecha.",
-              "successToast": "Actualización aplicada"
-            }
+              "target": "leases.adjustments.apply"
+            },
+            "showWhenColumn": "status",
+            "showWhenValues": "pending"
           },
           {
             "label": "Cancelar",
             "variant": "destructive",
             "icon": "X",
+            "confirm": "¿Descartás esta actualización? El alquiler queda como estaba.",
+            "successToast": "Actualización cancelada",
             "action": {
               "id": "serverAction",
               "label": "Cancelar",
-              "target": "leases.adjustments.cancel",
-              "confirm": "¿Descartás esta actualización? El alquiler queda como estaba.",
-              "successToast": "Actualización cancelada"
-            }
+              "target": "leases.adjustments.cancel"
+            },
+            "showWhenColumn": "status",
+            "showWhenValues": "pending, applied"
+          },
+          {
+            "label": "Eliminar",
+            "variant": "destructive",
+            "icon": "Trash2",
+            "showWhenColumn": "status",
+            "showWhenValues": "pending, cancelled"
           }
         ],
         "emptyTitle": "No hay actualizaciones esperando",

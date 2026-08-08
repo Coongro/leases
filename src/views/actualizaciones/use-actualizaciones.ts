@@ -65,6 +65,27 @@ export function useActualizacionesView() {
     },
     [metrics]
   );
+
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    title: string;
+    message: string;
+    confirmLabel: string;
+    run: () => void;
+  } | null>(null);
+  const askConfirm = useCallback(
+    (title: string, message: string, confirmLabel: string, run: () => void) => {
+      setPendingConfirm({ title, message, confirmLabel, run });
+    },
+    []
+  );
+  const cancelConfirm = useCallback(() => {
+    setPendingConfirm(null);
+  }, []);
+  const runConfirmed = useCallback(() => {
+    const pend = pendingConfirm;
+    setPendingConfirm(null);
+    pend?.run();
+  }, [pendingConfirm]);
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -290,8 +311,8 @@ export function useActualizacionesView() {
       toast.success('Eliminado', 'El registro se eliminó correctamente');
       setPendingDelete(null);
       void load();
-    } catch {
-      toast.error('Error', 'No se pudo eliminar');
+    } catch (err) {
+      toast.error('Error', err instanceof Error ? err.message : 'No se pudo eliminar');
     } finally {
       setDeleting(false);
     }
@@ -332,6 +353,10 @@ export function useActualizacionesView() {
   return {
     metric,
     reloadMetrics,
+    pendingConfirm,
+    askConfirm,
+    cancelConfirm,
+    runConfirmed,
     sort,
     onSortChange,
     filters,

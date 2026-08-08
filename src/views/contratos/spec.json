@@ -244,6 +244,11 @@
             },
             "showWhenColumn": "state",
             "showWhenValues": "vigente, por_vencer, por_comenzar"
+          },
+          {
+            "label": "Eliminar",
+            "variant": "destructive",
+            "icon": "Trash2"
           }
         ],
         "emptyTitle": "Todavía no hay contratos",

@@ -18,9 +18,9 @@
         "action": {
           "id": "serverAction",
           "label": "Revisar vencimientos",
-          "target": "leases.expiries.scan",
-          "confirm": "Se revisa toda la cartera y se actualiza la lista. No modifica ningún certificado ni contrato: solo mira fechas."
-        }
+          "target": "leases.expiries.scan"
+        },
+        "confirm": "Se revisa toda la cartera y se actualiza la lista. No modifica ningún certificado ni contrato: solo mira fechas."
       }
     },
     {

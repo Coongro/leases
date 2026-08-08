@@ -348,6 +348,35 @@ export function CobranzasFidelidadView() {
                   renderCell(row, c)
                 )
               )
+            ),
+            h(
+              'div',
+              {
+                style: {
+                  display: 'flex',
+                  gap: '4px',
+                  justifyContent: 'flex-end',
+                  borderTop: '1px solid var(--cg-border-light)',
+                  paddingTop: '8px',
+                  marginTop: '2px',
+                },
+              },
+              ...ROW_ACTIONS.filter((a2: any) => !a2.hidden?.(row)).map((a2: any) =>
+                h(
+                  UI.Button,
+                  {
+                    key: a2.label,
+                    size: 'sm' as const,
+                    variant:
+                      a2.variant === 'destructive' ? ('destructive' as const) : ('ghost' as const),
+                    onClick: (e: any) => {
+                      e.stopPropagation();
+                      a2.onClick(row);
+                    },
+                  },
+                  a2.label
+                )
+              )
             )
           ),
         onClearFilters: () => {
@@ -402,7 +431,15 @@ export function CobranzasFidelidadView() {
               {
                 variant: 'default',
                 onClick: () => {
-                  void runServerAction('leases.billing.generateForPeriod');
+                  if (
+                    !window.confirm(
+                      'Se generan los cargos de todos los contratos vigentes del período. Si ya estaban generados, no se duplican.'
+                    )
+                  )
+                    return;
+                  (() => {
+                    void runServerAction('leases.billing.generateForPeriod');
+                  })();
                 },
               },
               'Generar cargos del mes'

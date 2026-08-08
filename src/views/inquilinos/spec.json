@@ -123,10 +123,21 @@
               "label": "Editar",
               "target": "leases.inquilino.open"
             }
+          },
+          {
+            "label": "Eliminar",
+            "variant": "destructive",
+            "icon": "Trash2",
+            "confirm": "La persona se da de baja de la cartera. Si ya firmó un contrato no se va a poder: el contrato tiene que salir primero.",
+            "action": {
+              "id": "serverAction",
+              "label": "Eliminar",
+              "target": "leases.contracts.deleteTenant"
+            }
           }
         ],
         "emptyTitle": "Todavía no hay inquilinos",
-        "emptySub": "Aparecen acá cuando firmás el primer contrato.",
+        "emptySub": "Cargá el primero o esperá a firmar un contrato.",
         "rowAction": {
           "id": "navigate",
           "label": "Ver ficha",
@@ -142,6 +153,15 @@
         "mode": "query",
         "action": "leases.contracts.listTenants",
         "resource": "leases.contracts"
+      },
+      {
+        "hook": "onAction",
+        "key": "leases.contracts.deleteTenant",
+        "mode": "command",
+        "action": "leases.contracts.deleteTenant",
+        "resource": "leases.contracts",
+        "effect": "destructive",
+        "confirmation": "always"
       }
     ]
   }
