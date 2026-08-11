@@ -27,6 +27,7 @@ import {
   type MoneyConverter,
 } from '../services/charge-generation.js';
 import type { ExpenseSettlement } from '../services/expenses.js';
+import { currentLateFeePolicy } from '../services/late-fee-policy.server.js';
 import { proposeLateFee, type LateFeePolicy } from '../services/late-fee.js';
 import type { LeaseCharge } from '../services/lease-charges.js';
 import { periodTotals, type PeriodTotals } from '../services/period-totals.js';
@@ -674,62 +675,145 @@ export class RentBillingRepository {
   }
 
   /**
-   * Suma a la cuenta el punitorio que le corresponde hoy a un cargo atrasado.
+   * Cobra el punitorio que corresponde hoy por los cargos atrasados de un contrato.
    *
    * El monto lo calcula el servidor con el saldo y el porcentaje pactado —no llega
    * desde la pantalla— porque es plata que se le cobra a una persona: quien pide la
-   * acción elige el cargo, no cuánto.
+   * acción elige a quién cobrarle, no cuánto.
+   *
+   * Se pide por CONTRATO y no por cargo (COONG-301). El contrato es lo que existe
+   * para quien administra —«cobrale la mora a Marta»—, mientras que el id de una
+   * cuenta interna no es algo que se pueda pedir sin haber mirado la pantalla
+   * primero. `accountId` sigue aceptándose porque la tabla de cobranzas ya tiene la
+   * fila a mano y no necesita el rodeo; `period` acota a un mes cuando hace falta.
    *
    * Cobrarlo dos veces el mismo día no suma dos veces (`sourceRef` lleva la fecha);
    * mañana, con un día más de mora, sí corresponde volver a cobrarlo.
+   *
+   * `detail` NUNCA vuelve vacío: no cobrar es un resultado legítimo —el contrato
+   * está al día, la gracia todavía corre, el contrato no pactó punitorio— y quien
+   * pidió la acción tiene que poder distinguir cuál de esos fue. Un «no cobré» sin
+   * motivo se lee como una falla y manda a buscar el problema donde no está.
    */
   async chargeLateFee({
+    leaseId,
     accountId,
+    period,
     graceDays,
     applyLateFee,
   }: {
-    accountId: string;
+    leaseId?: string;
+    accountId?: string;
+    period?: string;
     graceDays?: number;
     applyLateFee?: 'propose' | 'off';
   }): Promise<{ charged: boolean; amount: string; detail: string }> {
-    const nada = { charged: false, amount: '0', detail: '' };
-    if (!accountId) return nada;
+    if (!leaseId && !accountId) {
+      throw new Error('Falta el contrato: indicá «leaseId» para saber a quién cobrarle la mora.');
+    }
 
-    const cuenta = (
-      await new AccountRepository(this.db).listWithTotals({ source: RENT_SOURCE })
-    ).find((c) => String(c.id) === accountId);
-    if (!cuenta) throw new Error('El cargo no existe o no es de alquiler.');
+    const cuentas = await new AccountRepository(this.db).listWithTotals({ source: RENT_SOURCE });
+    // Un cargo puntual (la pantalla) o todos los del contrato (el agente). En el
+    // segundo caso el orden es cronológico: el desglose se lee como un extracto.
+    const alcance = accountId
+      ? cuentas.filter((c) => String(c.id) === accountId)
+      : cuentas
+          .filter((c) => leaseIdDe(String(c.source_ref ?? '')) === leaseId)
+          .filter((c) => !period || String(c.source_ref ?? '').endsWith(`:${period}`))
+          .sort((a, b) => String(a.due_date ?? '').localeCompare(String(b.due_date ?? '')));
 
-    const lease = await new LeaseRepository(this.db).getDetail({
-      id: leaseIdDe(String(cuenta.source_ref ?? '')),
+    if (!alcance.length) {
+      if (accountId) throw new Error('El cargo no existe o no es de alquiler.');
+      return {
+        charged: false,
+        amount: '0',
+        detail: period
+          ? `El contrato no tiene cargos emitidos en ${period}.`
+          : 'El contrato todavía no tiene cargos emitidos.',
+      };
+    }
+
+    const contrato = await new LeaseRepository(this.db).getDetail({
+      id: leaseId ?? leaseIdDe(String(alcance[0]?.source_ref ?? '')),
     });
+    const politica = await currentLateFeePolicy(this.db, { graceDays, applyLateFee });
 
-    const punitorio = proposeLateFee(
-      {
-        due_date: cuenta.due_date ?? null,
-        balance: String(cuenta.balance ?? '0'),
-        status: String(cuenta.status ?? 'open'),
-        late_fee_percent: lease?.late_fee_percent ?? '0',
-      },
-      {
-        graceDays: Number(graceDays) || 0,
-        apply: applyLateFee === 'off' ? 'off' : 'propose',
+    if (politica.apply === 'off') {
+      return {
+        charged: false,
+        amount: '0',
+        detail: 'El punitorio está desactivado en la configuración del sistema.',
+      };
+    }
+    if (Number(contrato?.late_fee_percent ?? '0') === 0) {
+      return { charged: false, amount: '0', detail: 'El contrato no pactó punitorio por mora.' };
+    }
+
+    const lineas = new AccountLineRepository(this.db);
+    const hoy = new Date().toISOString().slice(0, 10);
+    const sourceRef = `late_fee:${hoy}`;
+    const cobrados: string[] = [];
+    const yaCobrados: string[] = [];
+    let total = 0;
+    let conSaldo = 0;
+
+    for (const cuenta of alcance) {
+      if (Number(cuenta.balance ?? '0') <= 0) continue;
+      conSaldo += 1;
+      const periodo = periodoDe(String(cuenta.source_ref ?? ''));
+
+      // El punitorio del día ya está en la cuenta. `add` no lo duplicaría —
+      // deduplica por `sourceRef`—, pero seguir de largo haría que la respuesta
+      // informe un cobro que no ocurrió, sobre un saldo que YA incluye el
+      // punitorio anterior. Un barrido tiene que decir qué hizo y qué no.
+      const existentes = await lineas.listByAccount({ accountId: String(cuenta.id) });
+      if (existentes.some((linea) => String(linea.source_ref ?? '') === sourceRef)) {
+        yaCobrados.push(periodo);
+        continue;
       }
-    );
-    // Un cargo al día, sin punitorio pactado o ya saldado no es un error: no hay nada
-    // que cobrar y quien pidió la acción tiene que poder distinguirlo de un fallo.
-    if (punitorio.amount === '0') return nada;
 
-    await new AccountLineRepository(this.db).add({
-      accountId,
-      description: `Punitorio — ${punitorio.detail}`,
-      quantity: '1',
-      unitPrice: punitorio.amount,
-      sourceType: 'late_fee',
-      sourceRef: `late_fee:${new Date().toISOString().slice(0, 10)}`,
-    });
+      const punitorio = proposeLateFee(
+        {
+          due_date: cuenta.due_date ?? null,
+          balance: String(cuenta.balance ?? '0'),
+          status: String(cuenta.status ?? 'open'),
+          late_fee_percent: contrato?.late_fee_percent ?? '0',
+        },
+        politica
+      );
+      if (punitorio.amount === '0') continue;
 
-    return { charged: true, amount: punitorio.amount, detail: punitorio.detail };
+      await lineas.add({
+        accountId: String(cuenta.id),
+        description: `Punitorio — ${punitorio.detail}`,
+        quantity: '1',
+        unitPrice: punitorio.amount,
+        sourceType: 'late_fee',
+        sourceRef,
+      });
+      total += Number(punitorio.amount);
+      cobrados.push(`${periodo}: ${punitorio.detail}`);
+    }
+
+    const salteados = yaCobrados.length
+      ? ` Ya estaba cobrado el punitorio de hoy en ${yaCobrados.join(', ')}.`
+      : '';
+
+    if (!cobrados.length) {
+      return {
+        charged: false,
+        amount: '0',
+        detail: yaCobrados.length
+          ? `El punitorio de hoy ya estaba cobrado en ${yaCobrados.join(', ')}. Mañana, con un día más de mora, vuelve a corresponder.`
+          : !conSaldo
+            ? 'No hay saldo pendiente: los cargos están cobrados.'
+            : politica.graceDays > 0
+              ? `Los cargos impagos están al día o todavía dentro de los ${politica.graceDays} días de gracia.`
+              : 'Los cargos impagos todavía no están vencidos.',
+      };
+    }
+
+    return { charged: true, amount: String(total), detail: `${cobrados.join(' · ')}${salteados}` };
   }
 
   /**

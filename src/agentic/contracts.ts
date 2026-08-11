@@ -1632,21 +1632,29 @@ export const generateForPeriodBilling = defineAction({
  */
 export const chargeLateFeeBilling = defineAction({
   id: 'leases.billing.chargeLateFee',
-  title: 'Cobrar punitorio',
-  description: 'Ejecuta Cobrar punitorio para el cliente.',
+  title: 'Cobrar la mora de un contrato',
+  description:
+    'Le suma al alquiler impago el punitorio que corresponde por los días de atraso, según el porcentaje pactado en el contrato y los días de gracia configurados. Cobra sobre todos los cargos vencidos con saldo, salvo que se acote a un mes. El monto lo calcula el servidor: no se puede elegir cuánto. Cobrarlo dos veces el mismo día no lo duplica.',
   effect: 'write',
   confirmation: 'always',
   tenantScope: 'required',
   input: {
     type: 'object',
     properties: {
-      id: {
+      leaseId: {
         type: 'string',
         format: 'uuid',
-        description: 'ID del registro.',
+        description: 'El contrato al que se le cobra la mora.',
+        ref: { resource: 'leases.contracts' },
+      },
+      period: {
+        type: 'string',
+        pattern: '^\\d{4}-\\d{2}$',
+        description:
+          'Acota el cobro a un mes (AAAA-MM). Si se omite, alcanza a todos los cargos vencidos con saldo.',
       },
     },
-    required: ['id'],
+    required: ['leaseId'],
     additionalProperties: false,
   },
   output: {
@@ -1654,6 +1662,9 @@ export const chargeLateFeeBilling = defineAction({
     fields: [
       { key: 'charged', name: 'charged', label: 'Se cobró', format: 'text' },
       { key: 'amount', name: 'amount', label: 'Punitorio', format: 'money' },
+      // Cuando NO se cobró, este campo dice por qué (al día, dentro de la gracia,
+      // sin punitorio pactado). Nunca vuelve vacío: un «no cobré» mudo se lee como
+      // una falla y manda a buscar el problema donde no está.
       { key: 'detail', name: 'detail', label: 'Cómo se calculó', format: 'text' },
     ],
   },
