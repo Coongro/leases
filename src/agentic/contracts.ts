@@ -3813,8 +3813,12 @@ export const chargeTenantWorkOrdersBilling = defineAction({
   output: {
     kind: 'record',
     fields: [
+      // El resumen va PRIMERO: cuando el barrido no hizo nada, es lo único que explica
+      // por qué, y sin él «no pasó nada» se lee igual que «algo falló».
+      { key: 'detail', name: 'detail', label: 'Qué pasó', format: 'text' },
       { key: 'charged', name: 'charged', label: 'Arreglos pasados al recibo', format: 'text' },
       { key: 'removed', name: 'removed', label: 'Arreglos retirados', format: 'text' },
+      { key: 'skipped', name: 'skipped', label: 'Sin pasar, y por qué', format: 'text' },
     ],
   },
 });

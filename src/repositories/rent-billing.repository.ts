@@ -225,6 +225,65 @@ function etiquetaIndice(code?: string | null, rate?: string | null): string {
   return `${base} · +${String(rate).replace('.', ',')}%`;
 }
 
+/** Lo que devuelve el barrido de arreglos a cargo del inquilino. */
+export interface TenantExpenseSweep {
+  charged: Array<{ order: string; amount: string }>;
+  /** Lo que se retiró de un recibo porque la orden dejó de estar a cargo del inquilino. */
+  removed: string[];
+  /** Lo que NO entró, con el motivo de cada uno. */
+  skipped: Array<{ order: string; reason: string }>;
+  /** El resumen en una línea: es lo único que ve quien pidió el barrido. */
+  detail: string;
+}
+
+/**
+ * El resumen legible de un barrido.
+ *
+ * Un barrido que no hizo nada y no dice por qué es indistinguible de uno roto: devolvía
+ * listas vacías y quien lo llamaba —una persona o un agente— no tenía forma de saber si
+ * no había trabajo, si faltaba emitir el mes o si algo había fallado. El motivo se
+ * calcula igual en cada salteo; lo único que faltaba era no tirarlo.
+ */
+function sweepResult({
+  charged,
+  removed,
+  skipped,
+  sinCandidatos = false,
+}: Omit<TenantExpenseSweep, 'detail'> & { sinCandidatos?: boolean }): TenantExpenseSweep {
+  const partes: string[] = [];
+  if (charged.length) {
+    partes.push(
+      charged.length === 1
+        ? 'Se pasó 1 arreglo al recibo del inquilino'
+        : `Se pasaron ${charged.length} arreglos a los recibos de sus inquilinos`
+    );
+  }
+  if (removed.length) {
+    partes.push(
+      removed.length === 1
+        ? 'se retiró 1 que ya no le corresponde'
+        : `se retiraron ${removed.length} que ya no les corresponden`
+    );
+  }
+  // Los motivos van agrupados: repetir «ya estaba en un recibo» quince veces esconde el
+  // único que sí necesita que alguien haga algo.
+  const porMotivo = new Map<string, number>();
+  for (const entry of skipped) porMotivo.set(entry.reason, (porMotivo.get(entry.reason) ?? 0) + 1);
+  for (const [reason, count] of porMotivo) partes.push(`${count} sin pasar: ${reason}`);
+
+  if (!partes.length) {
+    return {
+      charged,
+      removed,
+      skipped,
+      detail: sinCandidatos
+        ? 'No hay arreglos a cargo de inquilinos esperando: no había nada que pasar.'
+        : 'No hubo nada que pasar a los recibos.',
+    };
+  }
+  return { charged, removed, skipped, detail: `${partes.join('; ')}.` };
+}
+
 /** `<leaseId>:<período>` — el id es todo lo anterior a los dos puntos finales. */
 function leaseIdDe(sourceRef: string): string {
   const corte = sourceRef.lastIndexOf(':');
@@ -252,10 +311,17 @@ export class RentBillingRepository {
    * quien la lee es el cliente. Sin ella no se propone nada: es el mismo criterio que
    * en la pantalla — el punitorio se propone, no se cobra solo.
    *
-   * `generateIfMissing` emite el mes cuando todavía no tiene ningún cargo. Va acá y no
+   * `generateIfMissing` emite lo que le FALTA al mes, contrato por contrato. Va acá y no
    * en dos llamadas seguidas porque «traeme el mes, y si falta emitilo» es UNA decisión:
    * separarlas deja una ventana en la que dos pantallas abiertas a la vez emiten dos
    * veces (no duplica —el `source_ref` es único— pero sí genera trabajo y confusión).
+   *
+   * Antes era todo-o-nada: si el período ya tenía UN cargo, no generaba ninguno más. Un
+   * contrato firmado después de emitir el mes quedaba sin facturar para siempre, sin
+   * ningún aviso — la unidad se veía alquilada y el inquilino no recibía nada que pagar.
+   * El barrido es idempotente por contrato (`openForSource` reusa la cuenta que ya
+   * existe sin volver a cargarle líneas), así que correrlo de más no cuesta nada y
+   * correrlo de menos deja plata sin cobrar.
    */
   async chargesForPeriod({
     period,
@@ -273,13 +339,9 @@ export class RentBillingRepository {
     const cuentas = new AccountRepository(this.db);
     const contratos = new LeaseRepository(this.db);
 
-    if (generateIfMissing) {
-      const yaHay = await cuentas.listWithTotals({
-        source: RENT_SOURCE,
-        refSuffix: `:${period}`,
-      });
-      if (yaHay.length === 0) await this.generateForPeriod({ period, usdHouse });
-    }
+    // Sin preguntar si el mes «ya está emitido»: la generación decide contrato por
+    // contrato y saltea los que ya tienen su cuenta.
+    if (generateIfMissing) await this.generateForPeriod({ period, usdHouse });
 
     const [filas, leases, desgloses] = await Promise.all([
       cuentas.listWithTotals({ source: RENT_SOURCE, refSuffix: `:${period}` }),
@@ -451,11 +513,7 @@ export class RentBillingRepository {
    * y corregirlo tiene que poder deshacerse: sin esto el gasto quedaba en su recibo para
    * siempre, y la única forma de sacarlo era borrar la línea a mano desde la cuenta.
    */
-  async chargeTenantWorkOrders({ today }: { today?: string } = {}): Promise<{
-    charged: Array<{ order: string; amount: string }>;
-    /** Lo que se retiró de un recibo porque la orden dejó de estar a cargo del inquilino. */
-    removed: string[];
-  }> {
+  async chargeTenantWorkOrders({ today }: { today?: string } = {}): Promise<TenantExpenseSweep> {
     const hoy = today ?? new Date().toISOString().slice(0, 10);
     const ordenes = await new WorkOrderRepository(this.db).list();
 
@@ -465,7 +523,10 @@ export class RentBillingRepository {
     const removed = await this.retirarGastosQueYaNoCorresponden(
       new Set(aCargoDelInquilino.map((o) => workOrderRef(o.id)))
     );
-    if (aCargoDelInquilino.length === 0) return { charged: [], removed };
+    const skipped: Array<{ order: string; reason: string }> = [];
+    if (aCargoDelInquilino.length === 0) {
+      return sweepResult({ charged: [], removed, skipped, sinCandidatos: true });
+    }
 
     // Lo ya cargado se pregunta UNA vez para todas las órdenes: preguntarlo por orden
     // haría una consulta por cada arreglo del historial cada vez que se genera un mes.
@@ -476,10 +537,17 @@ export class RentBillingRepository {
 
     for (const orden of aCargoDelInquilino) {
       const ref = workOrderRef(orden.id);
-      if (yaCargadas.has(ref)) continue;
+      const titulo = String(orden.title ?? ref);
+      if (yaCargadas.has(ref)) {
+        skipped.push({ order: titulo, reason: 'ya estaba en un recibo' });
+        continue;
+      }
 
       const gasto = expenseForWorkOrder(orden, hoy);
-      if (!gasto) continue;
+      if (!gasto) {
+        skipped.push({ order: titulo, reason: 'todavía no tiene un costo cerrado' });
+        continue;
+      }
 
       // El gasto va al contrato que ocupa la unidad hoy, no al inquilino que la ocupaba
       // cuando se reportó: si se fue, la deuda se le reclama por otro camino y no
@@ -487,14 +555,23 @@ export class RentBillingRepository {
       const contrato = contratos.find(
         (l) => l.unit_id === orden.unit_id && (l.state === 'vigente' || l.state === 'por_vencer')
       );
-      if (!contrato) continue;
+      if (!contrato) {
+        skipped.push({ order: titulo, reason: 'la unidad no tiene contrato vigente' });
+        continue;
+      }
 
       const destino = chargeForTenantExpense(
         await this.chargesForLease({ leaseId: contrato.id }),
         hoy
       );
       // Sin recibo cobrable el gasto espera: lo levanta la próxima generación de mes.
-      if (!destino) continue;
+      if (!destino) {
+        skipped.push({
+          order: titulo,
+          reason: 'el inquilino no tiene un recibo abierto donde cargarlo: emití el mes primero',
+        });
+        continue;
+      }
 
       await lineas.add({
         accountId: destino.id,
@@ -506,7 +583,7 @@ export class RentBillingRepository {
       charged.push({ order: orden.title, amount: gasto.amount });
     }
 
-    return { charged, removed };
+    return sweepResult({ charged, removed, skipped });
   }
 
   /** Las órdenes que ya figuran en algún recibo, para no cobrarlas de nuevo. */

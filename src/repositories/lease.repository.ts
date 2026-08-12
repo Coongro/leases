@@ -291,11 +291,12 @@ export class LeaseRepository {
         created = true;
       }
 
-      // La unidad pasa a estar alquilada. Sin esto la ficha de la propiedad seguiría
-      // mostrándola vacante con un contrato vigente encima.
+      // Qué período compromete el contrato. Se escriben las FECHAS, no «ocupada»: la
+      // unidad queda alquilada desde que el contrato empieza —no desde que se firma— y
+      // se libera sola cuando termina, sin que haga falta que corra nada.
       await tx
         .update(unitTable)
-        .set({ status: 'ocupada' } as never)
+        .set({ occupied_from: desde, occupied_until: hasta || null } as never)
         .where(eq(unitTable.id, unitId));
 
       // La garantía solo se crea al firmar: al editar un contrato ya firmado se toca
@@ -621,11 +622,12 @@ export class LeaseRepository {
         .set({ status: 'renovado' } as unknown as Partial<NewLeaseRow>)
         .where(eq(leaseTable.id, id));
 
-      // La unidad sigue alquilada: el contrato cambió, el inquilino no se fue.
+      // La unidad sigue alquilada: el contrato cambió, el inquilino no se fue. Lo que se
+      // corre es hasta cuándo está comprometida.
       if (previo.unit_id) {
         await tx
           .update(unitTable)
-          .set({ status: 'ocupada' } as never)
+          .set({ occupied_until: endDate } as never)
           .where(eq(unitTable.id, previo.unit_id));
       }
     });
@@ -674,13 +676,14 @@ export class LeaseRepository {
         .where(eq(leaseTable.id, id))
         .returning();
 
-      // La unidad vuelve a estar disponible. Va en el mismo acto que la rescisión: si
-      // quedara para una segunda llamada, un corte en el medio dejaría la unidad
-      // figurando ocupada sin nadie viviendo adentro.
+      // La unidad se libera EL DÍA de la rescisión, no antes: hasta esa fecha el
+      // inquilino sigue adentro y el mes se cobra igual. Va en el mismo acto que la
+      // rescisión porque si quedara para una segunda llamada, un corte en el medio
+      // dejaría la unidad comprometida por un contrato que ya no existe.
       if (previo.unit_id) {
         await tx
           .update(unitTable)
-          .set({ status: 'vacante' } as never)
+          .set({ occupied_until: terminationDate } as never)
           .where(eq(unitTable.id, previo.unit_id));
       }
 
