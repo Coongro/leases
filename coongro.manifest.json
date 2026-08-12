@@ -139,6 +139,12 @@
         "title": "Resultado",
         "component": "./dist/views/resultado/index.js",
         "export": "ResultadoView"
+      },
+      {
+        "id": "leases.co-firmante-del-contrato.open",
+        "title": "Co-firmante del contrato",
+        "component": "./dist/views/co-firmante-del-contrato/index.js",
+        "export": "CoFirmanteDelContratoView"
       }
     ],
     "repositories": [
@@ -169,7 +175,9 @@
         "prefix": "leases.coTenants",
         "actions": [
           "list",
+          "forLease",
           "getById",
+          "save",
           "create",
           "update",
           "delete",
@@ -180,14 +188,7 @@
         "module": "./dist/repositories/guarantee.repository.js",
         "export": "GuaranteeRepository",
         "prefix": "leases.guarantees",
-        "actions": [
-          "list",
-          "getById",
-          "create",
-          "update",
-          "delete",
-          "restore"
-        ]
+        "actions": ["list", "getById", "create", "update", "delete", "restore"]
       },
       {
         "module": "./dist/repositories/index-adjustment.repository.js",
@@ -211,14 +212,7 @@
         "module": "./dist/repositories/lease-charge.repository.js",
         "export": "LeaseChargeRepository",
         "prefix": "leases.charges",
-        "actions": [
-          "list",
-          "forLease",
-          "getById",
-          "create",
-          "update",
-          "delete"
-        ]
+        "actions": ["list", "forLease", "getById", "create", "update", "delete"]
       },
       {
         "module": "./dist/repositories/rent-billing.repository.js",
@@ -252,13 +246,7 @@
       }
     ],
     "settings": {
-      "groups": [
-        {
-          "id": "leases",
-          "label": "leases",
-          "order": 50
-        }
-      ],
+      "groups": [{ "id": "leases", "label": "leases", "order": 50 }],
       "pages": [
         {
           "id": "leases.contratos",
@@ -289,26 +277,11 @@
               "description": "«A mano»: vos apretás el botón en Cobranzas cuando querés. «Avisarme»: el sistema te recuerda al inicio del mes y generás vos. «Sola»: se generan al empezar el mes sin preguntar. Generándolos dos veces nunca se duplican, así que la diferencia real es cuánta iniciativa querés que tome el sistema.",
               "default": "manual",
               "options": [
-                {
-                  "value": "manual",
-                  "label": "A mano"
-                },
-                {
-                  "value": "ask",
-                  "label": "Avisarme y genero yo"
-                },
-                {
-                  "value": "auto",
-                  "label": "Que se generen solas"
-                }
+                { "value": "manual", "label": "A mano" },
+                { "value": "ask", "label": "Avisarme y genero yo" },
+                { "value": "auto", "label": "Que se generen solas" }
               ],
-              "tags": [
-                "leases",
-                "charges",
-                "generation",
-                "cómo",
-                "generan"
-              ]
+              "tags": ["leases", "charges", "generation", "cómo", "generan"]
             }
           ]
         },
@@ -326,13 +299,7 @@
               "default": 0,
               "min": 0,
               "max": 30,
-              "tags": [
-                "leases",
-                "latefee",
-                "gracedays",
-                "días",
-                "gracia"
-              ]
+              "tags": ["leases", "latefee", "gracedays", "días", "gracia"]
             },
             {
               "key": "leases.lateFee.apply",
@@ -341,14 +308,8 @@
               "description": "El punitorio nunca se agrega en silencio. «Proponer» lo calcula y espera tu confirmación antes de sumarlo a la cuenta; «no calcular» lo deja fuera del sistema, para quien lo arregla hablando.",
               "default": "propose",
               "options": [
-                {
-                  "value": "propose",
-                  "label": "Proponer y confirmo yo"
-                },
-                {
-                  "value": "off",
-                  "label": "No calcular punitorios"
-                }
+                { "value": "propose", "label": "Proponer y confirmo yo" },
+                { "value": "off", "label": "No calcular punitorios" }
               ],
               "tags": [
                 "leases",
@@ -374,21 +335,10 @@
               "description": "En qué moneda se pactan tus alquileres habitualmente. Es solo el valor con el que arranca el formulario: cada contrato puede firmarse en la otra.",
               "default": "ARS",
               "options": [
-                {
-                  "value": "ARS",
-                  "label": "Pesos (ARS)"
-                },
-                {
-                  "value": "USD",
-                  "label": "Dólares (USD)"
-                }
+                { "value": "ARS", "label": "Pesos (ARS)" },
+                { "value": "USD", "label": "Dólares (USD)" }
               ],
-              "tags": [
-                "leases",
-                "contracts",
-                "defaultcurrency",
-                "moneda"
-              ]
+              "tags": ["leases", "contracts", "defaultcurrency", "moneda"]
             },
             {
               "key": "leases.contracts.defaultDueDay",
@@ -413,14 +363,8 @@
               "description": "«Día fijo» vence siempre la misma fecha, caiga como caiga. «Día hábil» corre el vencimiento cuando cae fin de semana o feriado — se usa cuando el pago entra por transferencia y el banco tiene que estar abierto.",
               "default": "fixed",
               "options": [
-                {
-                  "value": "fixed",
-                  "label": "Día fijo del mes"
-                },
-                {
-                  "value": "business",
-                  "label": "Día hábil"
-                }
+                { "value": "fixed", "label": "Día fijo del mes" },
+                { "value": "business", "label": "Día hábil" }
               ],
               "tags": [
                 "leases",
@@ -439,22 +383,10 @@
               "description": "Con qué índice actualizás los alquileres. Desde la Ley 27.551 el ICL del BCRA es el más usado, pero se pacta libremente.",
               "default": "ICL",
               "options": [
-                {
-                  "value": "ICL",
-                  "label": "ICL (BCRA)"
-                },
-                {
-                  "value": "IPC",
-                  "label": "IPC (INDEC)"
-                },
-                {
-                  "value": "casa_propia",
-                  "label": "Casa Propia"
-                },
-                {
-                  "value": "fijo",
-                  "label": "Escalonado fijo"
-                }
+                { "value": "ICL", "label": "ICL (BCRA)" },
+                { "value": "IPC", "label": "IPC (INDEC)" },
+                { "value": "casa_propia", "label": "Casa Propia" },
+                { "value": "fijo", "label": "Escalonado fijo" }
               ],
               "tags": [
                 "leases",
@@ -471,22 +403,10 @@
               "description": "Cada cuántos meses se recalcula el alquiler. Ya no lo fija la ley: se pacta en el contrato.",
               "default": "6",
               "options": [
-                {
-                  "value": "3",
-                  "label": "3 meses"
-                },
-                {
-                  "value": "4",
-                  "label": "4 meses"
-                },
-                {
-                  "value": "6",
-                  "label": "6 meses"
-                },
-                {
-                  "value": "12",
-                  "label": "12 meses"
-                }
+                { "value": "3", "label": "3 meses" },
+                { "value": "4", "label": "4 meses" },
+                { "value": "6", "label": "6 meses" },
+                { "value": "12", "label": "12 meses" }
               ],
               "tags": [
                 "leases",
@@ -512,26 +432,11 @@
               "description": "Un contrato pactado en dólares se cobra en pesos: el cargo se convierte con esta cotización el día que se emite, y queda asentado con qué valor y de qué fecha se hizo la cuenta. Elegí la que dice el contrato — si dice «dólar oficial», poné oficial.",
               "default": "oficial",
               "options": [
-                {
-                  "value": "oficial",
-                  "label": "Oficial"
-                },
-                {
-                  "value": "blue",
-                  "label": "Blue"
-                },
-                {
-                  "value": "bolsa",
-                  "label": "MEP (bolsa)"
-                },
-                {
-                  "value": "contadoconliqui",
-                  "label": "Contado con liqui"
-                },
-                {
-                  "value": "mayorista",
-                  "label": "Mayorista"
-                }
+                { "value": "oficial", "label": "Oficial" },
+                { "value": "blue", "label": "Blue" },
+                { "value": "bolsa", "label": "MEP (bolsa)" },
+                { "value": "contadoconliqui", "label": "Contado con liqui" },
+                { "value": "mayorista", "label": "Mayorista" }
               ],
               "tags": [
                 "leases",
@@ -644,30 +549,12 @@
               "label": "Índice",
               "format": "text",
               "values": [
-                {
-                  "value": "ICL",
-                  "label": "ICL"
-                },
-                {
-                  "value": "IPC",
-                  "label": "IPC"
-                },
-                {
-                  "value": "casa_propia",
-                  "label": "Casa Propia"
-                },
-                {
-                  "value": "manual",
-                  "label": "Pactada"
-                },
-                {
-                  "value": "fijo",
-                  "label": "Fijo"
-                },
-                {
-                  "value": "otro",
-                  "label": "Otro"
-                }
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" },
+                { "value": "manual", "label": "Pactada" },
+                { "value": "fijo", "label": "Fijo" },
+                { "value": "otro", "label": "Otro" }
               ]
             },
             {
@@ -701,18 +588,9 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "pending",
-                  "label": "Pendiente"
-                },
-                {
-                  "value": "applied",
-                  "label": "Aplicada"
-                },
-                {
-                  "value": "cancelled",
-                  "label": "Cancelada"
-                }
+                { "value": "pending", "label": "Pendiente" },
+                { "value": "applied", "label": "Aplicada" },
+                { "value": "cancelled", "label": "Cancelada" }
               ]
             }
           ],
@@ -743,14 +621,10 @@
             "id": {
               "type": "string",
               "description": "ID",
-              "ref": {
-                "resource": "leases.adjustments"
-              }
+              "ref": { "resource": "leases.adjustments" }
             }
           },
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "additionalProperties": false
         },
         "output": {
@@ -780,30 +654,12 @@
               "label": "Índice",
               "format": "text",
               "values": [
-                {
-                  "value": "ICL",
-                  "label": "ICL"
-                },
-                {
-                  "value": "IPC",
-                  "label": "IPC"
-                },
-                {
-                  "value": "casa_propia",
-                  "label": "Casa Propia"
-                },
-                {
-                  "value": "manual",
-                  "label": "Pactada"
-                },
-                {
-                  "value": "fijo",
-                  "label": "Fijo"
-                },
-                {
-                  "value": "otro",
-                  "label": "Otro"
-                }
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" },
+                { "value": "manual", "label": "Pactada" },
+                { "value": "fijo", "label": "Fijo" },
+                { "value": "otro", "label": "Otro" }
               ]
             },
             {
@@ -837,18 +693,9 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "pending",
-                  "label": "Pendiente"
-                },
-                {
-                  "value": "applied",
-                  "label": "Aplicada"
-                },
-                {
-                  "value": "cancelled",
-                  "label": "Cancelada"
-                }
+                { "value": "pending", "label": "Pendiente" },
+                { "value": "applied", "label": "Aplicada" },
+                { "value": "cancelled", "label": "Cancelada" }
               ]
             }
           ],
@@ -900,26 +747,11 @@
               "label": "Tipo",
               "format": "text",
               "values": [
-                {
-                  "value": "abl",
-                  "label": "ABL / inmobiliario"
-                },
-                {
-                  "value": "servicio",
-                  "label": "Servicio"
-                },
-                {
-                  "value": "expensas",
-                  "label": "Expensas"
-                },
-                {
-                  "value": "descuento",
-                  "label": "Descuento"
-                },
-                {
-                  "value": "otro",
-                  "label": "Otro"
-                }
+                { "value": "abl", "label": "ABL / inmobiliario" },
+                { "value": "servicio", "label": "Servicio" },
+                { "value": "expensas", "label": "Expensas" },
+                { "value": "descuento", "label": "Descuento" },
+                { "value": "otro", "label": "Otro" }
               ]
             },
             {
@@ -962,14 +794,10 @@
             "id": {
               "type": "string",
               "description": "ID",
-              "ref": {
-                "resource": "leases.charges"
-              }
+              "ref": { "resource": "leases.charges" }
             }
           },
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "additionalProperties": false
         },
         "output": {
@@ -987,26 +815,11 @@
               "label": "Tipo",
               "format": "text",
               "values": [
-                {
-                  "value": "abl",
-                  "label": "ABL / inmobiliario"
-                },
-                {
-                  "value": "servicio",
-                  "label": "Servicio"
-                },
-                {
-                  "value": "expensas",
-                  "label": "Expensas"
-                },
-                {
-                  "value": "descuento",
-                  "label": "Descuento"
-                },
-                {
-                  "value": "otro",
-                  "label": "Otro"
-                }
+                { "value": "abl", "label": "ABL / inmobiliario" },
+                { "value": "servicio", "label": "Servicio" },
+                { "value": "expensas", "label": "Expensas" },
+                { "value": "descuento", "label": "Descuento" },
+                { "value": "otro", "label": "Otro" }
               ]
             },
             {
@@ -1052,19 +865,11 @@
                   "type": "string",
                   "format": "uuid",
                   "description": "Contrato",
-                  "ref": {
-                    "resource": "leases.contracts"
-                  }
+                  "ref": { "resource": "leases.contracts" }
                 },
                 "type": {
                   "type": "string",
-                  "enum": [
-                    "abl",
-                    "servicio",
-                    "expensas",
-                    "descuento",
-                    "otro"
-                  ],
+                  "enum": ["abl", "servicio", "expensas", "descuento", "otro"],
                   "description": "Tipo. Opciones: abl (ABL / inmobiliario), servicio (Servicio), expensas (Expensas), descuento (Descuento), otro (Otro).",
                   "default": "servicio"
                 },
@@ -1085,23 +890,13 @@
                   "type": "string",
                   "description": "Último período"
                 },
-                "notes": {
-                  "type": "string",
-                  "description": "Observaciones"
-                }
+                "notes": { "type": "string", "description": "Observaciones" }
               },
-              "required": [
-                "lease_id",
-                "type",
-                "label",
-                "amount"
-              ],
+              "required": ["lease_id", "type", "label", "amount"],
               "additionalProperties": false
             }
           },
-          "required": [
-            "data"
-          ],
+          "required": ["data"],
           "additionalProperties": false
         },
         "output": {
@@ -1119,26 +914,11 @@
               "label": "Tipo",
               "format": "text",
               "values": [
-                {
-                  "value": "abl",
-                  "label": "ABL / inmobiliario"
-                },
-                {
-                  "value": "servicio",
-                  "label": "Servicio"
-                },
-                {
-                  "value": "expensas",
-                  "label": "Expensas"
-                },
-                {
-                  "value": "descuento",
-                  "label": "Descuento"
-                },
-                {
-                  "value": "otro",
-                  "label": "Otro"
-                }
+                { "value": "abl", "label": "ABL / inmobiliario" },
+                { "value": "servicio", "label": "Servicio" },
+                { "value": "expensas", "label": "Expensas" },
+                { "value": "descuento", "label": "Descuento" },
+                { "value": "otro", "label": "Otro" }
               ]
             },
             {
@@ -1179,9 +959,7 @@
             "id": {
               "type": "string",
               "description": "ID",
-              "ref": {
-                "resource": "leases.charges"
-              }
+              "ref": { "resource": "leases.charges" }
             },
             "data": {
               "type": "object",
@@ -1191,19 +969,11 @@
                   "type": "string",
                   "format": "uuid",
                   "description": "Contrato",
-                  "ref": {
-                    "resource": "leases.contracts"
-                  }
+                  "ref": { "resource": "leases.contracts" }
                 },
                 "type": {
                   "type": "string",
-                  "enum": [
-                    "abl",
-                    "servicio",
-                    "expensas",
-                    "descuento",
-                    "otro"
-                  ],
+                  "enum": ["abl", "servicio", "expensas", "descuento", "otro"],
                   "description": "Tipo. Opciones: abl (ABL / inmobiliario), servicio (Servicio), expensas (Expensas), descuento (Descuento), otro (Otro).",
                   "default": "servicio"
                 },
@@ -1224,18 +994,12 @@
                   "type": "string",
                   "description": "Último período"
                 },
-                "notes": {
-                  "type": "string",
-                  "description": "Observaciones"
-                }
+                "notes": { "type": "string", "description": "Observaciones" }
               },
               "additionalProperties": false
             }
           },
-          "required": [
-            "id",
-            "data"
-          ],
+          "required": ["id", "data"],
           "additionalProperties": false
         },
         "output": {
@@ -1253,26 +1017,11 @@
               "label": "Tipo",
               "format": "text",
               "values": [
-                {
-                  "value": "abl",
-                  "label": "ABL / inmobiliario"
-                },
-                {
-                  "value": "servicio",
-                  "label": "Servicio"
-                },
-                {
-                  "value": "expensas",
-                  "label": "Expensas"
-                },
-                {
-                  "value": "descuento",
-                  "label": "Descuento"
-                },
-                {
-                  "value": "otro",
-                  "label": "Otro"
-                }
+                { "value": "abl", "label": "ABL / inmobiliario" },
+                { "value": "servicio", "label": "Servicio" },
+                { "value": "expensas", "label": "Expensas" },
+                { "value": "descuento", "label": "Descuento" },
+                { "value": "otro", "label": "Otro" }
               ]
             },
             {
@@ -1366,18 +1115,9 @@
               "label": "Ajuste",
               "format": "text",
               "values": [
-                {
-                  "value": "ICL",
-                  "label": "ICL"
-                },
-                {
-                  "value": "IPC",
-                  "label": "IPC"
-                },
-                {
-                  "value": "casa_propia",
-                  "label": "Casa Propia"
-                }
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" }
               ]
             },
             {
@@ -1386,34 +1126,13 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "vigente",
-                  "label": "Vigente"
-                },
-                {
-                  "value": "por_comenzar",
-                  "label": "Por comenzar"
-                },
-                {
-                  "value": "por_vencer",
-                  "label": "Por vencer"
-                },
-                {
-                  "value": "terminado",
-                  "label": "Terminado"
-                },
-                {
-                  "value": "renovado",
-                  "label": "Renovado"
-                },
-                {
-                  "value": "rescindido",
-                  "label": "Rescindido"
-                },
-                {
-                  "value": "borrador",
-                  "label": "Borrador"
-                }
+                { "value": "vigente", "label": "Vigente" },
+                { "value": "por_comenzar", "label": "Por comenzar" },
+                { "value": "por_vencer", "label": "Por vencer" },
+                { "value": "terminado", "label": "Terminado" },
+                { "value": "renovado", "label": "Renovado" },
+                { "value": "rescindido", "label": "Rescindido" },
+                { "value": "borrador", "label": "Borrador" }
               ]
             }
           ],
@@ -1444,14 +1163,10 @@
             "id": {
               "type": "string",
               "description": "ID",
-              "ref": {
-                "resource": "leases.contracts"
-              }
+              "ref": { "resource": "leases.contracts" }
             }
           },
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "additionalProperties": false
         },
         "output": {
@@ -1499,18 +1214,9 @@
               "label": "Ajuste",
               "format": "text",
               "values": [
-                {
-                  "value": "ICL",
-                  "label": "ICL"
-                },
-                {
-                  "value": "IPC",
-                  "label": "IPC"
-                },
-                {
-                  "value": "casa_propia",
-                  "label": "Casa Propia"
-                }
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" }
               ]
             },
             {
@@ -1519,34 +1225,13 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "vigente",
-                  "label": "Vigente"
-                },
-                {
-                  "value": "por_comenzar",
-                  "label": "Por comenzar"
-                },
-                {
-                  "value": "por_vencer",
-                  "label": "Por vencer"
-                },
-                {
-                  "value": "terminado",
-                  "label": "Terminado"
-                },
-                {
-                  "value": "renovado",
-                  "label": "Renovado"
-                },
-                {
-                  "value": "rescindido",
-                  "label": "Rescindido"
-                },
-                {
-                  "value": "borrador",
-                  "label": "Borrador"
-                }
+                { "value": "vigente", "label": "Vigente" },
+                { "value": "por_comenzar", "label": "Por comenzar" },
+                { "value": "por_vencer", "label": "Por vencer" },
+                { "value": "terminado", "label": "Terminado" },
+                { "value": "renovado", "label": "Renovado" },
+                { "value": "rescindido", "label": "Rescindido" },
+                { "value": "borrador", "label": "Borrador" }
               ]
             }
           ],
@@ -1592,14 +1277,8 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "vencido",
-                  "label": "Vencido"
-                },
-                {
-                  "value": "por_vencer",
-                  "label": "Por vencer"
-                }
+                { "value": "vencido", "label": "Vencido" },
+                { "value": "por_vencer", "label": "Por vencer" }
               ]
             },
             {
@@ -1608,18 +1287,9 @@
               "label": "Qué vence",
               "format": "text",
               "values": [
-                {
-                  "value": "certificado",
-                  "label": "Certificado"
-                },
-                {
-                  "value": "contrato",
-                  "label": "Contrato"
-                },
-                {
-                  "value": "garantia",
-                  "label": "Garantía"
-                }
+                { "value": "certificado", "label": "Certificado" },
+                { "value": "contrato", "label": "Contrato" },
+                { "value": "garantia", "label": "Garantía" }
               ]
             },
             {
@@ -1707,14 +1377,10 @@
             "id": {
               "type": "string",
               "description": "ID",
-              "ref": {
-                "resource": "leases.adjustments"
-              }
+              "ref": { "resource": "leases.adjustments" }
             }
           },
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "additionalProperties": false
         },
         "output": {
@@ -1744,30 +1410,12 @@
               "label": "Índice",
               "format": "text",
               "values": [
-                {
-                  "value": "ICL",
-                  "label": "ICL"
-                },
-                {
-                  "value": "IPC",
-                  "label": "IPC"
-                },
-                {
-                  "value": "casa_propia",
-                  "label": "Casa Propia"
-                },
-                {
-                  "value": "manual",
-                  "label": "Pactada"
-                },
-                {
-                  "value": "fijo",
-                  "label": "Fijo"
-                },
-                {
-                  "value": "otro",
-                  "label": "Otro"
-                }
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" },
+                { "value": "manual", "label": "Pactada" },
+                { "value": "fijo", "label": "Fijo" },
+                { "value": "otro", "label": "Otro" }
               ]
             },
             {
@@ -1801,18 +1449,9 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "pending",
-                  "label": "Pendiente"
-                },
-                {
-                  "value": "applied",
-                  "label": "Aplicada"
-                },
-                {
-                  "value": "cancelled",
-                  "label": "Cancelada"
-                }
+                { "value": "pending", "label": "Pendiente" },
+                { "value": "applied", "label": "Aplicada" },
+                { "value": "cancelled", "label": "Cancelada" }
               ]
             }
           ],
@@ -1841,14 +1480,10 @@
             "id": {
               "type": "string",
               "description": "ID",
-              "ref": {
-                "resource": "leases.adjustments"
-              }
+              "ref": { "resource": "leases.adjustments" }
             }
           },
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "additionalProperties": false
         },
         "output": {
@@ -1878,30 +1513,12 @@
               "label": "Índice",
               "format": "text",
               "values": [
-                {
-                  "value": "ICL",
-                  "label": "ICL"
-                },
-                {
-                  "value": "IPC",
-                  "label": "IPC"
-                },
-                {
-                  "value": "casa_propia",
-                  "label": "Casa Propia"
-                },
-                {
-                  "value": "manual",
-                  "label": "Pactada"
-                },
-                {
-                  "value": "fijo",
-                  "label": "Fijo"
-                },
-                {
-                  "value": "otro",
-                  "label": "Otro"
-                }
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" },
+                { "value": "manual", "label": "Pactada" },
+                { "value": "fijo", "label": "Fijo" },
+                { "value": "otro", "label": "Otro" }
               ]
             },
             {
@@ -1935,18 +1552,9 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "pending",
-                  "label": "Pendiente"
-                },
-                {
-                  "value": "applied",
-                  "label": "Aplicada"
-                },
-                {
-                  "value": "cancelled",
-                  "label": "Cancelada"
-                }
+                { "value": "pending", "label": "Pendiente" },
+                { "value": "applied", "label": "Aplicada" },
+                { "value": "cancelled", "label": "Cancelada" }
               ]
             }
           ],
@@ -2002,30 +1610,12 @@
               "label": "Índice",
               "format": "text",
               "values": [
-                {
-                  "value": "ICL",
-                  "label": "ICL"
-                },
-                {
-                  "value": "IPC",
-                  "label": "IPC"
-                },
-                {
-                  "value": "casa_propia",
-                  "label": "Casa Propia"
-                },
-                {
-                  "value": "manual",
-                  "label": "Pactada"
-                },
-                {
-                  "value": "fijo",
-                  "label": "Fijo"
-                },
-                {
-                  "value": "otro",
-                  "label": "Otro"
-                }
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" },
+                { "value": "manual", "label": "Pactada" },
+                { "value": "fijo", "label": "Fijo" },
+                { "value": "otro", "label": "Otro" }
               ]
             },
             {
@@ -2059,18 +1649,9 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "pending",
-                  "label": "Pendiente"
-                },
-                {
-                  "value": "applied",
-                  "label": "Aplicada"
-                },
-                {
-                  "value": "cancelled",
-                  "label": "Cancelada"
-                }
+                { "value": "pending", "label": "Pendiente" },
+                { "value": "applied", "label": "Aplicada" },
+                { "value": "cancelled", "label": "Cancelada" }
               ]
             }
           ],
@@ -2128,30 +1709,12 @@
               "label": "Índice",
               "format": "text",
               "values": [
-                {
-                  "value": "ICL",
-                  "label": "ICL"
-                },
-                {
-                  "value": "IPC",
-                  "label": "IPC"
-                },
-                {
-                  "value": "casa_propia",
-                  "label": "Casa Propia"
-                },
-                {
-                  "value": "manual",
-                  "label": "Pactada"
-                },
-                {
-                  "value": "fijo",
-                  "label": "Fijo"
-                },
-                {
-                  "value": "otro",
-                  "label": "Otro"
-                }
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" },
+                { "value": "manual", "label": "Pactada" },
+                { "value": "fijo", "label": "Fijo" },
+                { "value": "otro", "label": "Otro" }
               ]
             },
             {
@@ -2185,18 +1748,9 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "pending",
-                  "label": "Pendiente"
-                },
-                {
-                  "value": "applied",
-                  "label": "Aplicada"
-                },
-                {
-                  "value": "cancelled",
-                  "label": "Cancelada"
-                }
+                { "value": "pending", "label": "Pendiente" },
+                { "value": "applied", "label": "Aplicada" },
+                { "value": "cancelled", "label": "Cancelada" }
               ]
             }
           ],
@@ -2234,9 +1788,7 @@
               "description": "Con qué cotización convertir los contratos en dólares: «oficial», «blue», «mep». Si se omite, la de la configuración."
             }
           },
-          "required": [
-            "period"
-          ],
+          "required": ["period"],
           "additionalProperties": false
         },
         "output": {
@@ -2285,14 +1837,10 @@
             "id": {
               "type": "string",
               "description": "ID del registro.",
-              "ref": {
-                "resource": "leases.contracts"
-              }
+              "ref": { "resource": "leases.contracts" }
             }
           },
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "additionalProperties": false
         },
         "output": {
@@ -2353,16 +1901,11 @@
             },
             "applyLateFee": {
               "type": "string",
-              "enum": [
-                "propose",
-                "off"
-              ],
+              "enum": ["propose", "off"],
               "description": "Si proponer el punitorio de lo vencido. Propuesto no es cobrado: cobrarlo es otra operación."
             }
           },
-          "required": [
-            "period"
-          ],
+          "required": ["period"],
           "additionalProperties": false
         },
         "output": {
@@ -2416,22 +1959,10 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "open",
-                  "label": "Emitido"
-                },
-                {
-                  "value": "partial",
-                  "label": "Parcial"
-                },
-                {
-                  "value": "paid",
-                  "label": "Pagado"
-                },
-                {
-                  "value": "overdue",
-                  "label": "Vencido"
-                }
+                { "value": "open", "label": "Emitido" },
+                { "value": "partial", "label": "Parcial" },
+                { "value": "paid", "label": "Pagado" },
+                { "value": "overdue", "label": "Vencido" }
               ]
             }
           ],
@@ -2465,9 +1996,7 @@
               "description": "El mes, en formato AAAA-MM."
             }
           },
-          "required": [
-            "period"
-          ],
+          "required": ["period"],
           "additionalProperties": false
         },
         "output": {
@@ -2521,22 +2050,10 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "open",
-                  "label": "Emitido"
-                },
-                {
-                  "value": "partial",
-                  "label": "Parcial"
-                },
-                {
-                  "value": "paid",
-                  "label": "Pagado"
-                },
-                {
-                  "value": "overdue",
-                  "label": "Vencido"
-                }
+                { "value": "open", "label": "Emitido" },
+                { "value": "partial", "label": "Parcial" },
+                { "value": "paid", "label": "Pagado" },
+                { "value": "overdue", "label": "Vencido" }
               ]
             }
           ],
@@ -2567,9 +2084,7 @@
             "id": {
               "type": "string",
               "description": "El contrato que se edita. Si se omite, se firma uno nuevo.",
-              "ref": {
-                "resource": "leases.contracts"
-              }
+              "ref": { "resource": "leases.contracts" }
             },
             "data": {
               "type": "object",
@@ -2579,24 +2094,17 @@
                   "type": "string",
                   "format": "uuid",
                   "description": "La unidad que se alquila.",
-                  "ref": {
-                    "resource": "properties.units"
-                  }
+                  "ref": { "resource": "properties.units" }
                 },
                 "tenant_contact_id": {
                   "type": "string",
                   "format": "uuid",
                   "description": "El inquilino que la alquila.",
-                  "ref": {
-                    "resource": "contacts"
-                  }
+                  "ref": { "resource": "contacts" }
                 },
                 "contract_type": {
                   "type": "string",
-                  "enum": [
-                    "determinado",
-                    "indeterminado"
-                  ],
+                  "enum": ["determinado", "indeterminado"],
                   "description": "Plazo determinado (con fecha de fin) o indeterminado. Si se omite, determinado."
                 },
                 "start_date": {
@@ -2621,10 +2129,7 @@
                 },
                 "currency": {
                   "type": "string",
-                  "enum": [
-                    "ARS",
-                    "USD"
-                  ],
+                  "enum": ["ARS", "USD"],
                   "description": "Moneda del alquiler. Si se omite, pesos."
                 },
                 "due_day": {
@@ -2633,19 +2138,12 @@
                 },
                 "due_day_type": {
                   "type": "string",
-                  "enum": [
-                    "fixed",
-                    "business"
-                  ],
+                  "enum": ["fixed", "business"],
                   "description": "Cómo se cuenta ese día: fijo del mes, o hábil (corre el vencimiento si cae feriado o fin de semana)."
                 },
                 "adjustment_index": {
                   "type": "string",
-                  "enum": [
-                    "ICL",
-                    "IPC",
-                    "casa_propia"
-                  ],
+                  "enum": ["ICL", "IPC", "casa_propia"],
                   "description": "Con qué índice se actualiza el alquiler. Si se omite, no se actualiza."
                 },
                 "adjustment_months": {
@@ -2678,9 +2176,7 @@
                   "type": "string",
                   "format": "uuid",
                   "description": "El garante, si la garantía es una persona.",
-                  "ref": {
-                    "resource": "contacts"
-                  }
+                  "ref": { "resource": "contacts" }
                 },
                 "guarantee_notes": {
                   "type": "string",
@@ -2697,20 +2193,13 @@
               "additionalProperties": false
             }
           },
-          "required": [
-            "data"
-          ],
+          "required": ["data"],
           "additionalProperties": false
         },
         "output": {
           "kind": "record",
           "fields": [
-            {
-              "key": "id",
-              "name": "id",
-              "label": "Contrato",
-              "format": "text"
-            },
+            { "key": "id", "name": "id", "label": "Contrato", "format": "text" },
             {
               "key": "created",
               "name": "created",
@@ -2751,16 +2240,11 @@
             },
             "applyLateFee": {
               "type": "string",
-              "enum": [
-                "propose",
-                "off"
-              ],
+              "enum": ["propose", "off"],
               "description": "Si proponer el punitorio de lo vencido."
             }
           },
-          "required": [
-            "period"
-          ],
+          "required": ["period"],
           "additionalProperties": false
         },
         "output": {
@@ -2814,22 +2298,10 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "open",
-                  "label": "Emitido"
-                },
-                {
-                  "value": "partial",
-                  "label": "Parcial"
-                },
-                {
-                  "value": "paid",
-                  "label": "Pagado"
-                },
-                {
-                  "value": "overdue",
-                  "label": "Vencido"
-                }
+                { "value": "open", "label": "Emitido" },
+                { "value": "partial", "label": "Parcial" },
+                { "value": "paid", "label": "Pagado" },
+                { "value": "overdue", "label": "Vencido" }
               ]
             }
           ],
@@ -2862,9 +2334,7 @@
               "description": "El año de la serie, con cuatro dígitos."
             }
           },
-          "required": [
-            "year"
-          ],
+          "required": ["year"],
           "additionalProperties": false
         },
         "output": {
@@ -2918,22 +2388,10 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "open",
-                  "label": "Emitido"
-                },
-                {
-                  "value": "partial",
-                  "label": "Parcial"
-                },
-                {
-                  "value": "paid",
-                  "label": "Pagado"
-                },
-                {
-                  "value": "overdue",
-                  "label": "Vencido"
-                }
+                { "value": "open", "label": "Emitido" },
+                { "value": "partial", "label": "Parcial" },
+                { "value": "paid", "label": "Pagado" },
+                { "value": "overdue", "label": "Vencido" }
               ]
             }
           ],
@@ -2964,14 +2422,10 @@
             "leaseId": {
               "type": "string",
               "description": "El contrato cuya ficha se pide.",
-              "ref": {
-                "resource": "leases.contracts"
-              }
+              "ref": { "resource": "leases.contracts" }
             }
           },
-          "required": [
-            "leaseId"
-          ],
+          "required": ["leaseId"],
           "additionalProperties": false
         },
         "output": {
@@ -3025,22 +2479,10 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "open",
-                  "label": "Emitido"
-                },
-                {
-                  "value": "partial",
-                  "label": "Parcial"
-                },
-                {
-                  "value": "paid",
-                  "label": "Pagado"
-                },
-                {
-                  "value": "overdue",
-                  "label": "Vencido"
-                }
+                { "value": "open", "label": "Emitido" },
+                { "value": "partial", "label": "Parcial" },
+                { "value": "paid", "label": "Pagado" },
+                { "value": "overdue", "label": "Vencido" }
               ]
             }
           ],
@@ -3071,14 +2513,10 @@
             "leaseId": {
               "type": "string",
               "description": "El contrato cuyas actualizaciones se piden.",
-              "ref": {
-                "resource": "leases.contracts"
-              }
+              "ref": { "resource": "leases.contracts" }
             }
           },
-          "required": [
-            "leaseId"
-          ],
+          "required": ["leaseId"],
           "additionalProperties": false
         },
         "output": {
@@ -3108,30 +2546,12 @@
               "label": "Índice",
               "format": "text",
               "values": [
-                {
-                  "value": "ICL",
-                  "label": "ICL"
-                },
-                {
-                  "value": "IPC",
-                  "label": "IPC"
-                },
-                {
-                  "value": "casa_propia",
-                  "label": "Casa Propia"
-                },
-                {
-                  "value": "manual",
-                  "label": "Pactada"
-                },
-                {
-                  "value": "fijo",
-                  "label": "Fijo"
-                },
-                {
-                  "value": "otro",
-                  "label": "Otro"
-                }
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" },
+                { "value": "manual", "label": "Pactada" },
+                { "value": "fijo", "label": "Fijo" },
+                { "value": "otro", "label": "Otro" }
               ]
             },
             {
@@ -3165,18 +2585,9 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "pending",
-                  "label": "Pendiente"
-                },
-                {
-                  "value": "applied",
-                  "label": "Aplicada"
-                },
-                {
-                  "value": "cancelled",
-                  "label": "Cancelada"
-                }
+                { "value": "pending", "label": "Pendiente" },
+                { "value": "applied", "label": "Aplicada" },
+                { "value": "cancelled", "label": "Cancelada" }
               ]
             }
           ],
@@ -3207,14 +2618,10 @@
             "leaseId": {
               "type": "string",
               "description": "El contrato cuya cuenta corriente se pide.",
-              "ref": {
-                "resource": "leases.contracts"
-              }
+              "ref": { "resource": "leases.contracts" }
             }
           },
-          "required": [
-            "leaseId"
-          ],
+          "required": ["leaseId"],
           "additionalProperties": false
         },
         "output": {
@@ -3268,22 +2675,10 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "open",
-                  "label": "Emitido"
-                },
-                {
-                  "value": "partial",
-                  "label": "Parcial"
-                },
-                {
-                  "value": "paid",
-                  "label": "Pagado"
-                },
-                {
-                  "value": "overdue",
-                  "label": "Vencido"
-                }
+                { "value": "open", "label": "Emitido" },
+                { "value": "partial", "label": "Parcial" },
+                { "value": "paid", "label": "Pagado" },
+                { "value": "overdue", "label": "Vencido" }
               ]
             }
           ],
@@ -3314,14 +2709,10 @@
             "leaseId": {
               "type": "string",
               "description": "El contrato cuyos conceptos se piden.",
-              "ref": {
-                "resource": "leases.contracts"
-              }
+              "ref": { "resource": "leases.contracts" }
             }
           },
-          "required": [
-            "leaseId"
-          ],
+          "required": ["leaseId"],
           "additionalProperties": false
         },
         "output": {
@@ -3339,26 +2730,11 @@
               "label": "Tipo",
               "format": "text",
               "values": [
-                {
-                  "value": "abl",
-                  "label": "ABL / inmobiliario"
-                },
-                {
-                  "value": "servicio",
-                  "label": "Servicio"
-                },
-                {
-                  "value": "expensas",
-                  "label": "Expensas"
-                },
-                {
-                  "value": "descuento",
-                  "label": "Descuento"
-                },
-                {
-                  "value": "otro",
-                  "label": "Otro"
-                }
+                { "value": "abl", "label": "ABL / inmobiliario" },
+                { "value": "servicio", "label": "Servicio" },
+                { "value": "expensas", "label": "Expensas" },
+                { "value": "descuento", "label": "Descuento" },
+                { "value": "otro", "label": "Otro" }
               ]
             },
             {
@@ -3401,14 +2777,10 @@
             "tenantId": {
               "type": "string",
               "description": "El inquilino cuya ficha se pide.",
-              "ref": {
-                "resource": "contacts"
-              }
+              "ref": { "resource": "contacts" }
             }
           },
-          "required": [
-            "tenantId"
-          ],
+          "required": ["tenantId"],
           "additionalProperties": false
         },
         "output": {
@@ -3462,22 +2834,10 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "open",
-                  "label": "Emitido"
-                },
-                {
-                  "value": "partial",
-                  "label": "Parcial"
-                },
-                {
-                  "value": "paid",
-                  "label": "Pagado"
-                },
-                {
-                  "value": "overdue",
-                  "label": "Vencido"
-                }
+                { "value": "open", "label": "Emitido" },
+                { "value": "partial", "label": "Parcial" },
+                { "value": "paid", "label": "Pagado" },
+                { "value": "overdue", "label": "Vencido" }
               ]
             }
           ],
@@ -3508,14 +2868,10 @@
             "id": {
               "type": "string",
               "description": "El inquilino cuyos datos se piden.",
-              "ref": {
-                "resource": "contacts"
-              }
+              "ref": { "resource": "contacts" }
             }
           },
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "additionalProperties": false
         },
         "output": {
@@ -3655,9 +3011,7 @@
             "id": {
               "type": "string",
               "description": "El inquilino que se edita. Si se omite, se crea uno nuevo.",
-              "ref": {
-                "resource": "contacts"
-              }
+              "ref": { "resource": "contacts" }
             },
             "data": {
               "type": "object",
@@ -3687,28 +3041,16 @@
                   "type": "string",
                   "description": "Un segundo teléfono."
                 },
-                "address": {
-                  "type": "string",
-                  "description": "Domicilio."
-                },
-                "city": {
-                  "type": "string",
-                  "description": "Localidad."
-                },
-                "province": {
-                  "type": "string",
-                  "description": "Provincia."
-                },
+                "address": { "type": "string", "description": "Domicilio." },
+                "city": { "type": "string", "description": "Localidad." },
+                "province": { "type": "string", "description": "Provincia." },
                 "zip_code": {
                   "type": "string",
                   "description": "Código postal."
                 },
                 "kind": {
                   "type": "string",
-                  "enum": [
-                    "persona",
-                    "empresa"
-                  ],
+                  "enum": ["persona", "empresa"],
                   "description": "Si el inquilino es una persona o una empresa."
                 },
                 "nationality": {
@@ -3740,15 +3082,11 @@
                   "description": "Forma jurídica de la empresa: SA, SRL, monotributista."
                 }
               },
-              "required": [
-                "name"
-              ],
+              "required": ["name"],
               "additionalProperties": false
             }
           },
-          "required": [
-            "data"
-          ],
+          "required": ["data"],
           "additionalProperties": false
         },
         "output": {
@@ -3832,18 +3170,9 @@
               "label": "Ajuste",
               "format": "text",
               "values": [
-                {
-                  "value": "ICL",
-                  "label": "ICL"
-                },
-                {
-                  "value": "IPC",
-                  "label": "IPC"
-                },
-                {
-                  "value": "casa_propia",
-                  "label": "Casa Propia"
-                }
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" }
               ]
             },
             {
@@ -3852,34 +3181,13 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "vigente",
-                  "label": "Vigente"
-                },
-                {
-                  "value": "por_comenzar",
-                  "label": "Por comenzar"
-                },
-                {
-                  "value": "por_vencer",
-                  "label": "Por vencer"
-                },
-                {
-                  "value": "terminado",
-                  "label": "Terminado"
-                },
-                {
-                  "value": "renovado",
-                  "label": "Renovado"
-                },
-                {
-                  "value": "rescindido",
-                  "label": "Rescindido"
-                },
-                {
-                  "value": "borrador",
-                  "label": "Borrador"
-                }
+                { "value": "vigente", "label": "Vigente" },
+                { "value": "por_comenzar", "label": "Por comenzar" },
+                { "value": "por_vencer", "label": "Por vencer" },
+                { "value": "terminado", "label": "Terminado" },
+                { "value": "renovado", "label": "Renovado" },
+                { "value": "rescindido", "label": "Rescindido" },
+                { "value": "borrador", "label": "Borrador" }
               ]
             }
           ],
@@ -3910,14 +3218,10 @@
             "id": {
               "type": "string",
               "description": "El contrato cuyo detalle se pide.",
-              "ref": {
-                "resource": "leases.contracts"
-              }
+              "ref": { "resource": "leases.contracts" }
             }
           },
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "additionalProperties": false
         },
         "output": {
@@ -3965,18 +3269,9 @@
               "label": "Ajuste",
               "format": "text",
               "values": [
-                {
-                  "value": "ICL",
-                  "label": "ICL"
-                },
-                {
-                  "value": "IPC",
-                  "label": "IPC"
-                },
-                {
-                  "value": "casa_propia",
-                  "label": "Casa Propia"
-                }
+                { "value": "ICL", "label": "ICL" },
+                { "value": "IPC", "label": "IPC" },
+                { "value": "casa_propia", "label": "Casa Propia" }
               ]
             },
             {
@@ -3985,34 +3280,13 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "vigente",
-                  "label": "Vigente"
-                },
-                {
-                  "value": "por_comenzar",
-                  "label": "Por comenzar"
-                },
-                {
-                  "value": "por_vencer",
-                  "label": "Por vencer"
-                },
-                {
-                  "value": "terminado",
-                  "label": "Terminado"
-                },
-                {
-                  "value": "renovado",
-                  "label": "Renovado"
-                },
-                {
-                  "value": "rescindido",
-                  "label": "Rescindido"
-                },
-                {
-                  "value": "borrador",
-                  "label": "Borrador"
-                }
+                { "value": "vigente", "label": "Vigente" },
+                { "value": "por_comenzar", "label": "Por comenzar" },
+                { "value": "por_vencer", "label": "Por vencer" },
+                { "value": "terminado", "label": "Terminado" },
+                { "value": "renovado", "label": "Renovado" },
+                { "value": "rescindido", "label": "Rescindido" },
+                { "value": "borrador", "label": "Borrador" }
               ]
             }
           ],
@@ -4043,9 +3317,7 @@
             "id": {
               "type": "string",
               "description": "El contrato que se renueva.",
-              "ref": {
-                "resource": "leases.contracts"
-              }
+              "ref": { "resource": "leases.contracts" }
             },
             "endDate": {
               "type": "string",
@@ -4075,11 +3347,7 @@
               "description": "Notas de la renovación."
             }
           },
-          "required": [
-            "id",
-            "endDate",
-            "rentAmount"
-          ],
+          "required": ["id", "endDate", "rentAmount"],
           "additionalProperties": false
         },
         "output": {
@@ -4123,24 +3391,16 @@
             "id": {
               "type": "string",
               "description": "El contrato que se rescinde.",
-              "ref": {
-                "resource": "leases.contracts"
-              }
+              "ref": { "resource": "leases.contracts" }
             },
             "terminationDate": {
               "type": "string",
               "format": "date",
               "description": "El día en que termina. Decide hasta cuándo se cobra y desde cuándo la unidad está disponible."
             },
-            "notes": {
-              "type": "string",
-              "description": "Por qué se rescinde."
-            }
+            "notes": { "type": "string", "description": "Por qué se rescinde." }
           },
-          "required": [
-            "id",
-            "terminationDate"
-          ],
+          "required": ["id", "terminationDate"],
           "additionalProperties": false
         },
         "output": {
@@ -4233,22 +3493,10 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "open",
-                  "label": "Emitido"
-                },
-                {
-                  "value": "partial",
-                  "label": "Parcial"
-                },
-                {
-                  "value": "paid",
-                  "label": "Pagado"
-                },
-                {
-                  "value": "overdue",
-                  "label": "Vencido"
-                }
+                { "value": "open", "label": "Emitido" },
+                { "value": "partial", "label": "Parcial" },
+                { "value": "paid", "label": "Pagado" },
+                { "value": "overdue", "label": "Vencido" }
               ]
             }
           ],
@@ -4336,14 +3584,10 @@
             "id": {
               "type": "string",
               "description": "ID",
-              "ref": {
-                "resource": "leases.expiries"
-              }
+              "ref": { "resource": "leases.expiries" }
             }
           },
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "additionalProperties": false
         },
         "output": {
@@ -4355,14 +3599,8 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "vencido",
-                  "label": "Vencido"
-                },
-                {
-                  "value": "por_vencer",
-                  "label": "Por vencer"
-                }
+                { "value": "vencido", "label": "Vencido" },
+                { "value": "por_vencer", "label": "Por vencer" }
               ]
             },
             {
@@ -4371,18 +3609,9 @@
               "label": "Qué vence",
               "format": "text",
               "values": [
-                {
-                  "value": "certificado",
-                  "label": "Certificado"
-                },
-                {
-                  "value": "contrato",
-                  "label": "Contrato"
-                },
-                {
-                  "value": "garantia",
-                  "label": "Garantía"
-                }
+                { "value": "certificado", "label": "Certificado" },
+                { "value": "contrato", "label": "Contrato" },
+                { "value": "garantia", "label": "Garantía" }
               ]
             },
             {
@@ -4438,14 +3667,8 @@
               "label": "Estado",
               "format": "text",
               "values": [
-                {
-                  "value": "vencido",
-                  "label": "Vencido"
-                },
-                {
-                  "value": "por_vencer",
-                  "label": "Por vencer"
-                }
+                { "value": "vencido", "label": "Vencido" },
+                { "value": "por_vencer", "label": "Por vencer" }
               ]
             },
             {
@@ -4454,18 +3677,9 @@
               "label": "Qué vence",
               "format": "text",
               "values": [
-                {
-                  "value": "certificado",
-                  "label": "Certificado"
-                },
-                {
-                  "value": "contrato",
-                  "label": "Contrato"
-                },
-                {
-                  "value": "garantia",
-                  "label": "Garantía"
-                }
+                { "value": "certificado", "label": "Certificado" },
+                { "value": "contrato", "label": "Contrato" },
+                { "value": "garantia", "label": "Garantía" }
               ]
             },
             {
@@ -4545,14 +3759,10 @@
             "id": {
               "type": "string",
               "description": "ID del registro.",
-              "ref": {
-                "resource": "leases.coTenants"
-              }
+              "ref": { "resource": "leases.coTenants" }
             }
           },
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "additionalProperties": false
         },
         "generatedBy": "agentic-graph",
@@ -4609,14 +3819,10 @@
             "id": {
               "type": "string",
               "description": "ID del registro.",
-              "ref": {
-                "resource": "leases.guarantees"
-              }
+              "ref": { "resource": "leases.guarantees" }
             }
           },
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "additionalProperties": false
         },
         "generatedBy": "agentic-graph",
@@ -4642,14 +3848,10 @@
             "id": {
               "type": "string",
               "description": "La actualización que se descarta.",
-              "ref": {
-                "resource": "leases.adjustments"
-              }
+              "ref": { "resource": "leases.adjustments" }
             }
           },
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "additionalProperties": false
         },
         "output": {
@@ -4687,25 +3889,16 @@
             "id": {
               "type": "string",
               "description": "El concepto que se da de baja.",
-              "ref": {
-                "resource": "leases.charges"
-              }
+              "ref": { "resource": "leases.charges" }
             }
           },
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "additionalProperties": false
         },
         "output": {
           "kind": "record",
           "fields": [
-            {
-              "key": "id",
-              "name": "id",
-              "label": "Concepto",
-              "format": "text"
-            }
+            { "key": "id", "name": "id", "label": "Concepto", "format": "text" }
           ],
           "identifierKey": "id"
         },
@@ -4777,14 +3970,10 @@
             "id": {
               "type": "string",
               "description": "El vencimiento que vuelve a quedar pendiente.",
-              "ref": {
-                "resource": "leases.expiries"
-              }
+              "ref": { "resource": "leases.expiries" }
             }
           },
-          "required": [
-            "id"
-          ],
+          "required": ["id"],
           "additionalProperties": false
         },
         "output": {

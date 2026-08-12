@@ -75,12 +75,21 @@ export const customHandlers: CustomHandlers = {
     // reescribir historia.
     const emitir = generacion === 'auto' && periodo === mesActual();
 
+    // Emitir y leer son dos llamadas y no un flag de la lectura: `chargesForPeriod` se
+    // publica como capability de lectura, y una lectura que además emite queda visible
+    // para el perfil `readonly` como si solo consultara. Correr de más es gratis — la
+    // generación es incremental y saltea los contratos que ya tienen su cargo.
+    if (emitir) {
+      await execute('leases.billing.generateForPeriod', {
+        period: periodo,
+        usdHouse: await usdHouse(),
+      });
+    }
+
     const filas = await execute<Fila[]>('leases.billing.chargesForPeriod', {
       period: periodo,
       graceDays: politica.graceDays,
       applyLateFee: politica.apply,
-      generateIfMissing: emitir,
-      usdHouse: emitir ? await usdHouse() : undefined,
     });
 
     // `ask`: se avisa una vez por período que el mes está sin emitir. Repetirlo en cada
