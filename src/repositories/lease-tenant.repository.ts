@@ -18,6 +18,23 @@ export interface CoTenantRow {
   notes: string | null;
 }
 
+/**
+ * Lo que queda registrado tras guardar un co-firmante.
+ *
+ * Devuelve el vínculo entero y no solo su id: quien lo pidió —una persona o un
+ * agente— tiene que poder leer QUÉ quedó guardado sin volver a preguntar, y una
+ * respuesta que solo dice «listo, id X» no se puede contrastar con lo que se
+ * mandó. `created` distingue el alta de la corrección.
+ */
+export interface SavedCoTenant {
+  id: string;
+  created: boolean;
+  leaseId: string;
+  contactId: string;
+  role: string | null;
+  notes: string | null;
+}
+
 export class LeaseTenantRepository {
   constructor(private readonly db: ModuleDatabaseAPI) {}
 
@@ -90,7 +107,7 @@ export class LeaseTenantRepository {
     contactId: string;
     role?: string;
     notes?: string;
-  }): Promise<{ id: string; created: boolean }> {
+  }): Promise<SavedCoTenant> {
     const [contrato] = await this.db.ormQuery((tx) =>
       tx
         .select({
@@ -142,6 +159,16 @@ export class LeaseTenantRepository {
       updated_at: new Date().toISOString(),
     };
 
+    /** Lo guardado, releído de la fila que devolvió la escritura. */
+    const guardado = (fila: LeaseTenantRow, created: boolean): SavedCoTenant => ({
+      id: String(fila.id),
+      created,
+      leaseId: String(fila.lease_id),
+      contactId: String(fila.contact_id),
+      role: fila.role ?? null,
+      notes: fila.notes ?? null,
+    });
+
     if (id) {
       const [fila] = await this.db.ormQuery((tx) =>
         tx
@@ -151,7 +178,7 @@ export class LeaseTenantRepository {
           .returning()
       );
       if (!fila) throw new Error('No existe ese co-firmante.');
-      return { id: String(fila.id), created: false };
+      return guardado(fila, false);
     }
 
     const [fila] = await this.db.ormQuery((tx) =>
@@ -161,7 +188,7 @@ export class LeaseTenantRepository {
         .returning()
     );
     if (!fila) throw new Error('No se pudo registrar el co-firmante.');
-    return { id: String(fila.id), created: true };
+    return guardado(fila, true);
   }
 
   async update({

@@ -3660,6 +3660,9 @@ export const saveCoTenant = defineAction({
     required: ['leaseId', 'contactId'],
     additionalProperties: false,
   },
+  // Devuelve el vínculo entero, no solo su id: quien lo pidió tiene que poder leer qué
+  // quedó guardado sin volver a preguntar, y una respuesta que solo confirma «listo» no
+  // se puede contrastar contra lo que se mandó.
   output: {
     kind: 'record',
     fields: [
@@ -3667,6 +3670,10 @@ export const saveCoTenant = defineAction({
       // Distingue el alta de la corrección: quien pidió «agregá a la esposa» tiene que
       // poder saber si se sumó o si se actualizó una que ya estaba.
       { key: 'created', name: 'created', label: 'Se dio de alta', format: 'text' },
+      { key: 'leaseId', name: 'leaseId', label: 'Contrato', format: 'text' },
+      { key: 'contactId', name: 'contactId', label: 'Persona', format: 'text' },
+      { key: 'role', name: 'role', label: 'Vínculo', format: 'text' },
+      { key: 'notes', name: 'notes', label: 'Aclaración', format: 'text' },
     ],
   },
 });

@@ -504,24 +504,16 @@
       {
         "id": "leases.adjustments.list",
         "action": "leases.adjustments.list",
-        "title": "Listar Actualizaciones",
-        "description": "Obtiene Actualizaciones disponibles para el cliente actual.",
+        "title": "Listar actualizaciones de alquiler",
+        "description": "Todas las actualizaciones de alquiler registradas, con el contrato al que pertenecen, el índice aplicado y el monto que dejaron vigente.",
         "effect": "read",
         "confirmation": "never",
         "inputSchema": {
           "type": "object",
-          "properties": {
-            "limit": {
-              "type": "integer",
-              "description": "Cantidad de resultados a devolver. Default 20; máximo 50."
-            },
-            "offset": {
-              "type": "integer",
-              "description": "Cantidad de resultados a saltear para pedir la página siguiente."
-            }
-          },
+          "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -714,24 +706,16 @@
       {
         "id": "leases.charges.list",
         "action": "leases.charges.list",
-        "title": "Listar Concepto del contrato",
-        "description": "Obtiene Concepto del contrato disponibles para el cliente actual.",
+        "title": "Listar conceptos pactados",
+        "description": "Los conceptos que cada contrato suma o descuenta todos los meses además del alquiler —expensas, ABL, agua, bonificaciones—, con su importe.",
         "effect": "read",
         "confirmation": "never",
         "inputSchema": {
           "type": "object",
-          "properties": {
-            "limit": {
-              "type": "integer",
-              "description": "Cantidad de resultados a devolver. Default 20; máximo 50."
-            },
-            "offset": {
-              "type": "integer",
-              "description": "Cantidad de resultados a saltear para pedir la página siguiente."
-            }
-          },
+          "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -773,8 +757,8 @@
         },
         "generatedBy": "agentic-graph",
         "evidence": {
-          "level": 4,
-          "id": "ejecutado",
+          "level": 3,
+          "id": "cruzado",
           "floor": 3,
           "authority": "module",
           "coverage": "full",
@@ -1052,24 +1036,16 @@
       {
         "id": "leases.contracts.list",
         "action": "leases.contracts.list",
-        "title": "Listar Contrato",
-        "description": "Obtiene Contrato disponibles para el cliente actual.",
+        "title": "Listar contratos de alquiler",
+        "description": "Todos los contratos con su unidad, su propiedad, su inquilino y en qué estado están: vigente, por vencer, vencido o rescindido.",
         "effect": "read",
         "confirmation": "never",
         "inputSchema": {
           "type": "object",
-          "properties": {
-            "limit": {
-              "type": "integer",
-              "description": "Cantidad de resultados a devolver. Default 20; máximo 50."
-            },
-            "offset": {
-              "type": "integer",
-              "description": "Cantidad de resultados a saltear para pedir la página siguiente."
-            }
-          },
+          "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "output": {
           "kind": "collection",
           "fields": [
@@ -1250,20 +1226,24 @@
       {
         "id": "leases.expiries.list",
         "action": "leases.expiries.list",
-        "title": "Listar Vencimientos",
-        "description": "Obtiene Vencimientos disponibles para el cliente actual.",
+        "title": "Listar avisos de vencimiento",
+        "description": "Lo que está por vencer y todavía nadie resolvió: contratos que terminan, actualizaciones que tocan y garantías que caducan, de lo más urgente a lo que falta más. Lo ya marcado como visto no aparece salvo que se pida.",
         "effect": "read",
         "confirmation": "never",
         "inputSchema": {
           "type": "object",
           "properties": {
-            "limit": {
-              "type": "integer",
-              "description": "Cantidad de resultados a devolver. Default 20; máximo 50."
+            "level": {
+              "type": "string",
+              "description": "Dejar solo los de esta urgencia. Sin esto vienen todos."
             },
-            "offset": {
-              "type": "integer",
-              "description": "Cantidad de resultados a saltear para pedir la página siguiente."
+            "kind": {
+              "type": "string",
+              "description": "Dejar solo los de este tipo de aviso. Sin esto vienen todos."
+            },
+            "includeAcknowledged": {
+              "type": "boolean",
+              "description": "Incluir también los que alguien ya marcó como vistos. Por defecto se omiten, porque la lista es lo que queda por hacer."
             }
           },
           "additionalProperties": false
@@ -1827,20 +1807,25 @@
       {
         "id": "leases.billing.chargeLateFee",
         "action": "leases.billing.chargeLateFee",
-        "title": "Cobrar punitorio",
-        "description": "Ejecuta Cobrar punitorio para el cliente.",
+        "title": "Cobrar la mora de un contrato",
+        "description": "Le suma al alquiler impago el punitorio que corresponde por los días de atraso, según el porcentaje pactado en el contrato y los días de gracia configurados. Cobra sobre todos los cargos vencidos con saldo, salvo que se acote a un mes. El monto lo calcula el servidor: no se puede elegir cuánto. Cobrarlo dos veces el mismo día no lo duplica.",
         "effect": "write",
         "confirmation": "always",
         "inputSchema": {
           "type": "object",
           "properties": {
-            "id": {
+            "leaseId": {
               "type": "string",
-              "description": "ID del registro.",
+              "description": "El contrato al que se le cobra la mora.",
               "ref": { "resource": "leases.contracts" }
+            },
+            "period": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}$",
+              "description": "Acota el cobro a un mes (AAAA-MM). Si se omite, alcanza a todos los cargos vencidos con saldo."
             }
           },
-          "required": ["id"],
+          "required": ["leaseId"],
           "additionalProperties": false
         },
         "output": {
@@ -1880,7 +1865,7 @@
         "id": "leases.billing.chargesForPeriod",
         "action": "leases.billing.chargesForPeriod",
         "title": "Cobranza de un mes",
-        "description": "Los cargos de alquiler de un mes con lo facturado, lo cobrado y lo que quedó vencido. Si el mes todavía no tiene ningún cargo emitido, puede emitirlo en el mismo pedido.",
+        "description": "Los cargos de alquiler de un mes con lo facturado, lo cobrado y lo que quedó vencido. Solo consulta: un mes que todavía no se emitió vuelve vacío, y emitirlo es otra operación.",
         "effect": "read",
         "confirmation": "never",
         "inputSchema": {
@@ -1890,10 +1875,6 @@
               "type": "string",
               "pattern": "^\\d{4}-\\d{2}$",
               "description": "El mes, en formato AAAA-MM."
-            },
-            "generateIfMissing": {
-              "type": "boolean",
-              "description": "Si el mes todavía no tiene ningún cargo emitido, emitirlo en el mismo pedido. Sin esto, un mes sin emitir devuelve vacío."
             },
             "graceDays": {
               "type": "integer",
@@ -3724,18 +3705,10 @@
         "confirmation": "never",
         "inputSchema": {
           "type": "object",
-          "properties": {
-            "limit": {
-              "type": "integer",
-              "description": "Cantidad de resultados."
-            },
-            "offset": {
-              "type": "integer",
-              "description": "Resultados a saltear."
-            }
-          },
+          "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "generatedBy": "agentic-graph",
         "evidence": {
           "level": 3,
@@ -3784,18 +3757,10 @@
         "confirmation": "never",
         "inputSchema": {
           "type": "object",
-          "properties": {
-            "limit": {
-              "type": "integer",
-              "description": "Cantidad de resultados."
-            },
-            "offset": {
-              "type": "integer",
-              "description": "Resultados a saltear."
-            }
-          },
+          "properties": {},
           "additionalProperties": false
         },
+        "inputNone": true,
         "generatedBy": "agentic-graph",
         "evidence": {
           "level": 3,
@@ -3913,51 +3878,6 @@
         }
       },
       {
-        "id": "leases.billing.chargeTenantWorkOrders",
-        "action": "leases.billing.chargeTenantWorkOrders",
-        "title": "Pasar al recibo los arreglos que paga el inquilino",
-        "description": "Le suma al recibo de cada inquilino los arreglos cerrados que quedaron a cargo suyo. Cierra el circuito del mantenimiento: el propietario le pagó al que hizo el trabajo y acá recupera esa plata poniéndola donde corresponde. Es un barrido sobre toda la cartera: revisa lo que todavía no se cobró y lo agrega al primer recibo disponible, sin duplicar lo ya pasado.",
-        "effect": "write",
-        "confirmation": "always",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "today": {
-              "type": "string",
-              "format": "date",
-              "description": "Hasta qué día mirar los arreglos cerrados. Si se omite, hoy."
-            }
-          },
-          "additionalProperties": false
-        },
-        "output": {
-          "kind": "record",
-          "fields": [
-            {
-              "key": "charged",
-              "name": "charged",
-              "label": "Arreglos pasados al recibo",
-              "format": "text"
-            },
-            {
-              "key": "removed",
-              "name": "removed",
-              "label": "Arreglos retirados",
-              "format": "text"
-            }
-          ]
-        },
-        "generatedBy": "agentic-graph",
-        "evidence": {
-          "level": 4,
-          "id": "ejecutado",
-          "floor": 4,
-          "authority": "module",
-          "coverage": "declared-none",
-          "validated": false
-        }
-      },
-      {
         "id": "leases.expiries.unacknowledge",
         "action": "leases.expiries.unacknowledge",
         "title": "Volver a marcar un vencimiento como pendiente",
@@ -3997,11 +3917,153 @@
           "coverage": "partial",
           "validated": false
         }
+      },
+      {
+        "id": "leases.coTenants.save",
+        "action": "leases.coTenants.save",
+        "title": "Sumar a alguien que firma el contrato",
+        "description": "Registra a otra persona como firmante del contrato junto al inquilino principal —cónyuge, conviviente, cotitular, fiador solidario—, o corrige el vínculo de una ya registrada. Se niega si el contrato está cerrado, si la persona ya es el inquilino principal o si ya figura como firmante. No modifica los datos de la persona: eso se hace en su ficha de contacto.",
+        "effect": "write",
+        "confirmation": "always",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Solo para corregir uno ya registrado. Sin esto se da de alta uno nuevo.",
+              "ref": { "resource": "leases.coTenants" }
+            },
+            "leaseId": {
+              "type": "string",
+              "description": "El contrato que la persona firma.",
+              "ref": { "resource": "leases.contracts" }
+            },
+            "contactId": {
+              "type": "string",
+              "description": "La persona que firma. Tiene que existir como contacto.",
+              "ref": { "resource": "contacts" }
+            },
+            "role": {
+              "type": "string",
+              "description": "Con qué carácter firma: cotitular, conviviente, cónyuge o fiador solidario."
+            },
+            "notes": {
+              "type": "string",
+              "description": "Aclaración sobre el vínculo, si hace falta."
+            }
+          },
+          "required": ["leaseId", "contactId"],
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "record",
+          "fields": [
+            {
+              "key": "id",
+              "name": "id",
+              "label": "Co-firmante",
+              "format": "text"
+            },
+            {
+              "key": "created",
+              "name": "created",
+              "label": "Se dio de alta",
+              "format": "text"
+            },
+            {
+              "key": "leaseId",
+              "name": "leaseId",
+              "label": "Contrato",
+              "format": "text"
+            },
+            {
+              "key": "contactId",
+              "name": "contactId",
+              "label": "Persona",
+              "format": "text"
+            },
+            {
+              "key": "role",
+              "name": "role",
+              "label": "Vínculo",
+              "format": "text"
+            },
+            {
+              "key": "notes",
+              "name": "notes",
+              "label": "Aclaración",
+              "format": "text"
+            }
+          ]
+        },
+        "generatedBy": "agentic-graph",
+        "evidence": {
+          "level": 4,
+          "id": "ejecutado",
+          "floor": 4,
+          "authority": "module",
+          "coverage": "partial",
+          "validated": false
+        }
+      },
+      {
+        "id": "leases.coTenants.forLease",
+        "action": "leases.coTenants.forLease",
+        "title": "Ver quiénes más firman un contrato",
+        "description": "Los co-firmantes de un contrato con su nombre y su vínculo. El inquilino principal no aparece acá: está en el contrato mismo.",
+        "effect": "read",
+        "confirmation": "never",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "leaseId": {
+              "type": "string",
+              "description": "El contrato del que se quieren saber los firmantes.",
+              "ref": { "resource": "leases.contracts" }
+            }
+          },
+          "required": ["leaseId"],
+          "additionalProperties": false
+        },
+        "output": {
+          "kind": "collection",
+          "fields": [
+            {
+              "key": "name",
+              "name": "name",
+              "label": "Nombre",
+              "format": "text"
+            },
+            {
+              "key": "role",
+              "name": "role",
+              "label": "Vínculo",
+              "format": "text"
+            },
+            {
+              "key": "notes",
+              "name": "notes",
+              "label": "Notas",
+              "format": "text"
+            }
+          ],
+          "identifierKey": "id"
+        },
+        "generatedBy": "agentic-graph",
+        "evidence": {
+          "level": 3,
+          "id": "cruzado",
+          "floor": 3,
+          "authority": "module",
+          "coverage": "partial",
+          "validated": false
+        }
       }
     ],
-    "copilotCatalogFingerprint": "dc296222e471d9f27416ae5ed10e5acd",
-    "copilotCatalogContentFingerprint": "9b0313b54cee37e9fa59f1c9199e5f38",
-    "actionContracts": "./dist/agentic/contracts.js"
+    "copilotCatalogFingerprint": "069f994fe12c061b5766b7d0a30b240f",
+    "copilotCatalogContentFingerprint": "2ed7594b7f55797070e38ef3a185fa51",
+    "actionContracts": "./dist/agentic/contracts.js",
+    "copilotCatalogRuntimeFingerprint": "f5ec1db98b489b77c921a71938590f65"
   },
   "initView": "leases.dashboard-alquileres-fidelidad.open",
   "entry": "./dist/server.js"

@@ -61,8 +61,14 @@ describe('sumar un co-firmante a un contrato', () => {
     ).rejects.toThrow(/ya figura como co-firmante/i);
   });
 
-  it('da de alta y avisa que fue alta, no corrección', async () => {
-    const { db } = baseCon([[CONTRATO_VIGENTE], [], [{ id: 'ct-nuevo' }]]);
+  it('da de alta y devuelve el vínculo guardado, no solo su id', async () => {
+    // Devolver lo guardado es lo que permite contrastar la respuesta con lo que se
+    // mandó: un «listo, id X» no se puede verificar contra nada.
+    const { db } = baseCon([
+      [CONTRATO_VIGENTE],
+      [],
+      [{ id: 'ct-nuevo', lease_id: 'lease-1', contact_id: 'c-1', role: 'conyuge', notes: null }],
+    ]);
 
     const r = await new LeaseTenantRepository(db).save({
       leaseId: 'lease-1',
@@ -70,13 +76,32 @@ describe('sumar un co-firmante a un contrato', () => {
       role: 'conyuge',
     });
 
-    expect(r).toEqual({ id: 'ct-nuevo', created: true });
+    expect(r).toEqual({
+      id: 'ct-nuevo',
+      created: true,
+      leaseId: 'lease-1',
+      contactId: 'c-1',
+      role: 'conyuge',
+      notes: null,
+    });
   });
 
   it('al corregir uno existente no lo choca contra sí mismo', async () => {
     // La consulta de duplicados excluye el id que se está editando; si no lo hiciera,
     // guardar sin cambiar el contacto se rechazaría a sí mismo.
-    const { db, ormQuery } = baseCon([[CONTRATO_VIGENTE], [], [{ id: 'ct-1' }]]);
+    const { db, ormQuery } = baseCon([
+      [CONTRATO_VIGENTE],
+      [],
+      [
+        {
+          id: 'ct-1',
+          lease_id: 'lease-1',
+          contact_id: 'c-1',
+          role: 'fiador_solidario',
+          notes: null,
+        },
+      ],
+    ]);
 
     const r = await new LeaseTenantRepository(db).save({
       id: 'ct-1',
@@ -85,7 +110,7 @@ describe('sumar un co-firmante a un contrato', () => {
       role: 'fiador_solidario',
     });
 
-    expect(r).toEqual({ id: 'ct-1', created: false });
+    expect(r).toMatchObject({ id: 'ct-1', created: false, role: 'fiador_solidario' });
     expect(ormQuery).toHaveBeenCalledTimes(3);
   });
 });
