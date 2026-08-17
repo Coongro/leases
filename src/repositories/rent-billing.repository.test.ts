@@ -2,13 +2,14 @@ import type { ModuleDatabaseAPI } from '@coongro/plugin-sdk';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * El mes se emite CONTRATO POR CONTRATO.
+ * Dos invariantes de la emisión del mes, los dos ganados a golpes.
  *
- * Antes `generateIfMissing` miraba si el período tenía algún cargo y, si lo tenía, no
- * generaba nada más: un contrato firmado después de emitir el mes quedaba sin facturar
- * para siempre y sin ningún aviso. La unidad se veía alquilada y el inquilino no recibía
- * nada que pagar. La generación ya es idempotente por contrato, así que la única forma
- * de equivocarse era no llamarla.
+ * 1. LEER NO EMITE. `chargesForPeriod` tuvo un `generateIfMissing` que llamaba a la
+ *    generación: una escritura publicada bajo un contrato que declaraba lectura, visible
+ *    para el perfil `readonly` como si solo consultara.
+ * 2. SE EMITE CONTRATO POR CONTRATO. Antes se miraba si el período tenía algún cargo y,
+ *    si lo tenía, no se generaba nada más: un contrato firmado después de emitir el mes
+ *    quedaba sin facturar para siempre y sin ningún aviso.
  */
 const listWithTotals = vi.fn(async () => [] as Array<Record<string, unknown>>);
 
@@ -61,30 +62,32 @@ function baseVacia() {
 describe('emitir los cargos del mes', () => {
   beforeEach(() => {
     listWithTotals.mockClear();
+    listWithTotals.mockResolvedValue([]);
   });
 
-  it('genera lo que falta aunque el período YA tenga cargos emitidos', async () => {
-    // El mes ya tiene el recibo de otro contrato: ese era el caso que frenaba todo.
-    listWithTotals.mockResolvedValue([
-      { id: 'cuenta-1', source_ref: 'contrato-viejo:2026-08', status: 'open', total: '300000' },
-    ]);
-    const repo = new RentBillingRepository(baseVacia());
-    const generate = vi
-      .spyOn(repo, 'generateForPeriod')
-      .mockResolvedValue({ period: '2026-08', created: 0, skipped: 1, details: [] });
-
-    await repo.chargesForPeriod({ period: '2026-08', generateIfMissing: true });
-
-    expect(generate).toHaveBeenCalledWith({ period: '2026-08', usdHouse: undefined });
-  });
-
-  it('no genera nada si no se lo piden', async () => {
+  it('consultar la cobranza no emite nada, ni con el mes vacío', async () => {
+    // El mes sin un solo cargo es justo el caso en el que el atajo viejo emitía.
     const repo = new RentBillingRepository(baseVacia());
     const generate = vi.spyOn(repo, 'generateForPeriod');
 
     await repo.chargesForPeriod({ period: '2026-08' });
 
     expect(generate).not.toHaveBeenCalled();
+  });
+
+  it('la emisión no pregunta si el mes ya tiene cargos: decide por contrato', async () => {
+    // El corte que dejaba contratos sin facturar era mirar el estado del período
+    // completo. Que no se consulten las cuentas del mes es esa ausencia, verificada.
+    listWithTotals.mockResolvedValue([
+      { id: 'cuenta-1', source_ref: 'contrato-viejo:2026-08', status: 'open', total: '300000' },
+    ]);
+
+    const resultado = await new RentBillingRepository(baseVacia()).generateForPeriod({
+      period: '2026-08',
+    });
+
+    expect(listWithTotals).not.toHaveBeenCalled();
+    expect(resultado.period).toBe('2026-08');
   });
 });
 

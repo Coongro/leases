@@ -1,0 +1,107 @@
+{
+  "specVersion": 1,
+  "kind": "panel",
+  "title": "Co-firmante del contrato",
+  "slug": "co-firmante",
+  "blocks": [
+    {
+      "id": "aviso",
+      "kind": "component",
+      "comp": "Callout",
+      "props": {
+        "tone": "neutral",
+        "title": "Quién más responde por el contrato",
+        "text": "El inquilino principal ya está en el contrato: acá van los demás firmantes, que responden solidariamente. La garantía se registra aparte."
+      }
+    },
+    {
+      "id": "s1",
+      "kind": "container",
+      "ctype": "card",
+      "label": "Quién firma",
+      "icon": "Users",
+      "children": [
+        {
+          "id": "f_lease",
+          "kind": "field",
+          "name": "leaseId",
+          "fieldType": "ref",
+          "label": "Contrato",
+          "refEntity": "leases.contracts",
+          "placeholder": "Elegí el contrato",
+          "width": "full",
+          "validations": [
+            "required"
+          ]
+        },
+        {
+          "id": "f_contact",
+          "kind": "field",
+          "name": "contactId",
+          "fieldType": "ref",
+          "label": "Persona",
+          "refEntity": "contacts",
+          "placeholder": "Buscala entre los contactos",
+          "width": "full",
+          "validations": [
+            "required"
+          ],
+          "help": "Tiene que existir como contacto. Si es la primera vez, cargala primero en Contactos."
+        },
+        {
+          "id": "f_role",
+          "kind": "field",
+          "name": "role",
+          "fieldType": "enum",
+          "label": "Con qué carácter firma",
+          "width": "half",
+          "validations": [],
+          "options": [
+            {
+              "value": "cotitular",
+              "label": "Cotitular"
+            },
+            {
+              "value": "conyuge",
+              "label": "Cónyuge"
+            },
+            {
+              "value": "conviviente",
+              "label": "Conviviente"
+            },
+            {
+              "value": "fiador_solidario",
+              "label": "Fiador solidario"
+            }
+          ]
+        },
+        {
+          "id": "f_notes",
+          "kind": "field",
+          "name": "notes",
+          "fieldType": "text",
+          "label": "Aclaración",
+          "width": "half",
+          "validations": [],
+          "placeholder": "Ej: firma solo por la unidad, no por la cochera"
+        }
+      ]
+    }
+  ],
+  "data": {
+    "submitLabel": "Sumar al contrato",
+    "successTitle": "Co-firmante registrado",
+    "successMessage": "La persona queda como firmante del contrato junto al inquilino principal."
+  },
+  "headless": {
+    "handlers": [
+      {
+        "hook": "onSubmit",
+        "mode": "command",
+        "action": "leases.coTenants.save",
+        "effect": "write",
+        "confirmation": "always"
+      }
+    ]
+  }
+}

@@ -311,37 +311,29 @@ export class RentBillingRepository {
    * quien la lee es el cliente. Sin ella no se propone nada: es el mismo criterio que
    * en la pantalla — el punitorio se propone, no se cobra solo.
    *
-   * `generateIfMissing` emite lo que le FALTA al mes, contrato por contrato. Va acá y no
-   * en dos llamadas seguidas porque «traeme el mes, y si falta emitilo» es UNA decisión:
-   * separarlas deja una ventana en la que dos pantallas abiertas a la vez emiten dos
-   * veces (no duplica —el `source_ref` es único— pero sí genera trabajo y confusión).
+   * **Esto NO emite.** Tenía un `generateIfMissing` que llamaba a `generateForPeriod`,
+   * y ese atajo convertía una lectura en una escritura encubierta: la capability se
+   * publica declarada `read`, así que la ve el perfil de conexión `readonly` como una
+   * consulta inofensiva y —por ser lectura— nunca tuvo que correr de verdad para
+   * publicarse. Una rama que emite plata quedaba detrás de un contrato que decía
+   * consultar. Quien quiera emitir llama a `generateForPeriod`, que declara lo que hace.
    *
-   * Antes era todo-o-nada: si el período ya tenía UN cargo, no generaba ninguno más. Un
-   * contrato firmado después de emitir el mes quedaba sin facturar para siempre, sin
-   * ningún aviso — la unidad se veía alquilada y el inquilino no recibía nada que pagar.
-   * El barrido es idempotente por contrato (`openForSource` reusa la cuenta que ya
-   * existe sin volver a cargarle líneas), así que correrlo de más no cuesta nada y
-   * correrlo de menos deja plata sin cobrar.
+   * El acople existía para cerrar una ventana real: dos pantallas abiertas a la vez
+   * emitiendo el mismo mes. Esa ventana se cerró sola cuando la generación pasó a ser
+   * incremental e idempotente por contrato (`openForSource` reusa la cuenta que ya
+   * existe sin volver a cargarle líneas), así que emitir de más dejó de costar nada.
    */
   async chargesForPeriod({
     period,
     graceDays,
     applyLateFee,
-    generateIfMissing,
-    usdHouse,
   }: {
     period: string;
     graceDays?: number;
     applyLateFee?: 'propose' | 'off';
-    generateIfMissing?: boolean;
-    usdHouse?: string;
   }): Promise<RentChargeRow[]> {
     const cuentas = new AccountRepository(this.db);
     const contratos = new LeaseRepository(this.db);
-
-    // Sin preguntar si el mes «ya está emitido»: la generación decide contrato por
-    // contrato y saltea los que ya tienen su cuenta.
-    if (generateIfMissing) await this.generateForPeriod({ period, usdHouse });
 
     const [filas, leases, desgloses] = await Promise.all([
       cuentas.listWithTotals({ source: RENT_SOURCE, refSuffix: `:${period}` }),

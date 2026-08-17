@@ -509,6 +509,107 @@
                   }
                 }
               ]
+            },
+            {
+              "id": "c_firmantes",
+              "kind": "container",
+              "ctype": "card",
+              "label": "Quiénes firman",
+              "icon": "Users",
+              "children": [
+                {
+                  "id": "btn_firmante",
+                  "kind": "component",
+                  "comp": "Button",
+                  "align": "right",
+                  "props": {
+                    "label": "Sumar co-firmante",
+                    "variant": "secondary",
+                    "action": {
+                      "id": "openForm",
+                      "label": "Sumar co-firmante",
+                      "target": "leases.co-firmante-del-contrato.open"
+                    }
+                  }
+                },
+                {
+                  "id": "tbl_firmantes",
+                  "kind": "component",
+                  "comp": "DataTable",
+                  "props": {
+                    "view": "list",
+                    "subtitle": "role",
+                    "pageSize": "10",
+                    "rowAction": {
+                      "id": "openForm",
+                      "label": "Editar co-firmante",
+                      "target": "leases.co-firmante-del-contrato.open"
+                    },
+                    "columns": [
+                      {
+                        "key": "name",
+                        "label": "Nombre"
+                      },
+                      {
+                        "key": "role",
+                        "label": "Vínculo",
+                        "display": "pill",
+                        "emptyLabel": "Sin especificar",
+                        "values": [
+                          {
+                            "value": "cotitular",
+                            "label": "Cotitular",
+                            "tone": "neutral"
+                          },
+                          {
+                            "value": "conyuge",
+                            "label": "Cónyuge",
+                            "tone": "neutral"
+                          },
+                          {
+                            "value": "conviviente",
+                            "label": "Conviviente",
+                            "tone": "neutral"
+                          },
+                          {
+                            "value": "fiador_solidario",
+                            "label": "Fiador solidario",
+                            "tone": "warning"
+                          }
+                        ]
+                      },
+                      {
+                        "key": "notes",
+                        "label": "Aclaración",
+                        "emptyLabel": ""
+                      }
+                    ],
+                    "cells": [
+                      [
+                        "Carla Duarte",
+                        "conyuge",
+                        ""
+                      ]
+                    ],
+                    "filters": [],
+                    "actions": [
+                      {
+                        "label": "Quitar",
+                        "variant": "destructive",
+                        "icon": "Trash2",
+                        "confirm": "Deja de figurar como firmante del contrato. El contrato y el inquilino principal no cambian.",
+                        "action": {
+                          "id": "serverAction",
+                          "label": "Quitar",
+                          "target": "leases.coTenants.delete"
+                        }
+                      }
+                    ],
+                    "emptyTitle": "Firma solo el inquilino principal",
+                    "emptySub": "Sumá al cónyuge, un cotitular o un fiador solidario si responden junto con él."
+                  }
+                }
+              ]
             }
           ]
         }
@@ -546,11 +647,28 @@
         "outputBlockId": "tbl_conceptos"
       },
       {
+        "hook": "loadDataFor",
+        "key": "tbl_firmantes",
+        "mode": "query",
+        "action": "leases.coTenants.forLease",
+        "resource": "leases.coTenants",
+        "outputBlockId": "tbl_firmantes"
+      },
+      {
         "hook": "onAction",
         "key": "leases.charges.delete",
         "mode": "command",
         "action": "leases.charges.delete",
         "resource": "leases.charges",
+        "effect": "destructive",
+        "confirmation": "always"
+      },
+      {
+        "hook": "onAction",
+        "key": "leases.coTenants.delete",
+        "mode": "command",
+        "action": "leases.coTenants.delete",
+        "resource": "leases.coTenants",
         "effect": "destructive",
         "confirmation": "always"
       }

@@ -18,25 +18,13 @@ import { defineAction, none } from '@coongro/plugin-sdk/agentic';
  */
 export const listAdjustments = defineAction({
   id: 'leases.adjustments.list',
-  title: 'Listar Actualizaciones',
-  description: 'Obtiene Actualizaciones disponibles para el cliente actual.',
+  title: 'Listar actualizaciones de alquiler',
+  description:
+    'Todas las actualizaciones de alquiler registradas, con el contrato al que pertenecen, el índice aplicado y el monto que dejaron vigente.',
   effect: 'read',
   confirmation: 'never',
   tenantScope: 'required',
-  input: {
-    type: 'object',
-    properties: {
-      limit: {
-        type: 'integer',
-        description: 'Cantidad de resultados a devolver. Default 20; máximo 50.',
-      },
-      offset: {
-        type: 'integer',
-        description: 'Cantidad de resultados a saltear para pedir la página siguiente.',
-      },
-    },
-    additionalProperties: false,
-  },
+  input: none(),
   output: {
     kind: 'collection',
     fields: [
@@ -280,25 +268,13 @@ export const getByIdAdjustments = defineAction({
  */
 export const listCharges = defineAction({
   id: 'leases.charges.list',
-  title: 'Listar Concepto del contrato',
-  description: 'Obtiene Concepto del contrato disponibles para el cliente actual.',
+  title: 'Listar conceptos pactados',
+  description:
+    'Los conceptos que cada contrato suma o descuenta todos los meses además del alquiler —expensas, ABL, agua, bonificaciones—, con su importe.',
   effect: 'read',
   confirmation: 'never',
   tenantScope: 'required',
-  input: {
-    type: 'object',
-    properties: {
-      limit: {
-        type: 'integer',
-        description: 'Cantidad de resultados a devolver. Default 20; máximo 50.',
-      },
-      offset: {
-        type: 'integer',
-        description: 'Cantidad de resultados a saltear para pedir la página siguiente.',
-      },
-    },
-    additionalProperties: false,
-  },
+  input: none(),
   output: {
     kind: 'collection',
     fields: [
@@ -687,25 +663,13 @@ export const updateCharges = defineAction({
  */
 export const listContracts = defineAction({
   id: 'leases.contracts.list',
-  title: 'Listar Contrato',
-  description: 'Obtiene Contrato disponibles para el cliente actual.',
+  title: 'Listar contratos de alquiler',
+  description:
+    'Todos los contratos con su unidad, su propiedad, su inquilino y en qué estado están: vigente, por vencer, vencido o rescindido.',
   effect: 'read',
   confirmation: 'never',
   tenantScope: 'required',
-  input: {
-    type: 'object',
-    properties: {
-      limit: {
-        type: 'integer',
-        description: 'Cantidad de resultados a devolver. Default 20; máximo 50.',
-      },
-      offset: {
-        type: 'integer',
-        description: 'Cantidad de resultados a saltear para pedir la página siguiente.',
-      },
-    },
-    additionalProperties: false,
-  },
+  input: none(),
   output: {
     kind: 'collection',
     fields: [
@@ -943,21 +907,27 @@ export const getByIdContracts = defineAction({
  */
 export const listExpiries = defineAction({
   id: 'leases.expiries.list',
-  title: 'Listar Vencimientos',
-  description: 'Obtiene Vencimientos disponibles para el cliente actual.',
+  title: 'Listar avisos de vencimiento',
+  description:
+    'Lo que está por vencer y todavía nadie resolvió: contratos que terminan, actualizaciones que tocan y garantías que caducan, de lo más urgente a lo que falta más. Lo ya marcado como visto no aparece salvo que se pida.',
   effect: 'read',
   confirmation: 'never',
   tenantScope: 'required',
   input: {
     type: 'object',
     properties: {
-      limit: {
-        type: 'integer',
-        description: 'Cantidad de resultados a devolver. Default 20; máximo 50.',
+      level: {
+        type: 'string',
+        description: 'Dejar solo los de esta urgencia. Sin esto vienen todos.',
       },
-      offset: {
-        type: 'integer',
-        description: 'Cantidad de resultados a saltear para pedir la página siguiente.',
+      kind: {
+        type: 'string',
+        description: 'Dejar solo los de este tipo de aviso. Sin esto vienen todos.',
+      },
+      includeAcknowledged: {
+        type: 'boolean',
+        description:
+          'Incluir también los que alguien ya marcó como vistos. Por defecto se omiten, porque la lista es lo que queda por hacer.',
       },
     },
     additionalProperties: false,
@@ -1671,17 +1641,15 @@ export const chargeLateFeeBilling = defineAction({
 });
 
 /**
- * REVISAR: generado desde un borrador de confianza desconocida.
- *
- * El borrador describe lo que la pantalla envía hoy. El contrato tiene que
- * describir lo que ESTE handler exige — incluidos los valores que la UI
- * resuelve por contexto de apertura y que en el formulario no se ven.
+ * Solo consulta. La emisión del mes es `leases.billing.generateForPeriod`: estuvo
+ * un tiempo acá detrás de un `generateIfMissing`, y esa comodidad publicaba una
+ * escritura bajo un contrato que declaraba lectura.
  */
 export const chargesForPeriodBilling = defineAction({
   id: 'leases.billing.chargesForPeriod',
   title: 'Cobranza de un mes',
   description:
-    'Los cargos de alquiler de un mes con lo facturado, lo cobrado y lo que quedó vencido. Si el mes todavía no tiene ningún cargo emitido, puede emitirlo en el mismo pedido.',
+    'Los cargos de alquiler de un mes con lo facturado, lo cobrado y lo que quedó vencido. Solo consulta: un mes que todavía no se emitió vuelve vacío, y emitirlo es otra operación.',
   effect: 'read',
   confirmation: 'never',
   tenantScope: 'required',
@@ -1692,11 +1660,6 @@ export const chargesForPeriodBilling = defineAction({
         type: 'string',
         pattern: '^\\d{4}-\\d{2}$',
         description: 'El mes, en formato AAAA-MM.',
-      },
-      generateIfMissing: {
-        type: 'boolean',
-        description:
-          'Si el mes todavía no tiene ningún cargo emitido, emitirlo en el mismo pedido. Sin esto, un mes sin emitir devuelve vacío.',
       },
       graceDays: {
         type: 'integer',
@@ -3614,19 +3577,104 @@ export const listCoTenants = defineAction({
   effect: 'read',
   confirmation: 'never',
   tenantScope: 'required',
+  input: none(),
+});
+
+/**
+ * REVISAR: generado desde un borrador de confianza alta.
+ *
+ * El borrador describe lo que la pantalla envía hoy. El contrato tiene que
+ * describir lo que ESTE handler exige — incluidos los valores que la UI
+ * resuelve por contexto de apertura y que en el formulario no se ven.
+ */
+export const forLeaseCoTenants = defineAction({
+  id: 'leases.coTenants.forLease',
+  title: 'Ver quiénes más firman un contrato',
+  description:
+    'Los co-firmantes de un contrato con su nombre y su vínculo. El inquilino principal no aparece acá: está en el contrato mismo.',
+  effect: 'read',
+  confirmation: 'never',
+  tenantScope: 'required',
   input: {
     type: 'object',
     properties: {
-      limit: {
-        type: 'integer',
-        description: 'Cantidad de resultados.',
-      },
-      offset: {
-        type: 'integer',
-        description: 'Resultados a saltear.',
+      leaseId: {
+        type: 'string',
+        format: 'uuid',
+        description: 'El contrato del que se quieren saber los firmantes.',
+        ref: { resource: 'leases.contracts' },
       },
     },
+    required: ['leaseId'],
     additionalProperties: false,
+  },
+  output: {
+    kind: 'collection',
+    fields: [
+      { key: 'name', name: 'name', label: 'Nombre', format: 'text' },
+      { key: 'role', name: 'role', label: 'Vínculo', format: 'text' },
+      { key: 'notes', name: 'notes', label: 'Notas', format: 'text' },
+    ],
+    identifierKey: 'id',
+  },
+});
+
+export const saveCoTenant = defineAction({
+  id: 'leases.coTenants.save',
+  title: 'Sumar a alguien que firma el contrato',
+  description:
+    'Registra a otra persona como firmante del contrato junto al inquilino principal —cónyuge, conviviente, cotitular, fiador solidario—, o corrige el vínculo de una ya registrada. Se niega si el contrato está cerrado, si la persona ya es el inquilino principal o si ya figura como firmante. No modifica los datos de la persona: eso se hace en su ficha de contacto.',
+  effect: 'write',
+  confirmation: 'always',
+  tenantScope: 'required',
+  input: {
+    type: 'object',
+    properties: {
+      id: {
+        type: 'string',
+        format: 'uuid',
+        description: 'Solo para corregir uno ya registrado. Sin esto se da de alta uno nuevo.',
+        ref: { resource: 'leases.coTenants' },
+      },
+      leaseId: {
+        type: 'string',
+        format: 'uuid',
+        description: 'El contrato que la persona firma.',
+        ref: { resource: 'leases.contracts' },
+      },
+      contactId: {
+        type: 'string',
+        format: 'uuid',
+        description: 'La persona que firma. Tiene que existir como contacto.',
+        ref: { resource: 'contacts' },
+      },
+      role: {
+        type: 'string',
+        description: 'Con qué carácter firma: cotitular, conviviente, cónyuge o fiador solidario.',
+      },
+      notes: {
+        type: 'string',
+        description: 'Aclaración sobre el vínculo, si hace falta.',
+      },
+    },
+    required: ['leaseId', 'contactId'],
+    additionalProperties: false,
+  },
+  // Devuelve el vínculo entero, no solo su id: quien lo pidió tiene que poder leer qué
+  // quedó guardado sin volver a preguntar, y una respuesta que solo confirma «listo» no
+  // se puede contrastar contra lo que se mandó.
+  output: {
+    kind: 'record',
+    fields: [
+      { key: 'id', name: 'id', label: 'Co-firmante', format: 'text' },
+      // Distingue el alta de la corrección: quien pidió «agregá a la esposa» tiene que
+      // poder saber si se sumó o si se actualizó una que ya estaba.
+      { key: 'created', name: 'created', label: 'Se dio de alta', format: 'text' },
+      { key: 'leaseId', name: 'leaseId', label: 'Contrato', format: 'text' },
+      { key: 'contactId', name: 'contactId', label: 'Persona', format: 'text' },
+      { key: 'role', name: 'role', label: 'Vínculo', format: 'text' },
+      { key: 'notes', name: 'notes', label: 'Aclaración', format: 'text' },
+    ],
   },
 });
 
@@ -3672,20 +3720,7 @@ export const listGuarantees = defineAction({
   effect: 'read',
   confirmation: 'never',
   tenantScope: 'required',
-  input: {
-    type: 'object',
-    properties: {
-      limit: {
-        type: 'integer',
-        description: 'Cantidad de resultados.',
-      },
-      offset: {
-        type: 'integer',
-        description: 'Resultados a saltear.',
-      },
-    },
-    additionalProperties: false,
-  },
+  input: none(),
 });
 
 /**

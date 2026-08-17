@@ -212,6 +212,15 @@ export const customHandlers: CustomHandlers = {
       execute<Record<string, unknown>[]>('leases.charges.forLease', {
         leaseId: String(record?.id ?? ''),
       }),
+
+    /**
+     * Quiénes firman ADEMÁS del inquilino principal. Él no sale en esta lista: está
+     * en el encabezado de la ficha, y repetirlo acá haría parecer que firmó dos veces.
+     */
+    tbl_firmantes: ({ execute, record }) =>
+      execute<Record<string, unknown>[]>('leases.coTenants.forLease', {
+        leaseId: String(record?.id ?? ''),
+      }),
   },
 
   /**
@@ -229,6 +238,16 @@ export const customHandlers: CustomHandlers = {
     if (actionId === 'leases.charges.delete') {
       await execute('leases.charges.delete', { id: record?.id });
       toast.success('Concepto eliminado', '');
+      reload();
+      return;
+    }
+
+    // Quitar a un co-firmante no toca al contrato ni al inquilino principal: deja de
+    // figurar entre quienes responden, y el aviso lo dice para que nadie crea que
+    // rescindió algo.
+    if (actionId === 'leases.coTenants.delete') {
+      await execute('leases.coTenants.delete', { id: record?.id });
+      toast.success('Ya no figura como firmante', 'El contrato sigue igual.');
       reload();
     }
   },
