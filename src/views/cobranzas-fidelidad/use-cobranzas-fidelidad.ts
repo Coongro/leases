@@ -58,6 +58,27 @@ export function useCobranzasFidelidadView() {
     },
     [metrics]
   );
+
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    title: string;
+    message: string;
+    confirmLabel: string;
+    run: () => void;
+  } | null>(null);
+  const askConfirm = useCallback(
+    (title: string, message: string, confirmLabel: string, run: () => void) => {
+      setPendingConfirm({ title, message, confirmLabel, run });
+    },
+    []
+  );
+  const cancelConfirm = useCallback(() => {
+    setPendingConfirm(null);
+  }, []);
+  const runConfirmed = useCallback(() => {
+    const pend = pendingConfirm;
+    setPendingConfirm(null);
+    pend?.run();
+  }, [pendingConfirm]);
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -294,6 +315,10 @@ export function useCobranzasFidelidadView() {
   return {
     metric,
     reloadMetrics,
+    pendingConfirm,
+    askConfirm,
+    cancelConfirm,
+    runConfirmed,
     sort,
     onSortChange,
     filters,

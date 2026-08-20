@@ -17,6 +17,10 @@ const UI = getHostUI() as any;
 export function VencimientosView() {
   const isMobile = useIsMobile();
   const {
+    pendingConfirm,
+    askConfirm,
+    cancelConfirm,
+    runConfirmed,
     loading,
     visibleRows,
     COLUMNS,
@@ -376,15 +380,16 @@ export function VencimientosView() {
               {
                 variant: 'default',
                 onClick: () => {
-                  if (
-                    !window.confirm(
-                      'Se revisa toda la cartera y se actualiza la lista. No modifica ningún certificado ni contrato: solo mira fechas.'
-                    )
-                  )
-                    return;
-                  (() => {
-                    void runServerAction('leases.expiries.scan');
-                  })();
+                  askConfirm(
+                    'Revisar vencimientos',
+                    'Se revisa toda la cartera y se actualiza la lista. No modifica ningún certificado ni contrato: solo mira fechas.',
+                    'Revisar vencimientos',
+                    () => {
+                      (() => {
+                        void runServerAction('leases.expiries.scan');
+                      })();
+                    }
+                  );
                 },
               },
               'Revisar vencimientos'
@@ -662,6 +667,18 @@ export function VencimientosView() {
         )
       ),
       h('div', { 'data-cg-block-id': 'tbl', style: { display: 'contents' } }, renderTable())
-    )
+    ),
+    h(UI.ConfirmDialog, {
+      open: !!pendingConfirm,
+      onOpenChange: (o: boolean) => {
+        if (!o) cancelConfirm();
+      },
+      title: pendingConfirm?.title ?? '',
+      description: pendingConfirm?.message ?? '',
+      confirmLabel: pendingConfirm?.confirmLabel ?? 'Confirmar',
+      onConfirm: () => {
+        runConfirmed();
+      },
+    })
   );
 }
