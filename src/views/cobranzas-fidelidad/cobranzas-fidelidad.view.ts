@@ -26,6 +26,10 @@ export function CobranzasFidelidadView() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   });
   const {
+    pendingConfirm,
+    askConfirm,
+    cancelConfirm,
+    runConfirmed,
     loading,
     visibleRows,
     COLUMNS,
@@ -431,15 +435,16 @@ export function CobranzasFidelidadView() {
               {
                 variant: 'default',
                 onClick: () => {
-                  if (
-                    !window.confirm(
-                      'Se generan los cargos de todos los contratos vigentes del período. Si ya estaban generados, no se duplican.'
-                    )
-                  )
-                    return;
-                  (() => {
-                    void runServerAction('leases.billing.generateForPeriod');
-                  })();
+                  askConfirm(
+                    'Generar cargos del mes',
+                    'Se generan los cargos de todos los contratos vigentes del período. Si ya estaban generados, no se duplican.',
+                    'Generar cargos del mes',
+                    () => {
+                      (() => {
+                        void runServerAction('leases.billing.generateForPeriod');
+                      })();
+                    }
+                  );
                 },
               },
               'Generar cargos del mes'
@@ -818,6 +823,18 @@ export function CobranzasFidelidadView() {
         })
       ),
       h('div', { 'data-cg-block-id': 'tbl', style: { display: 'contents' } }, renderTable())
-    )
+    ),
+    h(UI.ConfirmDialog, {
+      open: !!pendingConfirm,
+      onOpenChange: (o: boolean) => {
+        if (!o) cancelConfirm();
+      },
+      title: pendingConfirm?.title ?? '',
+      description: pendingConfirm?.message ?? '',
+      confirmLabel: pendingConfirm?.confirmLabel ?? 'Confirmar',
+      onConfirm: () => {
+        runConfirmed();
+      },
+    })
   );
 }
