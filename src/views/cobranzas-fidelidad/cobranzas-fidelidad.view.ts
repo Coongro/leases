@@ -808,19 +808,23 @@ export function CobranzasFidelidadView() {
       h(
         'div',
         { 'data-cg-block-id': 'periodo', style: { display: 'contents' } },
-        h(UI.PeriodPicker, {
-          value: periodValue,
-          onChange: (period: string) => {
-            setPeriodValue(period);
-            customHandlers.onPeriodChange?.({
-              period,
-              reload: () => {
-                void load();
-                reloadMetrics();
-              },
-            });
-          },
-        })
+        h(
+          'div',
+          { style: { display: 'flex', justifyContent: 'flex-start' } },
+          h(UI.PeriodPicker, {
+            value: periodValue,
+            onChange: (period: string) => {
+              setPeriodValue(period);
+              customHandlers.onPeriodChange?.({
+                period,
+                reload: () => {
+                  void load();
+                  reloadMetrics();
+                },
+              });
+            },
+          })
+        )
       ),
       h('div', { 'data-cg-block-id': 'tbl', style: { display: 'contents' } }, renderTable())
     ),

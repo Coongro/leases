@@ -104,7 +104,8 @@
       "props": {
         "granularity": "month",
         "resettable": true
-      }
+      },
+      "align": "left"
     },
     {
       "id": "tbl",

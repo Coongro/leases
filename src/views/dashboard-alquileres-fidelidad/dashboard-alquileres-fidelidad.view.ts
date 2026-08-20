@@ -948,20 +948,24 @@ export function DashboardAlquileresFidelidadView() {
       h(
         'div',
         { 'data-cg-block-id': 'periodo', style: { display: 'contents' } },
-        h(UI.PeriodPicker, {
-          value: periodValue,
-          onChange: (period: string) => {
-            setPeriodValue(period);
-            customHandlers.onPeriodChange?.({
-              period,
-              reload: () => {
-                void t1.load();
-                void t2.load();
-                reloadMetrics();
-              },
-            });
-          },
-        })
+        h(
+          'div',
+          { style: { display: 'flex', justifyContent: 'flex-start' } },
+          h(UI.PeriodPicker, {
+            value: periodValue,
+            onChange: (period: string) => {
+              setPeriodValue(period);
+              customHandlers.onPeriodChange?.({
+                period,
+                reload: () => {
+                  void t1.load();
+                  void t2.load();
+                  reloadMetrics();
+                },
+              });
+            },
+          })
+        )
       ),
       h(
         'div',
