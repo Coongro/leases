@@ -28,7 +28,7 @@ import {
 } from '../services/charge-generation.js';
 import type { ExpenseSettlement } from '../services/expenses.js';
 import { currentLateFeePolicy } from '../services/late-fee-policy.server.js';
-import { proposeLateFee, type LateFeePolicy } from '../services/late-fee.js';
+import { pendingLateFee, proposeLateFee, type LateFeePolicy } from '../services/late-fee.js';
 import type { LeaseCharge } from '../services/lease-charges.js';
 import { periodTotals, type PeriodTotals } from '../services/period-totals.js';
 import {
@@ -844,36 +844,24 @@ export class RentBillingRepository {
         continue;
       }
 
-      // Los punitorios ya cobrados de esta cuenta. Se restan del saldo para obtener la
-      // DEUDA sobre la que corresponde calcular, y se descuentan del acumulado para
-      // cobrar solo lo que falta.
-      //
-      // `calcLateFee` devuelve el interés acumulado desde el vencimiento, no el del
-      // día. Cobrándolo entero contra el saldo —que ya incluye las líneas anteriores—
-      // cada cobro sucesivo recalculaba todo el período sobre una base inflada por el
-      // cobro anterior: al día 5 se cobraban $13.000 sobre $520.000, y al día 10
-      // $26.650 sobre $533.000, cuando los diez días son $26.000. Un 52 % de más, que
-      // se acelera con cada barrido.
+      // Lo ya cobrado de punitorio en esta cuenta: `pendingLateFee` lo necesita para no
+      // volver a cobrar el interés que ya se cobró (ver su comentario).
       const punitoriosPrevios = existentes
         .filter((linea) => String(linea.source_type ?? '') === 'late_fee')
         .reduce((total, linea) => total + Number(linea.subtotal ?? 0), 0);
-      const deuda = Number(cuenta.balance ?? '0') - punitoriosPrevios;
-      if (deuda <= 0) continue;
 
-      const punitorio = proposeLateFee(
-        {
+      const punitorio = pendingLateFee({
+        balance: String(cuenta.balance ?? '0'),
+        chargedSoFar: punitoriosPrevios,
+        cargo: {
           due_date: cuenta.due_date ?? null,
-          balance: String(deuda),
           status: String(cuenta.status ?? 'open'),
           late_fee_percent: contrato?.late_fee_percent ?? '0',
         },
-        politica
-      );
+        policy: politica,
+      });
       if (punitorio.amount === '0') continue;
-
-      // Lo acumulado menos lo ya cobrado: la diferencia desde el último barrido.
-      const aCobrar = Math.round(Number(punitorio.amount) - punitoriosPrevios);
-      if (aCobrar <= 0) continue;
+      const aCobrar = Number(punitorio.amount);
 
       await lineas.add({
         accountId: String(cuenta.id),
