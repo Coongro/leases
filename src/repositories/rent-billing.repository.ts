@@ -233,6 +233,8 @@ export interface TenantExpenseSweep {
   charged: Array<{ order: string; amount: string }>;
   /** Lo que se retiró de un recibo porque la orden dejó de estar a cargo del inquilino. */
   removed: string[];
+  /** Lo que ya estaba cobrado y se puso al día porque cambió el costo de la orden. */
+  updated: Array<{ order: string; from: string; to: string }>;
   /** Lo que NO entró, con el motivo de cada uno. */
   skipped: Array<{ order: string; reason: string }>;
   /** El resumen en una línea: es lo único que ve quien pidió el barrido. */
@@ -250,9 +252,11 @@ export interface TenantExpenseSweep {
 function sweepResult({
   charged,
   removed,
+  updated = [],
   skipped,
   sinCandidatos = false,
-}: Omit<TenantExpenseSweep, 'detail'> & { sinCandidatos?: boolean }): TenantExpenseSweep {
+}: Omit<TenantExpenseSweep, 'detail' | 'updated'> &
+  Partial<Pick<TenantExpenseSweep, 'updated'>> & { sinCandidatos?: boolean }): TenantExpenseSweep {
   const partes: string[] = [];
   if (charged.length) {
     partes.push(
@@ -278,13 +282,14 @@ function sweepResult({
     return {
       charged,
       removed,
+      updated,
       skipped,
       detail: sinCandidatos
         ? 'No hay arreglos a cargo de inquilinos esperando: no había nada que pasar.'
         : 'No hubo nada que pasar a los recibos.',
     };
   }
-  return { charged, removed, skipped, detail: `${partes.join('; ')}.` };
+  return { charged, removed, updated, skipped, detail: `${partes.join('; ')}.` };
 }
 
 /** `<leaseId>:<período>` — el id es todo lo anterior a los dos puntos finales. */
@@ -518,6 +523,12 @@ export class RentBillingRepository {
     const removed = await this.retirarGastosQueYaNoCorresponden(
       new Set(aCargoDelInquilino.map((o) => workOrderRef(o.id)))
     );
+    // Lo ya cobrado se pone al día con el costo de hoy. El egreso al proveedor SÍ se
+    // resincronizaba y el recupero al inquilino no: una orden presupuestada en $50.000
+    // que termina costando $65.000 se le pagaba entera al plomero y se le recuperaban
+    // $50.000 al inquilino. Los $15.000 los absorbía el propietario, que es justo lo
+    // contrario de lo que significa «a cargo del inquilino».
+    const updated = await this.sincronizarGastosCobrados(aCargoDelInquilino, hoy);
     const skipped: Array<{ order: string; reason: string }> = [];
     if (aCargoDelInquilino.length === 0) {
       return sweepResult({ charged: [], removed, skipped, sinCandidatos: true });
@@ -578,7 +589,7 @@ export class RentBillingRepository {
       charged.push({ order: orden.title, amount: gasto.amount });
     }
 
-    return sweepResult({ charged, removed, skipped });
+    return sweepResult({ charged, removed, updated, skipped });
   }
 
   /** Las órdenes que ya figuran en algún recibo, para no cobrarlas de nuevo. */
@@ -600,6 +611,69 @@ export class RentBillingRepository {
    * resuelve a mano —con una nota de crédito o devolviéndolo—, que es lo que
    * corresponde cuando la plata ya se movió.
    */
+  /**
+   * Pone al día lo que ya está en un recibo cuando cambió el costo de la orden.
+   *
+   * El egreso al proveedor ya se resincronizaba (`_syncExpense` en `maintenance`) y el
+   * recupero al inquilino no: una orden presupuestada en $50.000 que termina costando
+   * $65.000 se le pagaba entera al plomero y se le recuperaban $50.000 al inquilino. La
+   * diferencia la absorbía el propietario, que es lo contrario de «a cargo del inquilino».
+   *
+   * Un recibo que YA recibió un pago no se toca — el mismo criterio que usa el retiro, y
+   * por la misma razón: la otra persona pagó contra un total, y cambiárselo después le
+   * deja un saldo que nadie decidió. Ese caso se resuelve a mano.
+   */
+  private async sincronizarGastosCobrados(
+    ordenes: Array<{ id: string; title?: string | null }>,
+    hoy: string
+  ): Promise<Array<{ order: string; from: string; to: string }>> {
+    const esperado = new Map<string, { amount: string; title: string }>();
+    for (const orden of ordenes) {
+      const gasto = expenseForWorkOrder(orden as never, hoy);
+      if (gasto) {
+        esperado.set(workOrderRef(orden.id), {
+          amount: String(gasto.amount),
+          title: String(orden.title ?? ''),
+        });
+      }
+    }
+    if (esperado.size === 0) return [];
+
+    const filas = await this.db.ormQuery((tx) =>
+      tx
+        .select({
+          id: accountLineTable.id,
+          source_ref: accountLineTable.source_ref,
+          account_id: accountLineTable.account_id,
+          subtotal: accountLineTable.subtotal,
+        })
+        .from(accountLineTable)
+        .where(eq(accountLineTable.source_type, TENANT_EXPENSE_SOURCE))
+    );
+
+    const pagos = new PaymentRepository(this.db);
+    const lineas = new AccountLineRepository(this.db);
+    const actualizadas: Array<{ order: string; from: string; to: string }> = [];
+
+    for (const linea of filas ?? []) {
+      const destino = esperado.get(String(linea.source_ref ?? ''));
+      if (!destino) continue;
+      const antes = Number(linea.subtotal ?? 0);
+      const ahora = Number(destino.amount);
+      if (!Number.isFinite(ahora) || Math.abs(antes - ahora) <= SALDADO) continue;
+
+      const cobrado = await pagos.listByAccount({ accountId: String(linea.account_id) });
+      if (cobrado.length > 0) continue;
+
+      await lineas.update({
+        id: String(linea.id),
+        data: { unit_price: destino.amount, subtotal: destino.amount },
+      });
+      actualizadas.push({ order: destino.title, from: String(antes), to: destino.amount });
+    }
+    return actualizadas;
+  }
+
   private async retirarGastosQueYaNoCorresponden(vigentes: Set<string>): Promise<string[]> {
     const filas = await this.db.ormQuery((tx) =>
       tx
