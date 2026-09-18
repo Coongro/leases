@@ -94,7 +94,7 @@ export function useFichaDeContratoView() {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '');
 
-  // ── tabla 1: estado propio en su scope (mismos nombres, sin colisión) ──
+  // ── tabla 1 — leases.contracts: estado propio en su scope (mismos nombres, sin colisión) ──
   const useTable1 = () => {
     const [rows, setRows] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -114,7 +114,7 @@ export function useFichaDeContratoView() {
           ? await byBlock(ctx)
           : customHandlers.loadData
             ? await customHandlers.loadData(ctx)
-            : [];
+            : await actions.execute<any[]>('leases.contracts.list');
         if (mounted.current) setRows(Array.isArray(data) ? data : []);
       } catch {
         if (mounted.current) {
@@ -303,7 +303,7 @@ export function useFichaDeContratoView() {
   };
   const t1 = useTable1();
 
-  // ── tabla 2: estado propio en su scope (mismos nombres, sin colisión) ──
+  // ── tabla 2 — leases.contracts: estado propio en su scope (mismos nombres, sin colisión) ──
   const useTable2 = () => {
     const [rows, setRows] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -319,7 +319,9 @@ export function useFichaDeContratoView() {
           record: viewRecord,
         };
         const byBlock = customHandlers.loadDataFor?.['tbl_cargos'];
-        const data = byBlock ? await byBlock(ctx) : [];
+        const data = byBlock
+          ? await byBlock(ctx)
+          : await actions.execute<any[]>('leases.contracts.list');
         if (mounted.current) setRows(Array.isArray(data) ? data : []);
       } catch {
         if (mounted.current) {
@@ -464,8 +466,8 @@ export function useFichaDeContratoView() {
     );
     const removeRow = useCallback((_row: any) => {
       toast.warning(
-        'Sin entidad',
-        'Conectá un repositorio (binding de datos) en el Builder o implementá onAction en handlers.ts'
+        'Acción sin declarar',
+        'Las filas de esta tabla son de otra entidad: declarale sus acciones en el Builder o implementá onAction en handlers.ts'
       );
     }, []);
     return {
@@ -491,7 +493,7 @@ export function useFichaDeContratoView() {
   };
   const t2 = useTable2();
 
-  // ── tabla 3: estado propio en su scope (mismos nombres, sin colisión) ──
+  // ── tabla 3 — leases.contracts: estado propio en su scope (mismos nombres, sin colisión) ──
   const useTable3 = () => {
     const [rows, setRows] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -507,7 +509,9 @@ export function useFichaDeContratoView() {
           record: viewRecord,
         };
         const byBlock = customHandlers.loadDataFor?.['tbl_conceptos'];
-        const data = byBlock ? await byBlock(ctx) : [];
+        const data = byBlock
+          ? await byBlock(ctx)
+          : await actions.execute<any[]>('leases.contracts.list');
         if (mounted.current) setRows(Array.isArray(data) ? data : []);
       } catch {
         if (mounted.current) {
@@ -699,7 +703,7 @@ export function useFichaDeContratoView() {
   };
   const t3 = useTable3();
 
-  // ── tabla 4: estado propio en su scope (mismos nombres, sin colisión) ──
+  // ── tabla 4 — leases.contracts: estado propio en su scope (mismos nombres, sin colisión) ──
   const useTable4 = () => {
     const [rows, setRows] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -715,7 +719,9 @@ export function useFichaDeContratoView() {
           record: viewRecord,
         };
         const byBlock = customHandlers.loadDataFor?.['tbl_firmantes'];
-        const data = byBlock ? await byBlock(ctx) : [];
+        const data = byBlock
+          ? await byBlock(ctx)
+          : await actions.execute<any[]>('leases.contracts.list');
         if (mounted.current) setRows(Array.isArray(data) ? data : []);
       } catch {
         if (mounted.current) {

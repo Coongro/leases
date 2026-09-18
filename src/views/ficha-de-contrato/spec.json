@@ -18,6 +18,15 @@
       },
       "actions": [
         {
+          "label": "Editar contrato",
+          "variant": "secondary",
+          "action": {
+            "id": "openForm",
+            "label": "Editar contrato",
+            "target": "leases.contrato.open"
+          }
+        },
+        {
           "label": "Renovar",
           "variant": "secondary",
           "action": {
@@ -673,5 +682,8 @@
         "confirmation": "always"
       }
     ]
+  },
+  "data": {
+    "repositoryPrefix": "leases.contracts"
   }
 }
