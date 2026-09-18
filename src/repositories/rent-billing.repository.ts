@@ -910,7 +910,11 @@ export class RentBillingRepository {
     ]);
 
     const unidades = units.length;
-    const ocupadas = units.filter((u) => u.status === 'ocupada').length;
+    // `occupancy` y no `status`: el primero es cómo está la unidad HOY según las fechas
+    // del contrato; el segundo, la marca que puso quien administra («no disponible», «en
+    // recambio»). Contando la columna, el panel decía 0 % de ocupación con el edificio
+    // lleno, porque una unidad alquilada no lleva nada escrito ahí.
+    const ocupadas = units.filter((u) => u.occupancy === 'ocupada').length;
     const activos = leases.filter((l) => l.state === 'vigente' || l.state === 'por_vencer');
     const t = periodTotals(cargos);
     const porContrato = new Map(leases.map((l) => [l.id, l]));
