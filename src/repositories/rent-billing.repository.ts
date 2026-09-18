@@ -54,6 +54,9 @@ import { LeaseRepository, type LeaseListRow } from './lease.repository.js';
  */
 const TENANT_EXPENSE_SOURCE = 'gasto_a_cargo';
 
+/** Medio centavo: por debajo de eso el cargo está saldado y no cuenta como impago. */
+const SALDADO = 0.005;
+
 /**
  * La cobranza de los alquileres: los cargos de un período con el contrato al que
  * pertenece cada uno.
@@ -1064,7 +1067,10 @@ export class RentBillingRepository {
     let impagos = 0;
     for (const c of cargos) {
       saldo += Number(c.balance) || 0;
-      if (c.status !== 'paid') impagos += 1;
+      // Impago es deber algo: lo dice el saldo, no el `status` de la cuenta. `billing`
+      // escribe `open`, `closed` y `overdue` — «paid» no existe, así que esta condición
+      // era verdadera siempre y la ficha mostraba «saldo $0» al lado de «12 impagos».
+      if (Number(c.balance ?? 0) > SALDADO) impagos += 1;
     }
 
     return {
@@ -1127,7 +1133,7 @@ export class RentBillingRepository {
     for (const c of cargos) {
       facturado += Number(c.total_due) || 0;
       cobrado += Number(c.paid) || 0;
-      if (c.status !== 'paid') impagos += 1;
+      if (Number(c.balance ?? 0) > SALDADO) impagos += 1;
     }
 
     const inicios = contratos

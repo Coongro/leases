@@ -36,3 +36,9 @@ el saldo de la cuenta: al día 5 se cobraban $13.000 sobre una deuda de $520.000
 10 otros $26.650 sobre $533.000, cuando los diez días son $26.000. Un 52 % de más, que se
 aceleraba con cada barrido. Ahora la base es la deuda sin punitorios y se cobra solo la
 diferencia contra lo ya cobrado.
+
+**Los contadores de cargos saldados e impagos estaban siempre al revés.** Se comparaban
+contra `status === 'paid'`, un valor que `billing` no escribe nunca —sus cuentas son
+`open`, `closed` u `overdue`—, así que un mes íntegramente cobrado informaba cero
+saldados y todos los cargos impagos, al lado de un saldo de $0 que decía lo contrario.
+Ahora se miran los saldos, que son los que ya estaban bien.
