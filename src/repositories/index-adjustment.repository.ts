@@ -161,6 +161,14 @@ export class IndexAdjustmentRepository {
     const result: AdjustmentDetection = { proposed: 0, failed: [] };
 
     for (const lease of contratos as unknown as LeaseForAdjustment[]) {
+      // El alquiler sobre el que se calcula cada propuesta. La primera parte del vigente
+      // y cada siguiente parte del RESULTADO de la anterior: un contrato atrasado se
+      // actualiza en cascada, no tres veces sobre el mismo valor viejo. Calculándolas
+      // todas sobre `lease.rent_amount`, las tres propuestas de un contrato con tres
+      // semestres sin actualizar daban casi el mismo número —el segundo y el tercero
+      // quedaban hasta un 24 % por debajo de lo que el índice justifica—, y ese número
+      // ya entraba en el impacto mensual que muestra la pantalla de actualizaciones.
+      let baseRent = String(lease.rent_amount);
       for (const p of pendingAdjustments({
         lease,
         today: fecha,
@@ -171,7 +179,7 @@ export class IndexAdjustmentRepository {
             indexCode: p.indexCode,
             dateFrom: p.baseDate,
             dateTo: p.effectiveDate,
-            previousRent: p.previousRent,
+            previousRent: baseRent,
           });
 
           await this.create({
@@ -187,10 +195,13 @@ export class IndexAdjustmentRepository {
               index_value_from: String(factor.valueFrom),
               index_value_to: String(factor.valueTo),
               rate_percent: String(factor.ratePercent),
-              previous_rent: p.previousRent,
+              previous_rent: baseRent,
               new_rent: factor.newRent,
             } as unknown as NewIndexAdjustmentRow,
           });
+          // La próxima propuesta de ESTE contrato parte de acá. Si esta falló, no se
+          // toca: el alquiler no cambió.
+          baseRent = String(factor.newRent);
           result.proposed += 1;
         } catch (error) {
           // Un contrato sin índice disponible no frena a los demás: se anota y se

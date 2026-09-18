@@ -70,7 +70,9 @@ export interface GenerationResult {
   details: Array<{
     leaseId: string;
     label: string;
-    status: 'creada' | 'ya_existía' | 'fuera_de_período';
+    status: 'creada' | 'ya_existía' | 'fuera_de_período' | 'falló';
+    /** Por qué no se pudo emitir, cuando `status` es `falló`. */
+    reason?: string;
   }>;
 }
 
@@ -149,87 +151,106 @@ export async function generateCharges({
       continue;
     }
 
-    const dueDate = calcDueDate(
-      period,
-      lease.due_day,
-      lease.due_day_type === 'business' ? 'business' : 'fixed',
-      holidays
-    );
+    try {
+      const dueDate = calcDueDate(
+        period,
+        lease.due_day,
+        lease.due_day_type === 'business' ? 'business' : 'fixed',
+        holidays
+      );
 
-    // Un contrato en dólares se cobra en pesos: se convierte al emitir y se deja
-    // asentado con qué cotización, para que el importe pueda explicarse después.
-    const enPesos = async (amount: string): Promise<{ subtotal: string; detail: string }> => {
-      if (!esMonedaExtranjera(lease.currency)) return { subtotal: amount, detail: '' };
-      if (!convertir) {
-        // Emitirlo sin convertir cobraría 1.200 pesos donde el contrato dice 1.200
-        // dólares. Preferible que el cargo falte, y se vea que faltó.
-        throw new Error(
-          `El contrato ${label} está en ${lease.currency} y no hay cotización disponible para convertirlo.`
-        );
+      // Un contrato en dólares se cobra en pesos: se convierte al emitir y se deja
+      // asentado con qué cotización, para que el importe pueda explicarse después.
+      //
+      // **Lo único que se convierte es el ALQUILER.** La moneda extranjera se pacta sobre
+      // el canon locativo; todo lo demás que entra en el recibo ya viene en pesos:
+      // las expensas las liquida el consorcio en pesos —sueldo del encargado, luz de
+      // espacios comunes, proveedores, honorarios— y el ABL, el agua o una bonificación
+      // se cargan en pesos porque así se facturan. Convertirlos multiplicaba por la
+      // cotización un importe que ya estaba en pesos: un ABL de $45.000 salía
+      // $67.950.000 a $1.510 el dólar.
+      const enPesos = async (amount: string): Promise<{ subtotal: string; detail: string }> => {
+        if (!esMonedaExtranjera(lease.currency)) return { subtotal: amount, detail: '' };
+        if (!convertir) {
+          // Emitirlo sin convertir cobraría 1.200 pesos donde el contrato dice 1.200
+          // dólares. Preferible que el cargo falte, y se vea que faltó.
+          throw new Error(
+            `El contrato ${label} está en ${lease.currency} y no hay cotización disponible para convertirlo.`
+          );
+        }
+        const { subtotal, detail } = await convertir(amount, lease.currency);
+        return { subtotal, detail: detail ? ` · ${detail}` : '' };
+      };
+
+      const alquiler = await enPesos(lease.rent_amount);
+      const lines: Array<{ description: string; subtotal: string; sourceType: string }> = [
+        {
+          description: `Alquiler ${period}${alquiler.detail}`,
+          subtotal: alquiler.subtotal,
+          sourceType: RENT_SOURCE,
+        },
+      ];
+      // Las expensas van como línea aparte y no sumadas al alquiler: se actualizan por
+      // su cuenta (las fija el consorcio) y el inquilino tiene derecho a ver el desglose.
+      //
+      // El importe sale de la liquidación del mes repartida por alícuota; si el consorcio
+      // todavía no liquidó, se cobra lo pactado en el contrato y la línea lo aclara.
+      const expensasDelMes = expensesForPeriod({
+        lease,
+        period,
+        settlement: settlements?.get(String(lease.building_id ?? '')) ?? null,
+      });
+      if (expensasDelMes.amount) {
+        const comoSeCalculo = expensasDelMes.detail ? ` · ${expensasDelMes.detail}` : '';
+        lines.push({
+          description: `Expensas ${period}${comoSeCalculo}`,
+          subtotal: expensasDelMes.amount,
+          sourceType: 'expenses',
+        });
       }
-      const { subtotal, detail } = await convertir(amount, lease.currency);
-      return { subtotal, detail: detail ? ` · ${detail}` : '' };
-    };
 
-    const alquiler = await enPesos(lease.rent_amount);
-    const lines: Array<{ description: string; subtotal: string; sourceType: string }> = [
-      {
-        description: `Alquiler ${period}${alquiler.detail}`,
-        subtotal: alquiler.subtotal,
-        sourceType: RENT_SOURCE,
-      },
-    ];
-    // Las expensas van como línea aparte y no sumadas al alquiler: se actualizan por
-    // su cuenta (las fija el consorcio) y el inquilino tiene derecho a ver el desglose.
-    //
-    // El importe sale de la liquidación del mes repartida por alícuota; si el consorcio
-    // todavía no liquidó, se cobra lo pactado en el contrato y la línea lo aclara.
-    const expensasDelMes = expensesForPeriod({
-      lease,
-      period,
-      settlement: settlements?.get(String(lease.building_id ?? '')) ?? null,
-    });
-    if (expensasDelMes.amount) {
-      const expensas = await enPesos(expensasDelMes.amount);
-      const comoSeCalculo = expensasDelMes.detail ? ` · ${expensasDelMes.detail}` : '';
-      lines.push({
-        description: `Expensas ${period}${comoSeCalculo}${expensas.detail}`,
-        subtotal: expensas.subtotal,
-        sourceType: 'expenses',
+      // Conceptos que se pactaron aparte del alquiler: cada uno con su tipo declarado,
+      // así la cuenta corriente distingue un ABL de un servicio y de una bonificación.
+      for (const extra of chargeLinesForPeriod({ charges: extras?.get(lease.id) ?? [], period })) {
+        // Sin conversión: estos importes se cargan en pesos (ver `enPesos`). `lease_charges`
+        // no tiene moneda propia, así que se los pasaba por la misma conversión que el
+        // alquiler solo porque el contrato estaba en dólares.
+        lines.push({
+          description: extra.description,
+          subtotal: extra.subtotal,
+          sourceType: extra.sourceType,
+        });
+      }
+
+      const res = await execute<{ created: boolean }>('billing.accounts.openForSource', {
+        source: RENT_SOURCE,
+        sourceRef: `${lease.id}:${period}`,
+        contactId: lease.tenant_contact_id,
+        dueDate,
+        direction: 'receivable',
+        notes: `${label} · ${period}`,
+        lines,
       });
-    }
 
-    // Conceptos que se pactaron aparte del alquiler: cada uno con su tipo declarado,
-    // así la cuenta corriente distingue un ABL de un servicio y de una bonificación.
-    for (const extra of chargeLinesForPeriod({ charges: extras?.get(lease.id) ?? [], period })) {
-      // El signo se saca antes de convertir y se repone después: una bonificación es
-      // un importe negativo, y la conversión de moneda no tiene por qué saber eso
-      // (rechaza negativos a propósito, para que un error de carga no pase inadvertido).
-      const negativo = extra.subtotal.startsWith('-');
-      const enMoneda = await enPesos(negativo ? extra.subtotal.slice(1) : extra.subtotal);
-      lines.push({
-        description: `${extra.description}${enMoneda.detail}`,
-        subtotal: negativo ? `-${enMoneda.subtotal}` : enMoneda.subtotal,
-        sourceType: extra.sourceType,
+      if (res?.created) {
+        result.created += 1;
+        result.details.push({ leaseId: lease.id, label, status: 'creada' });
+      } else {
+        result.skipped += 1;
+        result.details.push({ leaseId: lease.id, label, status: 'ya_existía' });
+      }
+    } catch (error) {
+      // El contrato que falla se anota y la corrida sigue. Sin esto, un solo contrato
+      // en dólares sin cotización cortaba el `for` y dejaba sin facturar a TODOS los
+      // que venían después — inquilinos en pesos, sin ningún problema propio, cuyo
+      // único pecado era estar más abajo en la lista. Cuántos quedaban afuera dependía
+      // del orden en que el repositorio devolviera los contratos.
+      result.details.push({
+        leaseId: lease.id,
+        label,
+        status: 'falló',
+        reason: error instanceof Error ? error.message : String(error),
       });
-    }
-
-    const res = await execute<{ created: boolean }>('billing.accounts.openForSource', {
-      source: RENT_SOURCE,
-      sourceRef: `${lease.id}:${period}`,
-      contactId: lease.tenant_contact_id,
-      dueDate,
-      direction: 'receivable',
-      notes: `${label} · ${period}`,
-      lines,
-    });
-
-    if (res?.created) {
-      result.created += 1;
-      result.details.push({ leaseId: lease.id, label, status: 'creada' });
-    } else {
-      result.skipped += 1;
-      result.details.push({ leaseId: lease.id, label, status: 'ya_existía' });
     }
   }
 

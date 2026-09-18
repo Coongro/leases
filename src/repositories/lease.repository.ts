@@ -103,6 +103,8 @@ export interface ContractInput {
   adjustment_index?: unknown;
   adjustment_months?: unknown;
   late_fee_percent?: unknown;
+  /** Comisión de administración, en %. La cobra quien administra sobre lo cobrado. */
+  admin_fee_percent?: unknown;
   penalty_months?: unknown;
   deposit_amount?: unknown;
   deposit_status?: unknown;
@@ -231,6 +233,11 @@ export class LeaseRepository {
       adjustment_index: texto(data.adjustment_index) || null,
       adjustment_months: Number(data.adjustment_months) || null,
       late_fee_percent: numero(data.late_fee_percent),
+      // La comisión de administración se pedía en el formulario y se perdía acá: no
+      // estaba en esta lista, así que se guardaba `null` sin ningún error. La lee
+      // `propertyResults` para calcular el honorario en el rinde de cada propiedad —
+      // el único reporte de rentabilidad del kit—, que por eso daba siempre cero.
+      admin_fee_percent: numero(data.admin_fee_percent),
       penalty_months: Number(data.penalty_months) || null,
       deposit_amount: numero(data.deposit_amount),
       deposit_status: texto(data.deposit_status) || null,
