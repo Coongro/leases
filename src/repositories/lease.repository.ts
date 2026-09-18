@@ -306,19 +306,42 @@ export class LeaseRepository {
         .set({ occupied_from: desde, occupied_until: hasta || null } as never)
         .where(eq(unitTable.id, unitId));
 
-      // La garantía solo se crea al firmar: al editar un contrato ya firmado se toca
-      // desde su propia ficha, porque sobrevive a la renovación.
-      if (created && tipoGarantia) {
-        await tx.insert(guaranteeTable).values({
-          lease_id: leaseId,
+      // La garantía se crea al firmar y se corrige al editar.
+      //
+      // Antes solo se creaba: el formulario mostraba sus campos también en la edición y
+      // lo que se escribiera ahí no iba a ningún lado, con el agravante de que la ficha
+      // propia desde donde «se toca» no existe. Se actualiza la vigente —no se crea
+      // otra— porque la garantía sobrevive a la renovación y el historial importa.
+      if (tipoGarantia) {
+        const valores = {
           type: tipoGarantia,
           guarantor_contact_id: texto(data.guarantor_contact_id) || null,
           notes: texto(data.guarantee_notes) || null,
           // El depósito en garantía es la garantía misma: su monto se guarda también
           // acá para que la garantía se explique sola.
           amount: tipoGarantia === 'deposito' ? numero(data.deposit_amount) : null,
-          archived: false,
-        } as never);
+        };
+
+        const vigentes = created
+          ? []
+          : await tx
+              .select({ id: guaranteeTable.id })
+              .from(guaranteeTable)
+              .where(and(eq(guaranteeTable.lease_id, leaseId), eq(guaranteeTable.archived, false)))
+              .limit(1);
+
+        if (vigentes[0]) {
+          await tx
+            .update(guaranteeTable)
+            .set(valores as never)
+            .where(eq(guaranteeTable.id, vigentes[0].id));
+        } else {
+          await tx.insert(guaranteeTable).values({
+            lease_id: leaseId,
+            ...valores,
+            archived: false,
+          } as never);
+        }
       }
 
       return { id: leaseId, created };
