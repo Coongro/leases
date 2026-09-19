@@ -105,6 +105,8 @@ export interface ContractInput {
   late_fee_percent?: unknown;
   /** Comisión de administración, en %. La cobra quien administra sobre lo cobrado. */
   admin_fee_percent?: unknown;
+  /** `borrador` o `vigente`. Los otros estados tienen su propia acción. */
+  status?: unknown;
   penalty_months?: unknown;
   deposit_amount?: unknown;
   deposit_status?: unknown;
@@ -216,12 +218,28 @@ export class LeaseRepository {
     if (!hasta) throw new Error('El contrato necesita hasta cuándo rige.');
     if (!alquiler) throw new Error('El contrato necesita con qué alquiler arranca.');
 
+    /**
+     * Borrador o firmado, según lo que diga el formulario. Vigente por default: es el
+     * caso de todos los días y el comportamiento de siempre.
+     *
+     * El borrador existía en todas partes menos en el único camino que escribe un
+     * contrato: la lógica ya sabe que no se cobra (`charge-generation`), que no genera
+     * actualizaciones (`adjustment-detection`) y que no le bloquea la unidad a otro
+     * contrato, y los filtros de Contratos y de la ficha del inquilino lo ofrecen. Solo
+     * que acá se fijaba «vigente» a mano, así que ese filtro siempre daba vacío.
+     *
+     * Para qué sirve: el contrato se carga antes de estar firmado —falta que el garante
+     * traiga los papeles, falta una firma— y hasta entonces no puede facturar ni tomar
+     * la unidad. Los otros dos estados (`rescindido`, `renovado`) NO entran por acá:
+     * tienen su propia acción, porque significan cosas que pasaron, no que se eligen.
+     */
+    const pedido = texto(data.status);
+    const estado = pedido === 'borrador' ? 'borrador' : 'vigente';
+
     const contrato = {
       unit_id: unitId,
       tenant_contact_id: tenantId,
-      // Nace vigente: el borrador es para lo que se guarda a medio cargar, y este
-      // formulario exige lo necesario para que el contrato exista.
-      status: 'vigente',
+      status: estado,
       contract_type: texto(data.contract_type) || 'determinado',
       start_date: desde,
       end_date: hasta,
@@ -301,10 +319,21 @@ export class LeaseRepository {
       // Qué período compromete el contrato. Se escriben las FECHAS, no «ocupada»: la
       // unidad queda alquilada desde que el contrato empieza —no desde que se firma— y
       // se libera sola cuando termina, sin que haga falta que corra nada.
-      await tx
-        .update(unitTable)
-        .set({ occupied_from: desde, occupied_until: hasta || null } as never)
-        .where(eq(unitTable.id, unitId));
+      //
+      // Un BORRADOR no compromete nada: todavía no hay contrato. Escribirle las fechas
+      // a la unidad la mostraría alquilada por algo que quizá no se firme, y es
+      // justamente lo que el borrador viene a evitar. Al pasarlo a vigente, se escriben.
+      if (estado === 'borrador') {
+        await tx
+          .update(unitTable)
+          .set({ occupied_from: null, occupied_until: null } as never)
+          .where(eq(unitTable.id, unitId));
+      } else {
+        await tx
+          .update(unitTable)
+          .set({ occupied_from: desde, occupied_until: hasta || null } as never)
+          .where(eq(unitTable.id, unitId));
+      }
 
       // La garantía se crea al firmar y se corrige al editar.
       //

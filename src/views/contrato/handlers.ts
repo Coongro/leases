@@ -62,6 +62,9 @@ export const customHandlers: CustomHandlers = {
       adjustment_index: d.adjustmentIndex,
       adjustment_months: d.adjustmentMonths,
       contract_type: 'determinado',
+      // Un contrato nuevo nace firmado: es el caso de todos los días. El borrador se
+      // elige cuando falta algo —el garante, una firma— y hasta entonces no factura.
+      status: 'vigente',
       deposit_status: 'pendiente',
     };
   },

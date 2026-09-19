@@ -120,6 +120,53 @@ export function ContratoView() {
                     )
                   : null
               )
+            ),
+            h(
+              'div',
+              { 'data-cg-block-id': 'f_status', style: { display: 'contents' } },
+              h(
+                'div',
+                { style: { flex: '1 1 100%', minWidth: 0 } },
+                h(
+                  UI.Label,
+                  { htmlFor: 'status', style: { display: 'block', marginBottom: '6px' } },
+                  'Estado del contrato'
+                ),
+                h(
+                  UI.Select,
+                  {
+                    value: String(values['status'] ?? ''),
+                    onValueChange: (v: string) => setField('status', v),
+                    placeholder: 'Elegir…',
+                    clearable: true,
+                  },
+                  h(
+                    UI.SelectItem,
+                    {
+                      key: 'vigente',
+                      value: 'vigente',
+                      icon: h(UI.DynamicIcon, { icon: 'FileCheck', size: 16 }),
+                    },
+                    'Firmado · empieza a facturar'
+                  ),
+                  h(
+                    UI.SelectItem,
+                    {
+                      key: 'borrador',
+                      value: 'borrador',
+                      icon: h(UI.DynamicIcon, { icon: 'FilePen', size: 16 }),
+                    },
+                    'Borrador · todavía no se firma'
+                  )
+                ),
+                errors['status']
+                  ? h(
+                      'div',
+                      { style: { fontSize: '12px', color: 'var(--cg-danger)', marginTop: '4px' } },
+                      errors['status']
+                    )
+                  : null
+              )
             )
           )
         )

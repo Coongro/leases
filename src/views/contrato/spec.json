@@ -36,6 +36,26 @@
           "validations": [
             "required"
           ]
+        },
+        {
+          "id": "f_status",
+          "kind": "field",
+          "name": "status",
+          "fieldType": "enum",
+          "label": "Estado del contrato",
+          "validations": [],
+          "options": [
+            {
+              "value": "vigente",
+              "label": "Firmado · empieza a facturar",
+              "icon": "FileCheck"
+            },
+            {
+              "value": "borrador",
+              "label": "Borrador · todavía no se firma",
+              "icon": "FilePen"
+            }
+          ]
         }
       ]
     },

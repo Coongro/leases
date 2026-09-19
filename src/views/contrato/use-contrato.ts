@@ -28,6 +28,7 @@ export function useContratoView() {
   const [values, setValues] = useState<Record<string, any>>({
     unit_id: null,
     tenant_contact_id: null,
+    status: null,
     contract_type: null,
     start_date: null,
     end_date: null,
@@ -263,6 +264,7 @@ export function useContratoView() {
       setValues({
         unit_id: null,
         tenant_contact_id: null,
+        status: null,
         contract_type: null,
         start_date: null,
         end_date: null,
