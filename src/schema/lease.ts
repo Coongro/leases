@@ -13,9 +13,10 @@ import {
 /**
  * Contrato de alquiler: el vínculo entre una unidad y quien la alquila.
  *
- * El precio vive acá y NO cambia con cada actualización por índice: cada ajuste es
- * un registro propio con su período de vigencia (F4). Así queda auditable por qué
- * cambió el alquiler y cuándo, en vez de pisar el número y perder la historia.
+ * `rent_amount` es el alquiler VIGENTE: confirmar un ajuste lo actualiza. La historia
+ * no se pierde igual, porque cada ajuste es además un registro propio con su período
+ * de vigencia (F4) — ahí queda auditable por qué cambió y cuándo. Lo que se lee acá es
+ * lo que se cobra hoy; lo que se lee en `index_adjustments` es cómo se llegó a eso.
  *
  * Lo que se cobra tampoco vive acá: los cargos y su cobranza son de `billing`.
  * Este plugin dice cuánto y cuándo hay que cobrar; billing registra si se cobró.

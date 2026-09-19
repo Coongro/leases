@@ -240,6 +240,7 @@
           "chargeTenantWorkOrders",
           "generateForPeriod",
           "chargeLateFee",
+          "terminateLease",
           "dashboard",
           "yearSeries",
           "chargesForLease",

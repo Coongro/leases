@@ -177,14 +177,11 @@
           "kind": "field",
           "name": "fx_rate",
           "fieldType": "number",
-          "label": "Cotización pactada",
+          "label": "Cotización pactada (contratos en dólares)",
           "width": "half",
           "validations": [],
           "placeholder": "Ej: 1450 — vacío usa la del mercado",
-          "showWhen": {
-            "column": "currency",
-            "values": "USD"
-          }
+          "help": "Si el contrato en dólares fijó por escrito a qué valor se paga, va acá y gana sobre la cotización del día. En un contrato en pesos se deja vacío."
         },
         {
           "id": "f_rent",

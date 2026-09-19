@@ -414,45 +414,36 @@ export function ContratoView() {
                     : null
                 )
               ),
-              ['USD'].includes(String(((views.params as any)?.record ?? null)?.['currency'] ?? ''))
-                ? h(
-                    'div',
-                    { 'data-cg-block-id': 'f_fx', style: { display: 'contents' } },
-                    h(
-                      'div',
-                      { style: { flex: '1 1 260px', minWidth: 0 } },
-                      h(
-                        UI.Label,
-                        { htmlFor: 'fx_rate', style: { display: 'block', marginBottom: '6px' } },
-                        'Cotización pactada'
-                      ),
-                      h(UI.Input, {
-                        id: 'fx_rate',
-                        type: 'number',
-                        value: values['fx_rate'] ?? '',
-                        placeholder: 'Ej: 1450 — vacío usa la del mercado',
-                        onChange: (e: any) =>
-                          setField(
-                            'fx_rate',
-                            e.target.value === '' ? null : Number(e.target.value)
-                          ),
-                      }),
-                      errors['fx_rate']
-                        ? h(
-                            'div',
-                            {
-                              style: {
-                                fontSize: '12px',
-                                color: 'var(--cg-danger)',
-                                marginTop: '4px',
-                              },
-                            },
-                            errors['fx_rate']
-                          )
-                        : null
-                    )
-                  )
-                : null
+              h(
+                'div',
+                { 'data-cg-block-id': 'f_fx', style: { display: 'contents' } },
+                h(
+                  'div',
+                  { style: { flex: '1 1 260px', minWidth: 0 } },
+                  h(
+                    UI.Label,
+                    { htmlFor: 'fx_rate', style: { display: 'block', marginBottom: '6px' } },
+                    'Cotización pactada (contratos en dólares)'
+                  ),
+                  h(UI.Input, {
+                    id: 'fx_rate',
+                    type: 'number',
+                    value: values['fx_rate'] ?? '',
+                    placeholder: 'Ej: 1450 — vacío usa la del mercado',
+                    onChange: (e: any) =>
+                      setField('fx_rate', e.target.value === '' ? null : Number(e.target.value)),
+                  }),
+                  errors['fx_rate']
+                    ? h(
+                        'div',
+                        {
+                          style: { fontSize: '12px', color: 'var(--cg-danger)', marginTop: '4px' },
+                        },
+                        errors['fx_rate']
+                      )
+                    : null
+                )
+              )
             ),
             h(
               'div',

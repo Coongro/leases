@@ -20,7 +20,11 @@ import {
 import { eq } from 'drizzle-orm';
 
 import type { GuaranteeRow } from '../schema/guarantee.js';
+import type { NewLeaseChargeRow } from '../schema/lease-charge.js';
+import type { LeaseRow } from '../schema/lease.js';
 import {
+  cotizacionPactada,
+  esMonedaExtranjera,
   generateCharges,
   RENT_SOURCE,
   type GenerationResult,
@@ -38,11 +42,30 @@ import {
   type PropertyResult,
 } from '../services/property-result.js';
 import { chargeForTenantExpense } from '../services/tenant-expense.js';
+import {
+  penaltyDestination,
+  penaltyLabel,
+  periodOf,
+  proposedPenalty,
+  type PenaltyDecision,
+} from '../services/termination-penalty.js';
 
 import { GuaranteeRepository } from './guarantee.repository.js';
 import { IndexAdjustmentRepository } from './index-adjustment.repository.js';
 import { LeaseChargeRepository } from './lease-charge.repository.js';
 import { LeaseRepository, type LeaseListRow } from './lease.repository.js';
+
+/** Con qué origen entra en el recibo la multa por rescisión anticipada. */
+const PENALTY_SOURCE = 'multa_rescision';
+
+/**
+ * Qué pasó con la multa al rescindir. Se devuelve siempre —también cuando no se
+ * cobró— para que la pantalla pueda decirlo: una rescisión que calla qué hizo con la
+ * multa obliga a ir a buscarla al recibo.
+ */
+export type TerminationPenaltyResult =
+  | { charged: false; reason: string }
+  | { charged: true; where: 'recibo' | 'concepto'; period: string; amount: string; label: string };
 
 /**
  * Con qué origen entra en el recibo un arreglo que paga el inquilino.
@@ -841,6 +864,147 @@ export class RentBillingRepository {
    * pidió la acción tiene que poder distinguir cuál de esos fue. Un «no cobré» sin
    * motivo se lee como una falla y manda a buscar el problema donde no está.
    */
+  /**
+   * Rescinde un contrato y, si se decidió cobrarla, emite su multa.
+   *
+   * Las dos cosas van juntas porque son un solo acto del negocio: hasta ahora la
+   * rescisión guardaba la fecha y la multa quedaba «para hablarlo», o sea, se cobraba
+   * por fuera del sistema o no se cobraba. El importe NO se decide acá: llega decidido
+   * desde la pantalla, que lo propone y deja que una persona lo confirme, lo negocie o
+   * lo condone.
+   */
+  async terminateLease({
+    id,
+    terminationDate,
+    notes,
+    penalty = 'eximir',
+    penaltyAmount,
+    usdHouse,
+  }: {
+    id: string;
+    terminationDate: string;
+    notes?: string | null;
+    /** Qué se hizo con la multa. Por defecto no se cobra: cobrar es la decisión. */
+    penalty?: PenaltyDecision;
+    /** El importe confirmado, en la moneda del contrato. Vacío = el que propone el contrato. */
+    penaltyAmount?: string | null;
+    usdHouse?: string;
+  }): Promise<{ terminated: true; penalty: TerminationPenaltyResult }> {
+    const contratos = new LeaseRepository(this.db);
+    const contrato = await contratos.getById({ id });
+    if (!contrato) throw new Error('El contrato no existe.');
+
+    await contratos.terminate({ id, terminationDate, notes });
+
+    if (penalty !== 'cobrar') {
+      return { terminated: true, penalty: { charged: false, reason: 'no se cobró multa' } };
+    }
+
+    const importe = String(penaltyAmount ?? '').trim() || proposedPenalty(contrato) || '';
+    if (!importe || Number(importe) <= 0) {
+      // Decidir cobrar sin importe no es cobrar cero: es que el contrato no pactó
+      // multa y nadie escribió cuánto. Se avisa en vez de emitir una línea en cero.
+      return {
+        terminated: true,
+        penalty: {
+          charged: false,
+          reason: 'el contrato no pactó multa y no se indicó un importe',
+        },
+      };
+    }
+
+    return {
+      terminated: true,
+      penalty: await this.emitirMulta({ contrato, importe, terminationDate, usdHouse }),
+    };
+  }
+
+  /**
+   * Pone la multa donde se pueda cobrar: en el recibo del mes si ya se emitió, o como
+   * concepto de ese mes si todavía no. Ver `penaltyDestination`.
+   */
+  private async emitirMulta({
+    contrato,
+    importe,
+    terminationDate,
+    usdHouse,
+  }: {
+    contrato: LeaseRow;
+    importe: string;
+    terminationDate: string;
+    usdHouse?: string;
+  }): Promise<TerminationPenaltyResult> {
+    const periodo = periodOf(terminationDate);
+    const etiqueta = penaltyLabel(contrato);
+    const recibos = await this.chargesForLease({ leaseId: contrato.id });
+    const destino = penaltyDestination({
+      period: periodo,
+      issuedPeriods: recibos.map((r) => r.period_key),
+    });
+
+    if (destino === 'concepto') {
+      // El mes todavía no se facturó: la multa entra sola cuando se emita. Vigencia de
+      // un solo período para que no se repita en un mes que este contrato ya no tiene.
+      await new LeaseChargeRepository(this.db).create({
+        data: {
+          lease_id: contrato.id,
+          type: 'otro',
+          label: etiqueta,
+          amount: importe,
+          valid_from: periodo,
+          valid_to: periodo,
+          notes: `Rescisión del ${terminationDate}.`,
+          // El insert tipado de drizzle se queda con las columnas obligatorias y deja
+          // afuera las opcionales; el resto del repositorio hace lo mismo.
+        } as unknown as NewLeaseChargeRow,
+      });
+      return {
+        charged: true,
+        where: 'concepto',
+        period: periodo,
+        amount: importe,
+        label: etiqueta,
+      };
+    }
+
+    const recibo = recibos.find((r) => r.period_key === periodo);
+    if (!recibo) return { charged: false, reason: 'no se encontró el recibo del mes' };
+
+    const { subtotal, detail } = await this.enPesosDelContrato({ contrato, importe, usdHouse });
+    await new AccountLineRepository(this.db).add({
+      accountId: recibo.id,
+      description: detail ? `${etiqueta} · ${detail}` : etiqueta,
+      unitPrice: subtotal,
+      sourceType: PENALTY_SOURCE,
+      sourceRef: `${contrato.id}:multa`,
+    });
+    return { charged: true, where: 'recibo', period: periodo, amount: subtotal, label: etiqueta };
+  }
+
+  /**
+   * El importe de la multa en la moneda en que se cobra, con el mismo criterio que el
+   * alquiler: lo pactado gana sobre el mercado.
+   */
+  private async enPesosDelContrato({
+    contrato,
+    importe,
+    usdHouse,
+  }: {
+    contrato: LeaseRow;
+    importe: string;
+    usdHouse?: string;
+  }): Promise<{ subtotal: string; detail: string }> {
+    if (!esMonedaExtranjera(contrato.currency)) return { subtotal: importe, detail: '' };
+    const pactada = cotizacionPactada(contrato);
+    if (pactada !== null) {
+      return {
+        subtotal: String(Math.round(Number(importe) * pactada)),
+        detail: `${contrato.currency} ${importe} × ${pactada} (pactada en el contrato)`,
+      };
+    }
+    return this.conversorDeMoneda(usdHouse)(importe, contrato.currency);
+  }
+
   async chargeLateFee({
     leaseId,
     accountId,

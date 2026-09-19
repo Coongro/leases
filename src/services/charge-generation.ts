@@ -102,7 +102,7 @@ function periodRange(period: string): { first: DateKey; last: DateKey } {
  * del mercado: dos contratos del mismo administrador pueden haber pactado dólares
  * distintos, y el conversor pide una sola cotización para toda la corrida.
  */
-function cotizacionPactada(lease: LeaseForCharges): number | null {
+export function cotizacionPactada(lease: { fx_rate?: string | null }): number | null {
   const n = Number(lease.fx_rate ?? '');
   return Number.isFinite(n) && n > 0 ? n : null;
 }

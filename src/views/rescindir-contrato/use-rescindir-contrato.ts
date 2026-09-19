@@ -29,6 +29,8 @@ export function useRescindirContratoView() {
     terminationDate: null,
     reason: null,
     termination_detail: null,
+    penalty: null,
+    penaltyAmount: null,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const setField = useCallback((k: string, v: any) => {
@@ -44,6 +46,7 @@ export function useRescindirContratoView() {
       },
       editingId,
       record: initialRecord,
+      parentRecord,
     })
       .then((initial) => {
         if (!initial || !mounted.current) return;
@@ -62,6 +65,10 @@ export function useRescindirContratoView() {
   // record con el que se abrió la vista (views.open(id, { record })), si hubo — lo
   // reciben los handlers en onSubmit (ej. una acción de fila que necesita el id).
   const initialRecord = ((views.params as any)?.record ?? null) as Record<string, any> | null;
+  // Contexto padre (views.open(id, { parentRecord })): el registro DESDE el que
+  // se abrió — «Nueva unidad» desde la ficha del edificio. A diferencia de
+  // { record }, NUNCA activa el modo edición ni el prefill general de campos.
+  const parentRecord = ((views.params as any)?.parentRecord ?? null) as Record<string, any> | null;
   // Abierta con { record } → modo edición: guardar actualiza, no crea
   const [editingId, setEditingId] = useState<string | null>(
     initialRecord?.id !== null && initialRecord?.id !== undefined ? String(initialRecord.id) : null
@@ -102,6 +109,7 @@ export function useRescindirContratoView() {
           toast,
           editingId,
           record: initialRecord,
+          parentRecord,
         };
         await customHandlers.onSubmit(values, ctx);
       } else {
@@ -116,7 +124,13 @@ export function useRescindirContratoView() {
         'Se guardó la fecha de fin. Deja de generar cargos y la unidad queda vacante.'
       );
       setEditingId(null);
-      setValues({ terminationDate: null, reason: null, termination_detail: null });
+      setValues({
+        terminationDate: null,
+        reason: null,
+        termination_detail: null,
+        penalty: null,
+        penaltyAmount: null,
+      });
       closeDialog();
     } catch (err) {
       toast.error('Error', err instanceof Error ? err.message : 'No se pudo guardar');
