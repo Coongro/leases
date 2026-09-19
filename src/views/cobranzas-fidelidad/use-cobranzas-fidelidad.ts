@@ -149,10 +149,9 @@ export function useCobranzasFidelidadView() {
       label: 'Estado',
       display: 'pill',
       values: [
-        { value: 'open', label: 'Emitido', tone: 'outline', icon: 'FileText' },
-        { value: 'partial', label: 'Parcial', tone: 'warning', icon: 'CirclePercent' },
-        { value: 'paid', label: 'Pagado', tone: 'success', icon: 'CircleCheck' },
-        { value: 'overdue', label: 'Vencido', tone: 'danger', icon: 'TriangleAlert' },
+        { value: 'open', label: 'Emitido', tone: 'outline' },
+        { value: 'overdue', label: 'Vencido', tone: 'danger' },
+        { value: 'closed', label: 'Cerrado', tone: 'success' },
       ],
     },
   ];

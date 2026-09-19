@@ -364,10 +364,9 @@ export function useFichaDeContratoView() {
         label: 'Estado',
         display: 'pill',
         values: [
-          { value: 'paid', label: 'Pagado', tone: 'success' },
-          { value: 'partial', label: 'Parcial', tone: 'warning' },
-          { value: 'overdue', label: 'Vencido', tone: 'danger' },
           { value: 'open', label: 'Emitido', tone: 'outline' },
+          { value: 'overdue', label: 'Vencido', tone: 'danger' },
+          { value: 'closed', label: 'Cerrado', tone: 'success' },
         ],
       },
     ];

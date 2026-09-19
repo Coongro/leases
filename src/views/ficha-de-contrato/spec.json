@@ -259,14 +259,9 @@
                         "display": "pill",
                         "values": [
                           {
-                            "value": "paid",
-                            "label": "Pagado",
-                            "tone": "success"
-                          },
-                          {
-                            "value": "partial",
-                            "label": "Parcial",
-                            "tone": "warning"
+                            "value": "open",
+                            "label": "Emitido",
+                            "tone": "outline"
                           },
                           {
                             "value": "overdue",
@@ -274,9 +269,9 @@
                             "tone": "danger"
                           },
                           {
-                            "value": "open",
-                            "label": "Emitido",
-                            "tone": "outline"
+                            "value": "closed",
+                            "label": "Cerrado",
+                            "tone": "success"
                           }
                         ]
                       }
