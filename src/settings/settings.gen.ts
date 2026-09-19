@@ -17,17 +17,6 @@ function toNum(v: unknown, fallback: number): number {
   return fallback;
 }
 
-export const CHARGES_GENERATION = {
-  manual: 'manual',
-  ask: 'ask',
-  auto: 'auto',
-} as const;
-
-export const LATE_FEE_APPLY = {
-  propose: 'propose',
-  off: 'off',
-} as const;
-
 export const CONTRACTS_DEFAULT_CURRENCY = {
   ARS: 'ARS',
   USD: 'USD',
@@ -60,11 +49,25 @@ export const CONTRACTS_USD_HOUSE = {
   mayorista: 'mayorista',
 } as const;
 
+export const CHARGES_GENERATION = {
+  manual: 'manual',
+  ask: 'ask',
+  auto: 'auto',
+} as const;
+
+export const LATE_FEE_APPLY = {
+  propose: 'propose',
+  off: 'off',
+} as const;
+
+export const ADJUSTMENTS_RETROACTIVE = {
+  ask: 'ask',
+  auto: 'auto',
+  off: 'off',
+} as const;
+
 /** Tipo de cada setting por su key punteada (para getSetting). */
 export interface LeasesSettingsByKey {
-  'leases.charges.generation': 'manual' | 'ask' | 'auto';
-  'leases.lateFee.graceDays': number;
-  'leases.lateFee.apply': 'propose' | 'off';
   'leases.contracts.defaultCurrency': 'ARS' | 'USD';
   'leases.contracts.defaultDueDay': number;
   'leases.contracts.defaultDueDayType': 'fixed' | 'business';
@@ -72,16 +75,14 @@ export interface LeasesSettingsByKey {
   'leases.contracts.defaultAdjustmentMonths': '3' | '4' | '6' | '12';
   'leases.contracts.usdHouse': 'oficial' | 'blue' | 'bolsa' | 'contadoconliqui' | 'mayorista';
   'leases.contracts.expiryWarningDays': number;
+  'leases.charges.generation': 'manual' | 'ask' | 'auto';
+  'leases.lateFee.graceDays': number;
+  'leases.lateFee.apply': 'propose' | 'off';
+  'leases.adjustments.retroactive': 'ask' | 'auto' | 'off';
 }
 
 /** Settings del plugin con defaults aplicados y coerción por tipo. */
 export interface LeasesSettings {
-  /** Cómo se generan — «A mano»: vos apretás el botón en Cobranzas cuando querés. «Avisarme»: el sistema te recuerda al inicio del mes y generás vos. «Sola»: se generan al empezar el mes sin preguntar. Generándolos dos veces nunca se duplican, así que la diferencia real es cuánta iniciativa querés que tome el sistema. · `leases.charges.generation` · default: `"manual"` */
-  readonly chargesGeneration: 'manual' | 'ask' | 'auto';
-  /** Días de gracia — Cuántos días después del vencimiento se puede pagar sin punitorio. Un pago que entra el lunes por un vencimiento del sábado no siempre es una mora: con 0 el interés corre desde el día siguiente. · `leases.lateFee.graceDays` · default: `0` */
-  readonly lateFeeGraceDays: number;
-  /** Cómo se cobra el punitorio — El punitorio nunca se agrega en silencio. «Proponer» lo calcula y espera tu confirmación antes de sumarlo a la cuenta; «no calcular» lo deja fuera del sistema, para quien lo arregla hablando. · `leases.lateFee.apply` · default: `"propose"` */
-  readonly lateFeeApply: 'propose' | 'off';
   /** Moneda — En qué moneda se pactan tus alquileres habitualmente. Es solo el valor con el que arranca el formulario: cada contrato puede firmarse en la otra. · `leases.contracts.defaultCurrency` · default: `"ARS"` */
   readonly contractsDefaultCurrency: 'ARS' | 'USD';
   /** Día de vencimiento — Qué día del mes vencen tus alquileres. Cada propietario tiene su costumbre — el 1, el 5, el 10 — y repetirla en cada contrato es tiempo perdido. · `leases.contracts.defaultDueDay` · default: `10` */
@@ -96,13 +97,18 @@ export interface LeasesSettings {
   readonly contractsUsdHouse: 'oficial' | 'blue' | 'bolsa' | 'contadoconliqui' | 'mayorista';
   /** Marcar «por vencer» con esta anticipación — Cuántos días antes del final un contrato aparece como próximo a vencer. Es el tiempo que te dejás para negociar la renovación o buscar un inquilino nuevo: por debajo de 60 días se llega justo. · `leases.contracts.expiryWarningDays` · default: `60` */
   readonly contractsExpiryWarningDays: number;
+  /** Cómo se generan — «A mano»: vos apretás el botón en Cobranzas cuando querés. «Avisarme»: el sistema te recuerda al inicio del mes y generás vos. «Sola»: se generan al empezar el mes sin preguntar. Generándolos dos veces nunca se duplican, así que la diferencia real es cuánta iniciativa querés que tome el sistema. · `leases.charges.generation` · default: `"manual"` */
+  readonly chargesGeneration: 'manual' | 'ask' | 'auto';
+  /** Días de gracia — Cuántos días después del vencimiento se puede pagar sin punitorio. Un pago que entra el lunes por un vencimiento del sábado no siempre es una mora: con 0 el interés corre desde el día siguiente. · `leases.lateFee.graceDays` · default: `0` */
+  readonly lateFeeGraceDays: number;
+  /** Cómo se cobra el punitorio — El punitorio nunca se agrega en silencio. «Proponer» lo calcula y espera tu confirmación antes de sumarlo a la cuenta; «no calcular» lo deja fuera del sistema, para quien lo arregla hablando. · `leases.lateFee.apply` · default: `"propose"` */
+  readonly lateFeeApply: 'propose' | 'off';
+  /** Si la actualización se confirma tarde — Qué hacer cuando una actualización empieza a regir en un mes que ya se facturó al precio anterior. El alquiler nuevo se aplica igual; esto decide sólo qué pasa con la diferencia de los meses que quedaron atrás. Nunca se toca un recibo ya emitido: la diferencia va como concepto aparte en el próximo. Que esto pase es señal de que la actualización se pasó por alto, así que lo normal es mirarla antes de cobrarla. · `leases.adjustments.retroactive` · default: `"ask"` */
+  readonly adjustmentsRetroactive: 'ask' | 'auto' | 'off';
 }
 
 /** Nombre de prop → key punteada del manifest. */
 export const SETTING_KEYS = {
-  chargesGeneration: 'leases.charges.generation',
-  lateFeeGraceDays: 'leases.lateFee.graceDays',
-  lateFeeApply: 'leases.lateFee.apply',
   contractsDefaultCurrency: 'leases.contracts.defaultCurrency',
   contractsDefaultDueDay: 'leases.contracts.defaultDueDay',
   contractsDefaultDueDayType: 'leases.contracts.defaultDueDayType',
@@ -110,13 +116,14 @@ export const SETTING_KEYS = {
   contractsDefaultAdjustmentMonths: 'leases.contracts.defaultAdjustmentMonths',
   contractsUsdHouse: 'leases.contracts.usdHouse',
   contractsExpiryWarningDays: 'leases.contracts.expiryWarningDays',
+  chargesGeneration: 'leases.charges.generation',
+  lateFeeGraceDays: 'leases.lateFee.graceDays',
+  lateFeeApply: 'leases.lateFee.apply',
+  adjustmentsRetroactive: 'leases.adjustments.retroactive',
 } as const;
 
 /** Valores por defecto (los mismos del manifest). */
 export const SETTING_DEFAULTS = {
-  'leases.charges.generation': 'manual',
-  'leases.lateFee.graceDays': 0,
-  'leases.lateFee.apply': 'propose',
   'leases.contracts.defaultCurrency': 'ARS',
   'leases.contracts.defaultDueDay': 10,
   'leases.contracts.defaultDueDayType': 'fixed',
@@ -124,16 +131,15 @@ export const SETTING_DEFAULTS = {
   'leases.contracts.defaultAdjustmentMonths': '6',
   'leases.contracts.usdHouse': 'oficial',
   'leases.contracts.expiryWarningDays': 60,
+  'leases.charges.generation': 'manual',
+  'leases.lateFee.graceDays': 0,
+  'leases.lateFee.apply': 'propose',
+  'leases.adjustments.retroactive': 'ask',
 } as const;
 
 const COERCE: {
   [K in keyof LeasesSettingsByKey]: (values: Record<string, unknown>) => LeasesSettingsByKey[K];
 } = {
-  'leases.charges.generation': (values) =>
-    toEnum(values['leases.charges.generation'], ['manual', 'ask', 'auto'], 'manual'),
-  'leases.lateFee.graceDays': (values) => toNum(values['leases.lateFee.graceDays'], 0),
-  'leases.lateFee.apply': (values) =>
-    toEnum(values['leases.lateFee.apply'], ['propose', 'off'], 'propose'),
   'leases.contracts.defaultCurrency': (values) =>
     toEnum(values['leases.contracts.defaultCurrency'], ['ARS', 'USD'], 'ARS'),
   'leases.contracts.defaultDueDay': (values) => toNum(values['leases.contracts.defaultDueDay'], 10),
@@ -155,6 +161,13 @@ const COERCE: {
     ),
   'leases.contracts.expiryWarningDays': (values) =>
     toNum(values['leases.contracts.expiryWarningDays'], 60),
+  'leases.charges.generation': (values) =>
+    toEnum(values['leases.charges.generation'], ['manual', 'ask', 'auto'], 'manual'),
+  'leases.lateFee.graceDays': (values) => toNum(values['leases.lateFee.graceDays'], 0),
+  'leases.lateFee.apply': (values) =>
+    toEnum(values['leases.lateFee.apply'], ['propose', 'off'], 'propose'),
+  'leases.adjustments.retroactive': (values) =>
+    toEnum(values['leases.adjustments.retroactive'], ['ask', 'auto', 'off'], 'ask'),
 };
 
 /** Lee UNA setting tipada desde los valores crudos del tenant (para handlers). */
@@ -168,9 +181,6 @@ export function getSetting<K extends keyof LeasesSettingsByKey>(
 /** Construye el objeto tipado desde los valores crudos (sin hook: handlers/tests). */
 export function readLeasesSettings(values: Record<string, unknown>): LeasesSettings {
   return {
-    chargesGeneration: COERCE['leases.charges.generation'](values),
-    lateFeeGraceDays: COERCE['leases.lateFee.graceDays'](values),
-    lateFeeApply: COERCE['leases.lateFee.apply'](values),
     contractsDefaultCurrency: COERCE['leases.contracts.defaultCurrency'](values),
     contractsDefaultDueDay: COERCE['leases.contracts.defaultDueDay'](values),
     contractsDefaultDueDayType: COERCE['leases.contracts.defaultDueDayType'](values),
@@ -178,6 +188,10 @@ export function readLeasesSettings(values: Record<string, unknown>): LeasesSetti
     contractsDefaultAdjustmentMonths: COERCE['leases.contracts.defaultAdjustmentMonths'](values),
     contractsUsdHouse: COERCE['leases.contracts.usdHouse'](values),
     contractsExpiryWarningDays: COERCE['leases.contracts.expiryWarningDays'](values),
+    chargesGeneration: COERCE['leases.charges.generation'](values),
+    lateFeeGraceDays: COERCE['leases.lateFee.graceDays'](values),
+    lateFeeApply: COERCE['leases.lateFee.apply'](values),
+    adjustmentsRetroactive: COERCE['leases.adjustments.retroactive'](values),
   };
 }
 

@@ -12,13 +12,7 @@
  * botón y el reloj no pueden dar resultados distintos.
  */
 
-import {
-  actions,
-  formatDateKey,
-  formatMoney,
-  plural,
-  type CustomHandlers,
-} from '@coongro/plugin-sdk';
+import { formatDateKey, formatMoney, plural, type CustomHandlers } from '@coongro/plugin-sdk';
 
 /** Una actualización con su contrato ya resuelto, como la lista el servidor. */
 export interface AdjustmentRow {
@@ -44,6 +38,76 @@ interface AdjustmentsOverview {
 interface DetectionResult {
   proposed: number;
   failed: Array<{ label: string; reason: string }>;
+}
+
+/** Lo que informa el servidor sobre la diferencia de una actualización. */
+type RetroactiveResult =
+  | { status: 'sin_diferencia' }
+  | { status: 'no_corresponde'; reason: string }
+  | { status: 'propuesta'; periods: string[]; amount: string; label: string; detail: string }
+  | { status: 'cobrada'; where: 'recibo' | 'concepto'; periods: string[]; amount: string };
+
+/** Aplicar una actualización devuelve, además, qué pasó con su diferencia. */
+interface AplicacionResult {
+  applied: true;
+  retroactive?: RetroactiveResult;
+}
+
+/** Mínimo de un toast, para no acoplar estos avisos al tipo completo del motor. */
+type Avisos =
+  | {
+      success: (t: string, m: string) => void;
+      info: (t: string, m: string) => void;
+      warning: (t: string, m: string) => void;
+    }
+  | undefined;
+
+/** Dónde entró la diferencia, dicho como lo diría una persona. */
+function donde(where: 'recibo' | 'concepto'): string {
+  return where === 'recibo' ? 'en el próximo recibo impago' : 'como concepto del mes que viene';
+}
+
+/**
+ * Qué pasó al aplicar. La diferencia sin cobrar se avisa con `warning` y con el
+ * número: es plata que queda sin reclamar hasta que alguien apriete el otro botón, y
+ * un aviso verde haría creer que no quedó nada pendiente.
+ */
+function contarAplicacion(r: AplicacionResult, toast: Avisos): void {
+  const dif = r.retroactive;
+  if (dif?.status === 'propuesta') {
+    toast?.warning(
+      'Actualización aplicada, queda una diferencia',
+      `${dif.detail} Son ${formatMoney(Number(dif.amount))} sin cobrar: usá «Cobrar diferencia» en esta misma fila.`
+    );
+    return;
+  }
+  if (dif?.status === 'cobrada') {
+    toast?.success(
+      'Actualización aplicada y diferencia cobrada',
+      `${formatMoney(Number(dif.amount))} entraron ${donde(dif.where)}.`
+    );
+    return;
+  }
+  toast?.success('Actualización aplicada', 'El alquiler del contrato pasa al valor nuevo.');
+}
+
+/** Qué pasó al cobrar la diferencia, incluido el caso de que ya estuviera cobrada. */
+function contarDiferencia(r: RetroactiveResult, toast: Avisos): void {
+  if (r.status === 'cobrada') {
+    toast?.success(
+      'Diferencia cobrada',
+      `${formatMoney(Number(r.amount))} entraron ${donde(r.where)}.`
+    );
+    return;
+  }
+  if (r.status === 'sin_diferencia') {
+    toast?.info(
+      'No hay diferencia',
+      'Esta actualización no dejó meses facturados al alquiler anterior.'
+    );
+    return;
+  }
+  toast?.info('No se cobró', r.status === 'no_corresponde' ? r.reason : 'No corresponde.');
 }
 
 export const customHandlers: CustomHandlers = {
@@ -73,10 +137,41 @@ export const customHandlers: CustomHandlers = {
   },
 
   /**
-   * Busca contratos que cumplieron su período y deja una propuesta por cada uno.
-   * No cambia ningún alquiler: eso pasa recién al confirmar, fila por fila.
+   * Toda acción de esta vista pasa por acá, y por eso ramifica por `actionId`.
+   *
+   * Antes ignoraba cuál se había apretado y corría siempre la detección: los botones
+   * «Aplicar» y «Cancelar» de cada fila NO hacían nada —el motor delega en este handler
+   * cuando existe, así que tampoco ejecutaba la acción por su cuenta— y encima el aviso
+   * decía «Actualización aplicada». El alquiler seguía igual y nadie se enteraba.
    */
-  onAction: async (_actionId, { execute, toast, reload }) => {
+  onAction: async (actionId, { execute, toast, record, reload }) => {
+    const id = String(record?.id ?? '');
+
+    if (actionId === 'leases.billing.applyAdjustment') {
+      if (!id) return;
+      const r = await execute<AplicacionResult>('leases.billing.applyAdjustment', { id });
+      reload?.();
+      contarAplicacion(r, toast);
+      return;
+    }
+
+    if (actionId === 'leases.billing.chargeRetroactive') {
+      if (!id) return;
+      const r = await execute<RetroactiveResult>('leases.billing.chargeRetroactive', { id });
+      reload?.();
+      contarDiferencia(r, toast);
+      return;
+    }
+
+    if (actionId === 'leases.adjustments.cancel') {
+      if (!id) return;
+      await execute('leases.adjustments.cancel', { id });
+      reload?.();
+      toast?.info('Actualización descartada', 'El alquiler queda como estaba.');
+      return;
+    }
+    // Lo que queda es el botón de la cabecera: busca contratos que cumplieron su
+    // período y deja una propuesta por cada uno. No cambia ningún alquiler.
     const r = await execute<DetectionResult>('leases.adjustments.detect');
     // Lo recién calculado tiene que verse sin recargar la página.
     reload?.();
@@ -102,27 +197,3 @@ export const customHandlers: CustomHandlers = {
     }
   },
 };
-
-/** Confirma o descarta una actualización desde los botones de la fila. */
-export async function onRowAction(
-  accion: 'Aplicar' | 'Cancelar',
-  row: AdjustmentRow,
-  toast?: { success: (t: string, m: string) => void; info: (t: string, m: string) => void }
-): Promise<void> {
-  if (row.status !== 'pending') {
-    toast?.info('Ya resuelta', 'Esta actualización no está pendiente.');
-    return;
-  }
-  if (accion === 'Aplicar') {
-    // El ajuste y el alquiler del contrato cambian juntos, en el servidor: aplicar uno
-    // sin el otro dejaría al sistema facturando el valor viejo.
-    await actions.execute('leases.adjustments.apply', { id: row.id });
-    toast?.success(
-      'Actualización aplicada',
-      `El alquiler pasa a ${formatMoney(Number(row.new_rent))} desde el ${row.effective_date}.`
-    );
-    return;
-  }
-  await actions.execute('leases.adjustments.cancel', { id: row.id });
-  toast?.info('Actualización cancelada', 'El alquiler queda como estaba.');
-}

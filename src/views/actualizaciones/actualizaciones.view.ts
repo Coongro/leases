@@ -205,12 +205,12 @@ export function ActualizacionesView() {
       onClick: (row: any) => {
         askConfirm(
           'Aplicar',
-          '¿Confirmás la actualización? El alquiler del contrato pasa a valer el monto nuevo desde su fecha.',
+          '¿Confirmás la actualización? El alquiler del contrato pasa a valer el monto nuevo desde su fecha. Si esa fecha cae en meses que ya se facturaron, la diferencia NO se cobra sola: queda para que la cobres con «Cobrar diferencia».',
           'Aplicar',
           () => {
             ((row: any) => {
               ((row: any) => {
-                void runServerAction('leases.adjustments.apply', { id: row.id }, row);
+                void runServerAction('leases.billing.applyAdjustment', { id: row.id }, row);
               })(row);
               toast.success('Actualización aplicada', '');
             })(row);
@@ -218,6 +218,26 @@ export function ActualizacionesView() {
         );
       },
       hidden: (row: any) => !['pending'].includes(String(row?.['status'] ?? '')),
+    },
+    {
+      label: 'Cobrar diferencia',
+      icon: 'ReceiptText',
+      onClick: (row: any) => {
+        askConfirm(
+          'Cobrar diferencia',
+          'Se cobra lo que se dejó de facturar en los meses que ya salieron al alquiler anterior. Entra en el próximo recibo impago —los emitidos no se tocan— y cobrarla dos veces no duplica el cargo.',
+          'Cobrar diferencia',
+          () => {
+            ((row: any) => {
+              ((row: any) => {
+                void runServerAction('leases.billing.chargeRetroactive', { id: row.id }, row);
+              })(row);
+              toast.success('Diferencia resuelta', '');
+            })(row);
+          }
+        );
+      },
+      hidden: (row: any) => !['applied'].includes(String(row?.['status'] ?? '')),
     },
     {
       label: 'Cancelar',
