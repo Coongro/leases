@@ -24,6 +24,8 @@ interface LeaseDetail {
   rent_amount?: string;
   expenses_amount?: string | null;
   currency?: string;
+  /** Cotización pactada por escrito, si el contrato fijó una. */
+  fx_rate?: string | null;
   due_day?: number;
   due_day_type?: string;
   adjustment_index?: string | null;
@@ -60,6 +62,22 @@ interface FichaContrato {
 
 /** El contrato puede estar pactado en dólares: la moneda viaja con el monto. */
 const monto = (v: unknown, moneda?: string) => formatMoney(v, moneda === 'USD' ? 'USD' : 'ARS');
+
+/**
+ * La moneda del contrato y, si pactó cotización, a cuánto se convierte.
+ *
+ * Sin cotización pactada se usa la del mercado del día de emisión, y eso también se
+ * dice: el propietario tiene que poder distinguir un contrato con valor fijo de uno
+ * que sigue al dólar sin abrir el papel.
+ */
+function monedaDelContrato(currency: unknown, fxRate: unknown): string {
+  if (String(currency ?? 'ARS').toUpperCase() !== 'USD') return 'Pesos (ARS)';
+  const n = Number(fxRate ?? '');
+  if (Number.isFinite(n) && n > 0) {
+    return `Dólares (USD) · a ${n.toLocaleString('es-AR')} pactado`;
+  }
+  return 'Dólares (USD) · a la cotización del día';
+}
 
 /** Cuánto falta para una fecha, en palabras: «2 años», «8 meses», «12 días». */
 function faltaPara(dk?: string | null): string {
@@ -151,7 +169,9 @@ export const customHandlers: CustomHandlers = {
       },
       k4: { value: faltaPara(c.end_date), sub: formatDateKey(c.end_date) },
 
-      'kv_cond.Moneda': { value: c.currency === 'USD' ? 'Dólares (USD)' : 'Pesos (ARS)' },
+      // En un contrato en dólares, lo que se paga depende de a qué valor se convierte:
+      // decir sólo «Dólares» deja afuera la mitad de la condición pactada.
+      'kv_cond.Moneda': { value: monedaDelContrato(c.currency, c.fx_rate) },
       'kv_cond.Alquiler inicial': { value: monto(c.rent_amount, c.currency) },
       'kv_cond.Expensas': {
         value: c.expenses_amount ? monto(c.expenses_amount, c.currency) : 'No corresponde',

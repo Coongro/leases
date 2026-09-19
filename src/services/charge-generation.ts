@@ -52,6 +52,8 @@ interface LeaseForCharges {
   rent_amount: string;
   expenses_amount?: string | null;
   currency: string;
+  /** Cotización pactada por escrito, si el contrato fijó una. Vacío = la del mercado. */
+  fx_rate?: string | null;
   due_day: number;
   due_day_type: string;
   unit?: string | null;
@@ -93,6 +95,18 @@ function periodRange(period: string): { first: DateKey; last: DateKey } {
  * de agosto genera el cargo de agosto. Lo que no se cobra es lo que todavía no empezó,
  * lo que ya terminó, y lo que está en borrador o rescindido antes del período.
  */
+/**
+ * La cotización que el contrato dejó por escrito, si dejó alguna.
+ *
+ * Se resuelve acá y no en el conversor inyectado porque es un dato DEL CONTRATO, no
+ * del mercado: dos contratos del mismo administrador pueden haber pactado dólares
+ * distintos, y el conversor pide una sola cotización para toda la corrida.
+ */
+function cotizacionPactada(lease: LeaseForCharges): number | null {
+  const n = Number(lease.fx_rate ?? '');
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 export function appliesToPeriod(lease: LeaseForCharges, period: string): boolean {
   if (lease.status === 'borrador') return false;
   const { first, last } = periodRange(period);
@@ -171,6 +185,16 @@ export async function generateCharges({
       // $67.950.000 a $1.510 el dólar.
       const enPesos = async (amount: string): Promise<{ subtotal: string; detail: string }> => {
         if (!esMonedaExtranjera(lease.currency)) return { subtotal: amount, detail: '' };
+        // Lo pactado gana sobre el mercado, y no necesita cotización del día: un
+        // contrato con valor fijo por escrito se emite igual aunque la fuente no
+        // responda, porque no depende de ella.
+        const pactada = cotizacionPactada(lease);
+        if (pactada !== null) {
+          return {
+            subtotal: String(Math.round(Number(amount) * pactada)),
+            detail: ` · ${lease.currency} ${amount} × $${pactada} (pactada en el contrato)`,
+          };
+        }
         if (!convertir) {
           // Emitirlo sin convertir cobraría 1.200 pesos donde el contrato dice 1.200
           // dólares. Preferible que el cargo falte, y se vea que faltó.

@@ -107,6 +107,8 @@ export interface ContractInput {
   admin_fee_percent?: unknown;
   /** `borrador` o `vigente`. Los otros estados tienen su propia acción. */
   status?: unknown;
+  /** Cotización pactada por escrito, si el contrato fijó una. */
+  fx_rate?: unknown;
   penalty_months?: unknown;
   deposit_amount?: unknown;
   deposit_status?: unknown;
@@ -246,6 +248,7 @@ export class LeaseRepository {
       rent_amount: alquiler,
       expenses_amount: numero(data.expenses_amount),
       currency: texto(data.currency) || 'ARS',
+      fx_rate: numero(data.fx_rate),
       due_day: Number(data.due_day) || 1,
       due_day_type: texto(data.due_day_type) || 'fixed',
       adjustment_index: texto(data.adjustment_index) || null,

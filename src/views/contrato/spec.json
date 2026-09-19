@@ -173,6 +173,20 @@
           ]
         },
         {
+          "id": "f_fx",
+          "kind": "field",
+          "name": "fx_rate",
+          "fieldType": "number",
+          "label": "Cotización pactada",
+          "width": "half",
+          "validations": [],
+          "placeholder": "Ej: 1450 — vacío usa la del mercado",
+          "showWhen": {
+            "column": "currency",
+            "values": "USD"
+          }
+        },
+        {
           "id": "f_rent",
           "kind": "field",
           "name": "rent_amount",

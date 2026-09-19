@@ -1,6 +1,6 @@
 {
-  "id": "ba31e77d-f717-4d3d-9d82-b7cd1d33fbc4",
-  "prevId": "10768634-a291-4401-9870-fca642156a28",
+  "id": "b385faf0-88ee-462a-9e39-3ae6cd3cf14e",
+  "prevId": "ba31e77d-f717-4d3d-9d82-b7cd1d33fbc4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -671,6 +671,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "fx_rate": {
+          "name": "fx_rate",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
         },
         "due_day": {
           "name": "due_day",

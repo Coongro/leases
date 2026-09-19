@@ -173,6 +173,46 @@ describe('contratos pactados en dólares', () => {
     expect(execute.mock.calls[0][1].lines[0].description).toContain('USD 1200 × $1510');
   });
 
+  it('si el contrato pactó una cotización, esa manda sobre la del mercado', async () => {
+    const execute = vi.fn().mockResolvedValue({ created: true });
+    const convertir = vi.fn();
+    await generateCharges({
+      period: '2026-08',
+      leases: [{ ...enDolares, fx_rate: '1450' }],
+      execute,
+      convertir,
+    });
+    // Lo que las partes firmaron no se recalcula con el dólar de hoy.
+    expect(convertir).not.toHaveBeenCalled();
+    expect(execute.mock.calls[0][1].lines[0].subtotal).toBe('1740000');
+    expect(execute.mock.calls[0][1].lines[0].description).toContain(
+      'USD 1200 × $1450 (pactada en el contrato)'
+    );
+  });
+
+  it('con cotización pactada el cargo sale aunque no haya conversor', async () => {
+    const execute = vi.fn().mockResolvedValue({ created: true });
+    // Sin `convertir` un contrato en dólares no se emite; con valor fijo no depende
+    // de ninguna fuente, así que la facturación del mes no se cae por eso.
+    const r = await generateCharges({
+      period: '2026-08',
+      leases: [{ ...enDolares, fx_rate: '1450' }],
+      execute,
+    });
+    expect(r.created).toBe(1);
+  });
+
+  it('una cotización pactada en cero o basura se ignora y se usa la del mercado', async () => {
+    const execute = vi.fn().mockResolvedValue({ created: true });
+    await generateCharges({
+      period: '2026-08',
+      leases: [{ ...enDolares, fx_rate: '0' }],
+      execute,
+      convertir: aPesos,
+    });
+    expect(execute.mock.calls[0][1].lines[0].subtotal).toBe('1812000');
+  });
+
   it('un contrato en pesos no pasa por el conversor', async () => {
     const execute = vi.fn().mockResolvedValue({ created: true });
     const convertir = vi.fn();

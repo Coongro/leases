@@ -46,6 +46,16 @@ export const leaseTable = pgTable(
     expenses_amount: numeric('expenses_amount'),
     /** ARS o USD: el contrato bimoneda es corriente acá y ninguna de las fuentes lo contempla. */
     currency: text('currency').notNull(),
+    /**
+     * Cotización pactada por escrito, cuando el contrato fijó una. Vacío = la del mercado.
+     *
+     * Desde que la ley de alquileres quedó derogada, las partes pactan libremente, y en
+     * los contratos en dólares es habitual dejar escrito a qué valor se paga: uno fijo,
+     * el de una casa puntual, o el del día anterior. La casa de cambio ya se elige por
+     * configuración, pero eso es del tenant — y dos contratos del mismo administrador
+     * pueden haber pactado dólares distintos. Este número, si está, gana sobre el mercado.
+     */
+    fx_rate: numeric('fx_rate'),
     /** Día de vencimiento del alquiler. */
     due_day: integer('due_day').notNull(),
     /** `fixed` = ese día del mes; `business` = el N-ésimo día hábil (feriados incluidos). */
