@@ -41,6 +41,18 @@ import {
   type ExpenseForResult,
   type PropertyResult,
 } from '../services/property-result.js';
+import {
+  adjustmentMark,
+  alreadyCharged,
+  describePeriods,
+  retroactiveDifference,
+  retroactiveLabel,
+  retroactivePeriods,
+} from '../services/retroactive-adjustment.js';
+import {
+  currentRetroactivePolicy,
+  type RetroactivePolicy,
+} from '../services/retroactive-policy.server.js';
 import { chargeForTenantExpense } from '../services/tenant-expense.js';
 import {
   penaltyDestination,
@@ -57,6 +69,27 @@ import { LeaseRepository, type LeaseListRow } from './lease.repository.js';
 
 /** Con qué origen entra en el recibo la multa por rescisión anticipada. */
 const PENALTY_SOURCE = 'multa_rescision';
+
+/** Con qué origen entra la diferencia de una actualización confirmada tarde. */
+const RETROACTIVE_SOURCE = 'diferencia_actualizacion';
+
+/**
+ * Qué pasó con la diferencia al aplicar una actualización.
+ *
+ * `propuesta` es el caso que espera una decisión: el ajuste YA se aplicó —el alquiler
+ * nuevo rige— y lo único pendiente es si se cobran los meses que quedaron atrás.
+ */
+export type RetroactiveResult =
+  | { status: 'sin_diferencia' }
+  | { status: 'no_corresponde'; reason: string }
+  | { status: 'propuesta'; periods: string[]; amount: string; label: string; detail: string }
+  | {
+      status: 'cobrada';
+      where: 'recibo' | 'concepto';
+      periods: string[];
+      amount: string;
+      label: string;
+    };
 
 /**
  * Qué pasó con la multa al rescindir. Se devuelve siempre —también cuando no se
@@ -236,6 +269,13 @@ const MESES_LARGOS = [
 ];
 
 /** «2026-08» → «Agosto 2026». */
+/** El período siguiente a uno dado: `2026-12` → `2027-01`. */
+function periodoSiguiente(period: string): string {
+  const [y, m] = period.split('-').map(Number);
+  const mes = m + 1;
+  return mes > 12 ? `${y + 1}-01` : `${y}-${String(mes).padStart(2, '0')}`;
+}
+
 function periodoLegible(period: string): string {
   const m = /^(\d{4})-(\d{2})$/.exec(period);
   if (!m) return period;
@@ -1003,6 +1043,201 @@ export class RentBillingRepository {
       };
     }
     return this.conversorDeMoneda(usdHouse)(importe, contrato.currency);
+  }
+
+  /**
+   * Aplica una actualización por índice y resuelve la diferencia que haya quedado.
+   *
+   * El alquiler nuevo se aplica SIEMPRE: eso es lo que se confirmó. Lo que decide la
+   * política es sólo qué pasa con los meses que ya se facturaron al precio anterior.
+   *
+   * Que queden meses atrás no es lo normal: el kit calcula el ajuste con el último
+   * índice publicado, así que siempre se puede confirmar a tiempo. Si igual pasó, es
+   * que la actualización se pasó por alto — por eso el default PROPONE en vez de
+   * cobrar, y por eso el resultado cuenta qué encontró aunque no cobre nada.
+   */
+  async applyAdjustment({
+    id,
+    retroactive,
+    usdHouse,
+  }: {
+    id: string;
+    /** Pisa la configuración del tenant para esta corrida. */
+    retroactive?: RetroactivePolicy;
+    usdHouse?: string;
+  }): Promise<{ applied: true; retroactive: RetroactiveResult }> {
+    const ajustes = new IndexAdjustmentRepository(this.db);
+    const previo = await ajustes.getById({ id });
+    if (!previo) throw new Error('La actualización no existe.');
+
+    // La diferencia se mide ANTES de aplicar: después, el alquiler del contrato ya es
+    // el nuevo y no habría con qué comparar lo que se facturó.
+    const diferencia = await this.medirDiferencia(previo);
+
+    await ajustes.apply({ id });
+
+    if (diferencia.status !== 'propuesta') return { applied: true, retroactive: diferencia };
+
+    const politica = await currentRetroactivePolicy(this.db, retroactive);
+    if (politica === 'off') {
+      return {
+        applied: true,
+        retroactive: {
+          status: 'no_corresponde',
+          reason: 'la configuración es no cobrar diferencias',
+        },
+      };
+    }
+    if (politica === 'ask') return { applied: true, retroactive: diferencia };
+
+    return {
+      applied: true,
+      retroactive: await this.chargeRetroactive({ id, usdHouse }),
+    };
+  }
+
+  /**
+   * Cobra la diferencia de una actualización ya aplicada. Es lo que confirma la
+   * pantalla cuando la política es proponer.
+   */
+  async chargeRetroactive({
+    id,
+    usdHouse,
+  }: {
+    id: string;
+    usdHouse?: string;
+  }): Promise<RetroactiveResult> {
+    const ajuste = await new IndexAdjustmentRepository(this.db).getById({ id });
+    if (!ajuste) throw new Error('La actualización no existe.');
+
+    const diferencia = await this.medirDiferencia(ajuste);
+    if (diferencia.status !== 'propuesta') return diferencia;
+
+    const contrato = await new LeaseRepository(this.db).getById({ id: String(ajuste.lease_id) });
+    if (!contrato) return { status: 'no_corresponde', reason: 'el contrato ya no existe' };
+
+    return this.emitirDiferencia({ contrato, ajuste, diferencia, usdHouse });
+  }
+
+  /**
+   * Qué quedó mal facturado por esta actualización, sin tocar nada.
+   *
+   * Se mide contra los recibos EMITIDOS del contrato: un período sin recibo no está
+   * mal facturado, simplemente todavía no se facturó, y va a salir con el precio nuevo.
+   */
+  private async medirDiferencia(ajuste: {
+    id: string;
+    lease_id: string;
+    effective_date: string;
+    previous_rent: string;
+    new_rent: string;
+    index_code: string;
+  }): Promise<RetroactiveResult> {
+    const recibos = await this.chargesForLease({ leaseId: String(ajuste.lease_id) });
+    const periodos = retroactivePeriods({
+      effectiveDate: String(ajuste.effective_date),
+      issuedPeriods: recibos.map((r) => r.period_key),
+    });
+    if (periodos.length === 0) return { status: 'sin_diferencia' };
+
+    const monto = retroactiveDifference({
+      periods: periodos,
+      previousRent: ajuste.previous_rent,
+      newRent: ajuste.new_rent,
+    });
+    // Una actualización a la baja no genera un cargo: devolver plata es una decisión
+    // que no se toma sola ni se esconde en un recibo.
+    if (Number(monto) <= 0) return { status: 'sin_diferencia' };
+
+    const label = retroactiveLabel({
+      indexCode: String(ajuste.index_code),
+      periods: periodos,
+      previousRent: ajuste.previous_rent,
+      newRent: ajuste.new_rent,
+    });
+    return {
+      status: 'propuesta',
+      periods: periodos,
+      amount: monto,
+      label,
+      detail: `${describePeriods(periodos)} se facturaron al alquiler anterior.`,
+    };
+  }
+
+  /**
+   * Pone la diferencia donde se pueda cobrar, sin tocar lo emitido: en el primer recibo
+   * abierto posterior a los períodos corregidos, o como concepto del mes siguiente si
+   * todavía no hay ninguno. Mismo criterio que la multa por rescisión.
+   */
+  private async emitirDiferencia({
+    contrato,
+    ajuste,
+    diferencia,
+    usdHouse,
+  }: {
+    contrato: LeaseRow;
+    ajuste: { id: string };
+    diferencia: { periods: string[]; amount: string; label: string };
+    usdHouse?: string;
+  }): Promise<RetroactiveResult> {
+    const ultimo = diferencia.periods[diferencia.periods.length - 1];
+    const recibos = await this.chargesForLease({ leaseId: contrato.id });
+    // Un recibo ya cobrado no se toca aunque sea posterior: el inquilino ya lo pagó y
+    // la rendición del propietario ya salió con ese número.
+    const destino = recibos
+      .filter((r) => r.period_key > ultimo && Number(r.balance ?? 0) > 0.005)
+      .sort((a, b) => a.period_key.localeCompare(b.period_key))[0];
+
+    if (!destino) {
+      const siguiente = periodoSiguiente(ultimo);
+      const conceptos = new LeaseChargeRepository(this.db);
+      // Sin esta guarda el botón cobraba de nuevo cada vez que se apretaba: el camino
+      // del recibo es idempotente por `source_ref`, pero un concepto es una fila nueva
+      // cada vez. Apretar dos veces dejaba al inquilino debiendo el doble.
+      const yaEsta = alreadyCharged(await conceptos.forLease({ leaseId: contrato.id }), ajuste.id);
+      if (yaEsta) {
+        return { status: 'no_corresponde', reason: 'esta diferencia ya estaba cargada' };
+      }
+      await conceptos.create({
+        data: {
+          lease_id: contrato.id,
+          type: 'otro',
+          label: diferencia.label,
+          amount: diferencia.amount,
+          valid_from: siguiente,
+          valid_to: siguiente,
+          notes: adjustmentMark(ajuste.id),
+        } as unknown as NewLeaseChargeRow,
+      });
+      return {
+        status: 'cobrada',
+        where: 'concepto',
+        periods: diferencia.periods,
+        amount: diferencia.amount,
+        label: diferencia.label,
+      };
+    }
+
+    const { subtotal, detail } = await this.enPesosDelContrato({
+      contrato,
+      importe: diferencia.amount,
+      usdHouse,
+    });
+    await new AccountLineRepository(this.db).add({
+      accountId: destino.id,
+      description: detail ? `${diferencia.label} · ${detail}` : diferencia.label,
+      unitPrice: subtotal,
+      sourceType: RETROACTIVE_SOURCE,
+      // Idempotente por actualización: confirmarla dos veces no cobra dos veces.
+      sourceRef: `${ajuste.id}:retro`,
+    });
+    return {
+      status: 'cobrada',
+      where: 'recibo',
+      periods: diferencia.periods,
+      amount: subtotal,
+      label: diferencia.label,
+    };
   }
 
   async chargeLateFee({

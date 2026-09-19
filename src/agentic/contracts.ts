@@ -3950,3 +3950,80 @@ export const terminateLease = defineAction({
     identifierKey: 'id',
   },
 });
+
+/**
+ * Aplicar una actualización y resolver su diferencia son UN acto: el alquiler nuevo
+ * rige desde su fecha, y los meses que ya se facturaron al precio anterior quedan mal
+ * facturados en el mismo instante. Separarlos deja el estado de la mitad.
+ */
+export const applyAdjustmentBilling = defineAction({
+  id: 'leases.billing.applyAdjustment',
+  title: 'Aplicar una actualización y resolver su diferencia',
+  description:
+    'Confirma una actualización por índice: el alquiler del contrato pasa al valor nuevo desde su fecha de vigencia. Si esa fecha cae en meses que YA se facturaron al precio anterior, informa la diferencia. No la cobra sola salvo que la configuración del tenant lo diga: cobrar meses hacia atrás es de las pocas cosas que el inquilino no ve venir. Nunca modifica un recibo emitido.',
+  effect: 'write',
+  confirmation: 'always',
+  tenantScope: 'required',
+  input: {
+    type: 'object',
+    properties: {
+      id: {
+        type: 'string',
+        description: 'La actualización pendiente que se confirma.',
+        ref: { resource: 'leases.adjustments' },
+      },
+      retroactive: {
+        type: 'string',
+        enum: ['ask', 'auto', 'off'],
+        description:
+          'Pisa la configuración del tenant sólo para esta corrida. `ask` informa la diferencia sin cobrarla, `auto` la cobra, `off` la ignora. Sin esto se usa lo configurado, que por defecto es informar.',
+      },
+    },
+    required: ['id'],
+    additionalProperties: false,
+  },
+  output: {
+    kind: 'record',
+    fields: [
+      { key: 'retroactive.status', name: 'retroactiveStatus', label: 'Diferencia' },
+      { key: 'retroactive.amount', name: 'retroactiveAmount', label: 'Importe', format: 'money' },
+      { key: 'retroactive.label', name: 'retroactiveLabel', label: 'Concepto' },
+    ],
+    identifierKey: 'id',
+  },
+});
+
+/**
+ * La contraparte de `applyAdjustment` cuando la política es informar: alguien miró la
+ * diferencia y decidió cobrarla.
+ */
+export const chargeRetroactiveBilling = defineAction({
+  id: 'leases.billing.chargeRetroactive',
+  title: 'Cobrar la diferencia de una actualización',
+  description:
+    'Emite la diferencia de los meses que se facturaron al alquiler anterior, para una actualización YA aplicada. La diferencia entra en el primer recibo posterior que siga impago, o como concepto del mes siguiente si todavía no hay ninguno: un recibo emitido —y menos uno cobrado— no se reescribe. Es idempotente: cobrarla dos veces no duplica el cargo.',
+  effect: 'write',
+  confirmation: 'always',
+  tenantScope: 'required',
+  input: {
+    type: 'object',
+    properties: {
+      id: {
+        type: 'string',
+        description: 'La actualización ya aplicada cuya diferencia se cobra.',
+        ref: { resource: 'leases.adjustments' },
+      },
+    },
+    required: ['id'],
+    additionalProperties: false,
+  },
+  output: {
+    kind: 'record',
+    fields: [
+      { key: 'status', name: 'status', label: 'Resultado' },
+      { key: 'where', name: 'where', label: 'Dónde' },
+      { key: 'amount', name: 'amount', label: 'Importe', format: 'money' },
+    ],
+    identifierKey: 'id',
+  },
+});
