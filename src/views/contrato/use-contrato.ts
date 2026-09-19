@@ -213,20 +213,6 @@ export function useContratoView() {
     )
       errs['rent_amount'] = '«Alquiler inicial» es requerido';
     if (
-      values['adjustment_index'] === null ||
-      values['adjustment_index'] === undefined ||
-      values['adjustment_index'] === '' ||
-      values['adjustment_index'] === false
-    )
-      errs['adjustment_index'] = '«Índice de actualización» es requerido';
-    if (
-      values['adjustment_months'] === null ||
-      values['adjustment_months'] === undefined ||
-      values['adjustment_months'] === '' ||
-      values['adjustment_months'] === false
-    )
-      errs['adjustment_months'] = '«Se actualiza cada» es requerido';
-    if (
       values['guarantee_type'] === null ||
       values['guarantee_type'] === undefined ||
       values['guarantee_type'] === '' ||

@@ -617,8 +617,7 @@ export function ContratoView() {
                       htmlFor: 'adjustment_index',
                       style: { display: 'block', marginBottom: '6px' },
                     },
-                    'Índice de actualización',
-                    h('span', { style: { color: 'var(--cg-danger)' } }, ' *')
+                    'Índice de actualización'
                   ),
                   h(
                     UI.Select,
@@ -646,43 +645,52 @@ export function ContratoView() {
                 )
               )
             ),
-            h(
-              'div',
-              { 'data-cg-block-id': 'f_period', style: { display: 'contents' } },
-              h(
-                'div',
-                { style: { flex: '1 1 100%', minWidth: 0 } },
-                h(
-                  UI.Label,
-                  {
-                    htmlFor: 'adjustment_months',
-                    style: { display: 'block', marginBottom: '6px' },
-                  },
-                  'Se actualiza cada',
-                  h('span', { style: { color: 'var(--cg-danger)' } }, ' *')
-                ),
-                h(
-                  UI.Select,
-                  {
-                    value: String(values['adjustment_months'] ?? ''),
-                    onValueChange: (v: string) => setField('adjustment_months', v),
-                    placeholder: 'Elegir…',
-                    clearable: true,
-                  },
-                  h(UI.SelectItem, { key: '3', value: '3' }, '3 meses'),
-                  h(UI.SelectItem, { key: '4', value: '4' }, '4 meses'),
-                  h(UI.SelectItem, { key: '6', value: '6' }, '6 meses'),
-                  h(UI.SelectItem, { key: '12', value: '12' }, '12 meses')
-                ),
-                errors['adjustment_months']
-                  ? h(
-                      'div',
-                      { style: { fontSize: '12px', color: 'var(--cg-danger)', marginTop: '4px' } },
-                      errors['adjustment_months']
-                    )
-                  : null
-              )
+            ['ICL', 'IPC', 'casa_propia', 'fijo', 'otro'].includes(
+              String(((views.params as any)?.record ?? null)?.['adjustment_index'] ?? '')
             )
+              ? h(
+                  'div',
+                  { 'data-cg-block-id': 'f_period', style: { display: 'contents' } },
+                  h(
+                    'div',
+                    { style: { flex: '1 1 100%', minWidth: 0 } },
+                    h(
+                      UI.Label,
+                      {
+                        htmlFor: 'adjustment_months',
+                        style: { display: 'block', marginBottom: '6px' },
+                      },
+                      'Se actualiza cada'
+                    ),
+                    h(
+                      UI.Select,
+                      {
+                        value: String(values['adjustment_months'] ?? ''),
+                        onValueChange: (v: string) => setField('adjustment_months', v),
+                        placeholder: 'Elegir…',
+                        clearable: true,
+                      },
+                      h(UI.SelectItem, { key: '3', value: '3' }, '3 meses'),
+                      h(UI.SelectItem, { key: '4', value: '4' }, '4 meses'),
+                      h(UI.SelectItem, { key: '6', value: '6' }, '6 meses'),
+                      h(UI.SelectItem, { key: '12', value: '12' }, '12 meses')
+                    ),
+                    errors['adjustment_months']
+                      ? h(
+                          'div',
+                          {
+                            style: {
+                              fontSize: '12px',
+                              color: 'var(--cg-danger)',
+                              marginTop: '4px',
+                            },
+                          },
+                          errors['adjustment_months']
+                        )
+                      : null
+                  )
+                )
+              : null
           )
         )
       ),

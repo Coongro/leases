@@ -74,7 +74,7 @@ function monedaDelContrato(currency: unknown, fxRate: unknown): string {
   if (String(currency ?? 'ARS').toUpperCase() !== 'USD') return 'Pesos (ARS)';
   const n = Number(fxRate ?? '');
   if (Number.isFinite(n) && n > 0) {
-    return `Dólares (USD) · a ${n.toLocaleString('es-AR')} pactado`;
+    return `Dólares (USD) · a $${n.toLocaleString('es-AR')} pactado`;
   }
   return 'Dólares (USD) · a la cotización del día';
 }
@@ -159,8 +159,10 @@ export const customHandlers: CustomHandlers = {
       k3: {
         // El saldo sale de los cargos reales de este contrato, no de la tabla de
         // contratos: la plata la lleva billing y ésta es la misma cuenta que se ve
-        // en Cobranzas.
-        value: monto(saldo, c.currency),
+        // en Cobranzas. Va SIEMPRE en pesos, incluso en un contrato en dólares: el
+        // cargo se emite convertido, así que el saldo ya está en pesos y rotularlo
+        // «US$ 1.887.000» le dice al propietario que le deben mil veces más.
+        value: monto(saldo),
         sub: impagos
           ? `${impagos} cargo${impagos === 1 ? '' : 's'} sin saldar`
           : cargos.length
@@ -173,8 +175,9 @@ export const customHandlers: CustomHandlers = {
       // decir sólo «Dólares» deja afuera la mitad de la condición pactada.
       'kv_cond.Moneda': { value: monedaDelContrato(c.currency, c.fx_rate) },
       'kv_cond.Alquiler inicial': { value: monto(c.rent_amount, c.currency) },
+      // Las expensas siempre son en pesos: las liquida el consorcio, no el contrato.
       'kv_cond.Expensas': {
-        value: c.expenses_amount ? monto(c.expenses_amount, c.currency) : 'No corresponde',
+        value: c.expenses_amount ? monto(c.expenses_amount) : 'No corresponde',
       },
       'kv_cond.Vence el': {
         value:

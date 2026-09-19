@@ -226,9 +226,7 @@
           "fieldType": "enum",
           "label": "Índice de actualización",
           "width": "half",
-          "validations": [
-            "required"
-          ],
+          "validations": [],
           "options": [
             {
               "value": "ICL",
@@ -250,7 +248,8 @@
               "value": "otro",
               "label": "Otro"
             }
-          ]
+          ],
+          "placeholder": "Sin actualización — el precio no cambia solo"
         },
         {
           "id": "f_period",
@@ -259,9 +258,7 @@
           "fieldType": "enum",
           "label": "Se actualiza cada",
           "width": "half",
-          "validations": [
-            "required"
-          ],
+          "validations": [],
           "options": [
             {
               "value": "3",
@@ -279,7 +276,17 @@
               "value": "12",
               "label": "12 meses"
             }
-          ]
+          ],
+          "showWhen": {
+            "column": "adjustment_index",
+            "values": [
+              "ICL",
+              "IPC",
+              "casa_propia",
+              "fijo",
+              "otro"
+            ]
+          }
         }
       ]
     },
