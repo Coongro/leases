@@ -41,7 +41,7 @@ export function FichaDeContratoView() {
     metric,
   } = useFichaDeContratoView();
 
-  // ── tabla 1: render propio sobre su estado t1 ──
+  // ── tabla 1 — leases.contracts: render propio sobre su estado t1 ──
   const renderTable1 = (() => {
     const {
       loading,
@@ -271,7 +271,7 @@ export function FichaDeContratoView() {
       );
     return renderTable;
   })();
-  // ── tabla 2: render propio sobre su estado t2 ──
+  // ── tabla 2 — leases.contracts: render propio sobre su estado t2 ──
   const renderTable2 = (() => {
     const {
       loading,
@@ -501,7 +501,7 @@ export function FichaDeContratoView() {
       );
     return renderTable;
   })();
-  // ── tabla 3: render propio sobre su estado t3 ──
+  // ── tabla 3 — leases.contracts: render propio sobre su estado t3 ──
   const renderTable3 = (() => {
     const {
       loading,
@@ -826,7 +826,7 @@ export function FichaDeContratoView() {
       );
     return renderTable;
   })();
-  // ── tabla 4: render propio sobre su estado t4 ──
+  // ── tabla 4 — leases.contracts: render propio sobre su estado t4 ──
   const renderTable4 = (() => {
     const {
       loading,
@@ -1247,6 +1247,20 @@ export function FichaDeContratoView() {
           h(
             'div',
             { style: { display: 'flex', gap: '9px', flexShrink: 0 } },
+            h(
+              UI.Button,
+              {
+                variant: 'secondary',
+                onClick: () => {
+                  views.open(
+                    'leases.contrato.open',
+                    { record: (views.params as any)?.record ?? null },
+                    { mode: 'dialog' }
+                  );
+                },
+              },
+              'Editar contrato'
+            ),
             h(
               UI.Button,
               {
@@ -1841,9 +1855,14 @@ export function FichaDeContratoView() {
                         {
                           variant: 'secondary',
                           onClick: () => {
-                            views.open('leases.concepto-del-contrato.open', undefined, {
-                              mode: 'dialog',
-                            });
+                            views.open(
+                              'leases.concepto-del-contrato.open',
+                              {
+                                parentRecord: (views.params as any)?.record ?? null,
+                                parentEntity: 'leases.contracts',
+                              },
+                              { mode: 'dialog' }
+                            );
                           },
                         },
                         'Agregar concepto'

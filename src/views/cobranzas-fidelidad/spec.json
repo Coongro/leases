@@ -165,26 +165,17 @@
               {
                 "value": "open",
                 "label": "Emitido",
-                "tone": "outline",
-                "icon": "FileText"
-              },
-              {
-                "value": "partial",
-                "label": "Parcial",
-                "tone": "warning",
-                "icon": "CirclePercent"
-              },
-              {
-                "value": "paid",
-                "label": "Pagado",
-                "tone": "success",
-                "icon": "CircleCheck"
+                "tone": "outline"
               },
               {
                 "value": "overdue",
                 "label": "Vencido",
-                "tone": "danger",
-                "icon": "TriangleAlert"
+                "tone": "danger"
+              },
+              {
+                "value": "closed",
+                "label": "Cerrado",
+                "tone": "success"
               }
             ]
           },

@@ -32,8 +32,28 @@ export const customHandlers: CustomHandlers = {
    * Al editar no se toca nada: los valores son los del contrato firmado, no los
    * defaults de hoy.
    */
-  onInit: async ({ editingId }) => {
-    if (editingId) return {};
+  onInit: async ({ editingId, execute }) => {
+    if (editingId) {
+      // La garantía vive en su propia tabla, así que no viene con el registro del
+      // contrato — y su tipo es obligatorio. Sin traerla, editar un contrato firmado
+      // moría en «Tipo de garantía es requerido» pidiendo volver a elegir algo que ya
+      // estaba cargado y que la pantalla ni siquiera mostraba.
+      const garantias = await execute<
+        Array<{
+          type?: string;
+          guarantor_contact_id?: string | null;
+          notes?: string | null;
+          archived?: boolean | null;
+        }>
+      >('leases.guarantees.forLease', { leaseId: editingId });
+      const vigente = (garantias ?? []).find((g) => !g.archived) ?? (garantias ?? [])[0];
+      if (!vigente) return {};
+      return {
+        guarantee_type: String(vigente.type ?? ''),
+        guarantor_contact_id: String(vigente.guarantor_contact_id ?? ''),
+        guarantee_notes: String(vigente.notes ?? ''),
+      };
+    }
     const d = await contractDefaults();
     return {
       currency: d.currency,
@@ -42,6 +62,9 @@ export const customHandlers: CustomHandlers = {
       adjustment_index: d.adjustmentIndex,
       adjustment_months: d.adjustmentMonths,
       contract_type: 'determinado',
+      // Un contrato nuevo nace firmado: es el caso de todos los días. El borrador se
+      // elige cuando falta algo —el garante, una firma— y hasta entonces no factura.
+      status: 'vigente',
       deposit_status: 'pendiente',
     };
   },

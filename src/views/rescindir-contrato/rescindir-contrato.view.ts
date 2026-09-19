@@ -173,8 +173,7 @@ export function RescindirContratoView() {
                   id: 'termination_detail',
                   type: 'text',
                   value: String(values['termination_detail'] ?? ''),
-                  placeholder:
-                    'Ej: entregó las llaves el 20/07, se descuenta la multa del depósito',
+                  placeholder: 'Ej: entregó las llaves el 20/07, quedó a deber el mes de julio',
                   onChange: (e: any) => setField('termination_detail', e.target.value),
                 }),
                 errors['termination_detail']
@@ -182,6 +181,122 @@ export function RescindirContratoView() {
                       'div',
                       { style: { fontSize: '12px', color: 'var(--cg-danger)', marginTop: '4px' } },
                       errors['termination_detail']
+                    )
+                  : null
+              )
+            )
+          )
+        )
+      ),
+      h(
+        'div',
+        { 'data-cg-block-id': 's2', style: { display: 'contents' } },
+        h(
+          UI.FormSection,
+          { icon: 'Gavel', title: 'Multa por rescisión anticipada' },
+          h(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                alignItems: 'stretch',
+              },
+            },
+            h(
+              'div',
+              { 'data-cg-block-id': 'f_penalty', style: { display: 'contents' } },
+              h(
+                'div',
+                { style: { flex: '1 1 100%', minWidth: 0 } },
+                h(
+                  UI.Label,
+                  { htmlFor: 'penalty', style: { display: 'block', marginBottom: '6px' } },
+                  'Qué se hace con la multa'
+                ),
+                h(
+                  UI.Select,
+                  {
+                    value: String(values['penalty'] ?? ''),
+                    onValueChange: (v: string) => setField('penalty', v),
+                    placeholder: 'Elegir…',
+                    clearable: true,
+                  },
+                  h(
+                    UI.SelectItem,
+                    {
+                      key: 'cobrar',
+                      value: 'cobrar',
+                      icon: h(UI.DynamicIcon, { icon: 'ReceiptText', size: 16 }),
+                    },
+                    'Cobrarla'
+                  ),
+                  h(
+                    UI.SelectItem,
+                    {
+                      key: 'eximir',
+                      value: 'eximir',
+                      icon: h(UI.DynamicIcon, { icon: 'HandHeart', size: 16 }),
+                    },
+                    'No cobrarla'
+                  )
+                ),
+                errors['penalty']
+                  ? h(
+                      'div',
+                      { style: { fontSize: '12px', color: 'var(--cg-danger)', marginTop: '4px' } },
+                      errors['penalty']
+                    )
+                  : null
+              )
+            ),
+            h(
+              'div',
+              { 'data-cg-block-id': 'f_penalty_amount', style: { display: 'contents' } },
+              h(
+                'div',
+                { style: { flex: '1 1 100%', minWidth: 0 } },
+                h(
+                  UI.Label,
+                  { htmlFor: 'penaltyAmount', style: { display: 'block', marginBottom: '6px' } },
+                  'Importe'
+                ),
+                h(
+                  'div',
+                  { style: { position: 'relative', display: 'flex', alignItems: 'center' } },
+                  h(
+                    'span',
+                    {
+                      style: {
+                        position: 'absolute',
+                        left: '11px',
+                        color: 'var(--cg-text-muted)',
+                        fontSize: '13px',
+                        pointerEvents: 'none',
+                      },
+                    },
+                    '$'
+                  ),
+                  h(UI.Input, {
+                    id: 'penaltyAmount',
+                    type: 'number',
+                    inputMode: 'decimal',
+                    value: values['penaltyAmount'] ?? '',
+                    placeholder: 'Ej: 1560000',
+                    onChange: (e: any) =>
+                      setField(
+                        'penaltyAmount',
+                        e.target.value === '' ? null : Number(e.target.value)
+                      ),
+                    style: { paddingLeft: '22px', textAlign: 'right' as const },
+                  })
+                ),
+                errors['penaltyAmount']
+                  ? h(
+                      'div',
+                      { style: { fontSize: '12px', color: 'var(--cg-danger)', marginTop: '4px' } },
+                      errors['penaltyAmount']
                     )
                   : null
               )

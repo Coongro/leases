@@ -103,6 +103,12 @@ export interface ContractInput {
   adjustment_index?: unknown;
   adjustment_months?: unknown;
   late_fee_percent?: unknown;
+  /** Comisión de administración, en %. La cobra quien administra sobre lo cobrado. */
+  admin_fee_percent?: unknown;
+  /** `borrador` o `vigente`. Los otros estados tienen su propia acción. */
+  status?: unknown;
+  /** Cotización pactada por escrito, si el contrato fijó una. */
+  fx_rate?: unknown;
   penalty_months?: unknown;
   deposit_amount?: unknown;
   deposit_status?: unknown;
@@ -214,23 +220,45 @@ export class LeaseRepository {
     if (!hasta) throw new Error('El contrato necesita hasta cuándo rige.');
     if (!alquiler) throw new Error('El contrato necesita con qué alquiler arranca.');
 
+    /**
+     * Borrador o firmado, según lo que diga el formulario. Vigente por default: es el
+     * caso de todos los días y el comportamiento de siempre.
+     *
+     * El borrador existía en todas partes menos en el único camino que escribe un
+     * contrato: la lógica ya sabe que no se cobra (`charge-generation`), que no genera
+     * actualizaciones (`adjustment-detection`) y que no le bloquea la unidad a otro
+     * contrato, y los filtros de Contratos y de la ficha del inquilino lo ofrecen. Solo
+     * que acá se fijaba «vigente» a mano, así que ese filtro siempre daba vacío.
+     *
+     * Para qué sirve: el contrato se carga antes de estar firmado —falta que el garante
+     * traiga los papeles, falta una firma— y hasta entonces no puede facturar ni tomar
+     * la unidad. Los otros dos estados (`rescindido`, `renovado`) NO entran por acá:
+     * tienen su propia acción, porque significan cosas que pasaron, no que se eligen.
+     */
+    const pedido = texto(data.status);
+    const estado = pedido === 'borrador' ? 'borrador' : 'vigente';
+
     const contrato = {
       unit_id: unitId,
       tenant_contact_id: tenantId,
-      // Nace vigente: el borrador es para lo que se guarda a medio cargar, y este
-      // formulario exige lo necesario para que el contrato exista.
-      status: 'vigente',
+      status: estado,
       contract_type: texto(data.contract_type) || 'determinado',
       start_date: desde,
       end_date: hasta,
       rent_amount: alquiler,
       expenses_amount: numero(data.expenses_amount),
       currency: texto(data.currency) || 'ARS',
+      fx_rate: numero(data.fx_rate),
       due_day: Number(data.due_day) || 1,
       due_day_type: texto(data.due_day_type) || 'fixed',
       adjustment_index: texto(data.adjustment_index) || null,
       adjustment_months: Number(data.adjustment_months) || null,
       late_fee_percent: numero(data.late_fee_percent),
+      // La comisión de administración se pedía en el formulario y se perdía acá: no
+      // estaba en esta lista, así que se guardaba `null` sin ningún error. La lee
+      // `propertyResults` para calcular el honorario en el rinde de cada propiedad —
+      // el único reporte de rentabilidad del kit—, que por eso daba siempre cero.
+      admin_fee_percent: numero(data.admin_fee_percent),
       penalty_months: Number(data.penalty_months) || null,
       deposit_amount: numero(data.deposit_amount),
       deposit_status: texto(data.deposit_status) || null,
@@ -294,24 +322,58 @@ export class LeaseRepository {
       // Qué período compromete el contrato. Se escriben las FECHAS, no «ocupada»: la
       // unidad queda alquilada desde que el contrato empieza —no desde que se firma— y
       // se libera sola cuando termina, sin que haga falta que corra nada.
-      await tx
-        .update(unitTable)
-        .set({ occupied_from: desde, occupied_until: hasta || null } as never)
-        .where(eq(unitTable.id, unitId));
+      //
+      // Un BORRADOR no compromete nada: todavía no hay contrato. Escribirle las fechas
+      // a la unidad la mostraría alquilada por algo que quizá no se firme, y es
+      // justamente lo que el borrador viene a evitar. Al pasarlo a vigente, se escriben.
+      if (estado === 'borrador') {
+        await tx
+          .update(unitTable)
+          .set({ occupied_from: null, occupied_until: null } as never)
+          .where(eq(unitTable.id, unitId));
+      } else {
+        await tx
+          .update(unitTable)
+          .set({ occupied_from: desde, occupied_until: hasta || null } as never)
+          .where(eq(unitTable.id, unitId));
+      }
 
-      // La garantía solo se crea al firmar: al editar un contrato ya firmado se toca
-      // desde su propia ficha, porque sobrevive a la renovación.
-      if (created && tipoGarantia) {
-        await tx.insert(guaranteeTable).values({
-          lease_id: leaseId,
+      // La garantía se crea al firmar y se corrige al editar.
+      //
+      // Antes solo se creaba: el formulario mostraba sus campos también en la edición y
+      // lo que se escribiera ahí no iba a ningún lado, con el agravante de que la ficha
+      // propia desde donde «se toca» no existe. Se actualiza la vigente —no se crea
+      // otra— porque la garantía sobrevive a la renovación y el historial importa.
+      if (tipoGarantia) {
+        const valores = {
           type: tipoGarantia,
           guarantor_contact_id: texto(data.guarantor_contact_id) || null,
           notes: texto(data.guarantee_notes) || null,
           // El depósito en garantía es la garantía misma: su monto se guarda también
           // acá para que la garantía se explique sola.
           amount: tipoGarantia === 'deposito' ? numero(data.deposit_amount) : null,
-          archived: false,
-        } as never);
+        };
+
+        const vigentes = created
+          ? []
+          : await tx
+              .select({ id: guaranteeTable.id })
+              .from(guaranteeTable)
+              .where(and(eq(guaranteeTable.lease_id, leaseId), eq(guaranteeTable.archived, false)))
+              .limit(1);
+
+        if (vigentes[0]) {
+          await tx
+            .update(guaranteeTable)
+            .set(valores as never)
+            .where(eq(guaranteeTable.id, vigentes[0].id));
+        } else {
+          await tx.insert(guaranteeTable).values({
+            lease_id: leaseId,
+            ...valores,
+            archived: false,
+          } as never);
+        }
       }
 
       return { id: leaseId, created };

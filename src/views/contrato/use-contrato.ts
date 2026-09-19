@@ -28,12 +28,14 @@ export function useContratoView() {
   const [values, setValues] = useState<Record<string, any>>({
     unit_id: null,
     tenant_contact_id: null,
+    status: null,
     contract_type: null,
     start_date: null,
     end_date: null,
     due_day: null,
     due_day_type: null,
     currency: null,
+    fx_rate: null,
     rent_amount: null,
     expenses_amount: null,
     admin_fee_percent: null,
@@ -211,20 +213,6 @@ export function useContratoView() {
     )
       errs['rent_amount'] = '«Alquiler inicial» es requerido';
     if (
-      values['adjustment_index'] === null ||
-      values['adjustment_index'] === undefined ||
-      values['adjustment_index'] === '' ||
-      values['adjustment_index'] === false
-    )
-      errs['adjustment_index'] = '«Índice de actualización» es requerido';
-    if (
-      values['adjustment_months'] === null ||
-      values['adjustment_months'] === undefined ||
-      values['adjustment_months'] === '' ||
-      values['adjustment_months'] === false
-    )
-      errs['adjustment_months'] = '«Se actualiza cada» es requerido';
-    if (
       values['guarantee_type'] === null ||
       values['guarantee_type'] === undefined ||
       values['guarantee_type'] === '' ||
@@ -263,12 +251,14 @@ export function useContratoView() {
       setValues({
         unit_id: null,
         tenant_contact_id: null,
+        status: null,
         contract_type: null,
         start_date: null,
         end_date: null,
         due_day: null,
         due_day_type: null,
         currency: null,
+        fx_rate: null,
         rent_amount: null,
         expenses_amount: null,
         admin_fee_percent: null,

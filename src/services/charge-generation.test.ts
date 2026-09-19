@@ -109,7 +109,10 @@ describe('generación', () => {
 });
 
 describe('contratos pactados en dólares', () => {
-  const enDolares = { ...base, currency: 'USD', rent_amount: '1200', expenses_amount: '150' };
+  // Alquiler en dólares y expensas en pesos: así se pacta de verdad. El consorcio
+  // liquida en pesos —sueldo del encargado, luz, proveedores— y la moneda extranjera
+  // del contrato aplica al canon locativo, no a los gastos que llegan ya facturados.
+  const enDolares = { ...base, currency: 'USD', rent_amount: '1200', expenses_amount: '145000' };
 
   /** Conversor de prueba: un dólar a $1.510, sin salir a la red. */
   const aPesos = vi.fn(async (amount: string, currency: string) => ({
@@ -129,7 +132,32 @@ describe('contratos pactados en dólares', () => {
     const lines = execute.mock.calls[0][1].lines;
     // USD 1.200 × 1.510 — sin esto billing sumaría 1.200 pesos.
     expect(lines[0].subtotal).toBe('1812000');
-    expect(lines[1].subtotal).toBe('226500');
+    // Las expensas NO se convierten: ya vienen en pesos. Convertirlas cobraba
+    // $218.950.000 de expensas.
+    expect(lines[1].subtotal).toBe('145000');
+  });
+
+  it('los conceptos aparte (ABL, servicios) no se convierten: se cargan en pesos', async () => {
+    const execute = vi.fn().mockResolvedValue({ created: true });
+    await generateCharges({
+      period: '2026-08',
+      leases: [enDolares],
+      execute,
+      convertir: aPesos,
+      extras: new Map([
+        [
+          enDolares.id,
+          [{ id: 'c1', lease_id: enDolares.id, type: 'abl', label: 'ABL', amount: '45000' }],
+        ],
+      ]) as never,
+    });
+
+    const abl = execute.mock.calls[0][1].lines.find((l: { sourceType: string }) =>
+      ['abl', 'otro'].includes(l.sourceType)
+    );
+    // El ABL se factura en pesos aunque el alquiler esté en dólares. Pasándolo por la
+    // conversión, estos $45.000 salían $67.950.000.
+    expect(abl?.subtotal).toBe('45000');
   });
 
   it('deja asentado con qué cotización se hizo la cuenta', async () => {
@@ -143,6 +171,46 @@ describe('contratos pactados en dólares', () => {
     // El inquilino ve un monto en pesos que no está en su contrato: tiene que poder
     // saber de dónde salió sin preguntar.
     expect(execute.mock.calls[0][1].lines[0].description).toContain('USD 1200 × $1510');
+  });
+
+  it('si el contrato pactó una cotización, esa manda sobre la del mercado', async () => {
+    const execute = vi.fn().mockResolvedValue({ created: true });
+    const convertir = vi.fn();
+    await generateCharges({
+      period: '2026-08',
+      leases: [{ ...enDolares, fx_rate: '1450' }],
+      execute,
+      convertir,
+    });
+    // Lo que las partes firmaron no se recalcula con el dólar de hoy.
+    expect(convertir).not.toHaveBeenCalled();
+    expect(execute.mock.calls[0][1].lines[0].subtotal).toBe('1740000');
+    expect(execute.mock.calls[0][1].lines[0].description).toContain(
+      'USD 1200 × $1450 (pactada en el contrato)'
+    );
+  });
+
+  it('con cotización pactada el cargo sale aunque no haya conversor', async () => {
+    const execute = vi.fn().mockResolvedValue({ created: true });
+    // Sin `convertir` un contrato en dólares no se emite; con valor fijo no depende
+    // de ninguna fuente, así que la facturación del mes no se cae por eso.
+    const r = await generateCharges({
+      period: '2026-08',
+      leases: [{ ...enDolares, fx_rate: '1450' }],
+      execute,
+    });
+    expect(r.created).toBe(1);
+  });
+
+  it('una cotización pactada en cero o basura se ignora y se usa la del mercado', async () => {
+    const execute = vi.fn().mockResolvedValue({ created: true });
+    await generateCharges({
+      period: '2026-08',
+      leases: [{ ...enDolares, fx_rate: '0' }],
+      execute,
+      convertir: aPesos,
+    });
+    expect(execute.mock.calls[0][1].lines[0].subtotal).toBe('1812000');
   });
 
   it('un contrato en pesos no pasa por el conversor', async () => {
@@ -168,10 +236,34 @@ describe('contratos pactados en dólares', () => {
 
   it('sin cotización NO emite el cargo en vez de cobrar pesos por dólares', async () => {
     const execute = vi.fn().mockResolvedValue({ created: true });
-    await expect(
-      generateCharges({ period: '2026-08', leases: [enDolares], execute })
-    ).rejects.toThrow(/USD/);
+    const r = await generateCharges({ period: '2026-08', leases: [enDolares], execute });
+
     expect(execute).not.toHaveBeenCalled();
+    expect(r.created).toBe(0);
+    const detalle = r.details.find((d) => d.leaseId === enDolares.id);
+    expect(detalle?.status).toBe('falló');
+    expect(detalle?.reason).toMatch(/USD/);
+  });
+
+  /**
+   * El contrato que no se puede cotizar es SUYO el problema: no puede dejar sin recibo
+   * a los que venían después en la lista. Antes la excepción cortaba el `for`, así que
+   * un inquilino en pesos se quedaba sin cargo del mes porque otro contrato, en dólares
+   * y sin cotización, estaba más arriba en el arreglo.
+   */
+  it('un contrato sin cotización no frena a los demás del lote', async () => {
+    const execute = vi.fn().mockResolvedValue({ created: true });
+    const enPesos = { ...base, id: 'l-pesos' };
+
+    const r = await generateCharges({
+      period: '2026-08',
+      leases: [enDolares, enPesos],
+      execute,
+    });
+
+    expect(r.created).toBe(1);
+    expect(r.details.find((d) => d.leaseId === enDolares.id)?.status).toBe('falló');
+    expect(r.details.find((d) => d.leaseId === 'l-pesos')?.status).toBe('creada');
   });
 });
 

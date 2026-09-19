@@ -470,9 +470,6 @@ export function FichaDeInquilinoView() {
           onSortChange,
           pagination: { page, pageSize: 20, total: visibleRows.length },
           onPageChange: setPage,
-          onRowClick: (row: any) => {
-            views.open('leases.inquilino.open', { record: row }, { mode: 'dialog' });
-          },
           density: 'compact' as const,
           mobileRender: (row: any) =>
             h(

@@ -93,13 +93,21 @@ export function pendingAdjustments({
 
   return fechas
     .filter((f) => !ya.has(f))
-    .map((effectiveDate, i) => ({
+    .map((effectiveDate) => ({
       leaseId: lease.id,
       label,
       indexCode: String(lease.adjustment_index),
       effectiveDate,
-      // La base es el ajuste anterior; para el primero, el inicio del contrato.
-      baseDate: i === 0 ? fechaAnterior(fechas, effectiveDate, lease) : fechas[i - 1],
+      // La base es SIEMPRE el ajuste anterior del contrato —haya sido propuesto en esta
+      // corrida o ya aplicado hace meses—; para el primero, el inicio del contrato.
+      //
+      // Se busca por fecha y no por posición: antes usaba el índice del `map`, que
+      // corre sobre las fechas YA FILTRADAS, contra el arreglo SIN filtrar. Con un
+      // ajuste ya registrado y dos pendientes, el segundo tomaba una base seis meses
+      // más vieja y comparaba el índice contra una ventana del doble de largo — o sea
+      // que proponía cobrar de nuevo la inflación que el ajuste anterior ya había
+      // cobrado.
+      baseDate: fechaAnterior(fechas, effectiveDate, lease),
       previousRent: lease.rent_amount,
     }));
 }

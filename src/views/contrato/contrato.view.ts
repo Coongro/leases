@@ -4,7 +4,7 @@
  * ⚠️ ARCHIVO REGENERABLE: se reescribe al guardar el diseño en el Builder.
  * La lógica custom va en `handlers.ts` (nunca se pisa). Diseño: `spec.json`.
  */
-import { getHostReact, getHostUI, usePlugin } from '@coongro/plugin-sdk';
+import { getHostReact, getHostUI, usePlugin, views } from '@coongro/plugin-sdk';
 
 import { useContratoView } from './use-contrato.js';
 
@@ -117,6 +117,53 @@ export function ContratoView() {
                       'div',
                       { style: { fontSize: '12px', color: 'var(--cg-danger)', marginTop: '4px' } },
                       errors['tenant_contact_id']
+                    )
+                  : null
+              )
+            ),
+            h(
+              'div',
+              { 'data-cg-block-id': 'f_status', style: { display: 'contents' } },
+              h(
+                'div',
+                { style: { flex: '1 1 100%', minWidth: 0 } },
+                h(
+                  UI.Label,
+                  { htmlFor: 'status', style: { display: 'block', marginBottom: '6px' } },
+                  'Estado del contrato'
+                ),
+                h(
+                  UI.Select,
+                  {
+                    value: String(values['status'] ?? ''),
+                    onValueChange: (v: string) => setField('status', v),
+                    placeholder: 'Elegir…',
+                    clearable: true,
+                  },
+                  h(
+                    UI.SelectItem,
+                    {
+                      key: 'vigente',
+                      value: 'vigente',
+                      icon: h(UI.DynamicIcon, { icon: 'FileCheck', size: 16 }),
+                    },
+                    'Firmado · empieza a facturar'
+                  ),
+                  h(
+                    UI.SelectItem,
+                    {
+                      key: 'borrador',
+                      value: 'borrador',
+                      icon: h(UI.DynamicIcon, { icon: 'FilePen', size: 16 }),
+                    },
+                    'Borrador · todavía no se firma'
+                  )
+                ),
+                errors['status']
+                  ? h(
+                      'div',
+                      { style: { fontSize: '12px', color: 'var(--cg-danger)', marginTop: '4px' } },
+                      errors['status']
                     )
                   : null
               )
@@ -369,6 +416,40 @@ export function ContratoView() {
               ),
               h(
                 'div',
+                { 'data-cg-block-id': 'f_fx', style: { display: 'contents' } },
+                h(
+                  'div',
+                  { style: { flex: '1 1 260px', minWidth: 0 } },
+                  h(
+                    UI.Label,
+                    { htmlFor: 'fx_rate', style: { display: 'block', marginBottom: '6px' } },
+                    'Cotización pactada (contratos en dólares)'
+                  ),
+                  h(UI.Input, {
+                    id: 'fx_rate',
+                    type: 'number',
+                    value: values['fx_rate'] ?? '',
+                    placeholder: 'Ej: 1450 — vacío usa la del mercado',
+                    onChange: (e: any) =>
+                      setField('fx_rate', e.target.value === '' ? null : Number(e.target.value)),
+                  }),
+                  errors['fx_rate']
+                    ? h(
+                        'div',
+                        {
+                          style: { fontSize: '12px', color: 'var(--cg-danger)', marginTop: '4px' },
+                        },
+                        errors['fx_rate']
+                      )
+                    : null
+                )
+              )
+            ),
+            h(
+              'div',
+              { style: { display: 'flex', gap: '14px', alignItems: 'flex-start' } },
+              h(
+                'div',
                 { 'data-cg-block-id': 'f_rent', style: { display: 'contents' } },
                 h(
                   'div',
@@ -419,11 +500,7 @@ export function ContratoView() {
                       )
                     : null
                 )
-              )
-            ),
-            h(
-              'div',
-              { style: { display: 'flex', gap: '14px', alignItems: 'flex-start' } },
+              ),
               h(
                 'div',
                 { 'data-cg-block-id': 'f_expenses', style: { display: 'contents' } },
@@ -478,7 +555,11 @@ export function ContratoView() {
                       )
                     : null
                 )
-              ),
+              )
+            ),
+            h(
+              'div',
+              { style: { display: 'flex', gap: '14px', alignItems: 'flex-start' } },
               h(
                 'div',
                 { 'data-cg-block-id': 'f_admin_fee', style: { display: 'contents' } },
@@ -514,11 +595,7 @@ export function ContratoView() {
                       )
                     : null
                 )
-              )
-            ),
-            h(
-              'div',
-              { style: { display: 'flex', gap: '14px', alignItems: 'flex-start' } },
+              ),
               h(
                 'div',
                 { 'data-cg-block-id': 'f_index', style: { display: 'contents' } },
@@ -531,8 +608,7 @@ export function ContratoView() {
                       htmlFor: 'adjustment_index',
                       style: { display: 'block', marginBottom: '6px' },
                     },
-                    'Índice de actualización',
-                    h('span', { style: { color: 'var(--cg-danger)' } }, ' *')
+                    'Índice de actualización'
                   ),
                   h(
                     UI.Select,
@@ -558,47 +634,54 @@ export function ContratoView() {
                       )
                     : null
                 )
-              ),
-              h(
-                'div',
-                { 'data-cg-block-id': 'f_period', style: { display: 'contents' } },
-                h(
-                  'div',
-                  { style: { flex: '1 1 260px', minWidth: 0 } },
-                  h(
-                    UI.Label,
-                    {
-                      htmlFor: 'adjustment_months',
-                      style: { display: 'block', marginBottom: '6px' },
-                    },
-                    'Se actualiza cada',
-                    h('span', { style: { color: 'var(--cg-danger)' } }, ' *')
-                  ),
-                  h(
-                    UI.Select,
-                    {
-                      value: String(values['adjustment_months'] ?? ''),
-                      onValueChange: (v: string) => setField('adjustment_months', v),
-                      placeholder: 'Elegir…',
-                      clearable: true,
-                    },
-                    h(UI.SelectItem, { key: '3', value: '3' }, '3 meses'),
-                    h(UI.SelectItem, { key: '4', value: '4' }, '4 meses'),
-                    h(UI.SelectItem, { key: '6', value: '6' }, '6 meses'),
-                    h(UI.SelectItem, { key: '12', value: '12' }, '12 meses')
-                  ),
-                  errors['adjustment_months']
-                    ? h(
-                        'div',
-                        {
-                          style: { fontSize: '12px', color: 'var(--cg-danger)', marginTop: '4px' },
-                        },
-                        errors['adjustment_months']
-                      )
-                    : null
-                )
               )
+            ),
+            ['ICL', 'IPC', 'casa_propia', 'fijo', 'otro'].includes(
+              String(((views.params as any)?.record ?? null)?.['adjustment_index'] ?? '')
             )
+              ? h(
+                  'div',
+                  { 'data-cg-block-id': 'f_period', style: { display: 'contents' } },
+                  h(
+                    'div',
+                    { style: { flex: '1 1 100%', minWidth: 0 } },
+                    h(
+                      UI.Label,
+                      {
+                        htmlFor: 'adjustment_months',
+                        style: { display: 'block', marginBottom: '6px' },
+                      },
+                      'Se actualiza cada'
+                    ),
+                    h(
+                      UI.Select,
+                      {
+                        value: String(values['adjustment_months'] ?? ''),
+                        onValueChange: (v: string) => setField('adjustment_months', v),
+                        placeholder: 'Elegir…',
+                        clearable: true,
+                      },
+                      h(UI.SelectItem, { key: '3', value: '3' }, '3 meses'),
+                      h(UI.SelectItem, { key: '4', value: '4' }, '4 meses'),
+                      h(UI.SelectItem, { key: '6', value: '6' }, '6 meses'),
+                      h(UI.SelectItem, { key: '12', value: '12' }, '12 meses')
+                    ),
+                    errors['adjustment_months']
+                      ? h(
+                          'div',
+                          {
+                            style: {
+                              fontSize: '12px',
+                              color: 'var(--cg-danger)',
+                              marginTop: '4px',
+                            },
+                          },
+                          errors['adjustment_months']
+                        )
+                      : null
+                  )
+                )
+              : null
           )
         )
       ),

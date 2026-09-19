@@ -9,6 +9,8 @@
 
 import type { CustomHandlers } from '@coongro/plugin-sdk';
 
+import { proposedPenalty } from '../../services/termination-penalty.js';
+
 const texto = (v: unknown): string => String(v ?? '').trim();
 
 const MOTIVOS: Record<string, string> = {
@@ -31,12 +33,25 @@ export const customHandlers: CustomHandlers = {
   onInit: ({ record }) => {
     const hoy = new Date().toISOString().slice(0, 10);
     const inicio = texto(record?.start_date);
-    return Promise.resolve({ terminationDate: inicio && inicio > hoy ? inicio : hoy });
+    // La multa se PROPONE con lo que dice el contrato, y queda a la vista para
+    // discutirla. Si el contrato no pactó ninguna, la opción arranca en no cobrar:
+    // ofrecer cobrar una multa que nadie firmó sería inventar una deuda.
+    const multa = proposedPenalty({
+      rent_amount: texto(record?.rent_amount),
+      penalty_months: Number(record?.penalty_months ?? 0),
+    });
+    return Promise.resolve({
+      terminationDate: inicio && inicio > hoy ? inicio : hoy,
+      penalty: multa ? 'cobrar' : 'eximir',
+      penaltyAmount: multa ?? '',
+    });
   },
 
   /**
-   * Rescinde el contrato. El motivo se guarda junto al detalle porque es lo primero
-   * que se pregunta meses después, cuando hay que explicar por qué terminó antes.
+   * Rescinde el contrato y, si se decidió cobrarla, emite la multa en el mismo acto.
+   *
+   * El motivo se guarda junto al detalle porque es lo primero que se pregunta meses
+   * después, cuando hay que explicar por qué terminó antes.
    */
   onSubmit: async (values, { execute, record }) => {
     const id = record?.id as string | undefined;
@@ -44,11 +59,14 @@ export const customHandlers: CustomHandlers = {
 
     const motivo = MOTIVOS[texto(values.reason)] ?? texto(values.reason);
     const detalle = texto(values.termination_detail);
+    const cobra = texto(values.penalty) === 'cobrar';
 
-    await execute('leases.contracts.terminate', {
+    await execute('leases.billing.terminateLease', {
       id,
       terminationDate: texto(values.terminationDate),
       notes: [motivo, detalle].filter(Boolean).join(' — '),
+      penalty: cobra ? 'cobrar' : 'eximir',
+      penaltyAmount: cobra ? texto(values.penaltyAmount) : null,
     });
   },
 };

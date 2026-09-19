@@ -20,7 +20,11 @@ import {
 import { eq } from 'drizzle-orm';
 
 import type { GuaranteeRow } from '../schema/guarantee.js';
+import type { NewLeaseChargeRow } from '../schema/lease-charge.js';
+import type { LeaseRow } from '../schema/lease.js';
 import {
+  cotizacionPactada,
+  esMonedaExtranjera,
   generateCharges,
   RENT_SOURCE,
   type GenerationResult,
@@ -28,7 +32,7 @@ import {
 } from '../services/charge-generation.js';
 import type { ExpenseSettlement } from '../services/expenses.js';
 import { currentLateFeePolicy } from '../services/late-fee-policy.server.js';
-import { proposeLateFee, type LateFeePolicy } from '../services/late-fee.js';
+import { pendingLateFee, proposeLateFee, type LateFeePolicy } from '../services/late-fee.js';
 import type { LeaseCharge } from '../services/lease-charges.js';
 import { periodTotals, type PeriodTotals } from '../services/period-totals.js';
 import {
@@ -38,11 +42,30 @@ import {
   type PropertyResult,
 } from '../services/property-result.js';
 import { chargeForTenantExpense } from '../services/tenant-expense.js';
+import {
+  penaltyDestination,
+  penaltyLabel,
+  periodOf,
+  proposedPenalty,
+  type PenaltyDecision,
+} from '../services/termination-penalty.js';
 
 import { GuaranteeRepository } from './guarantee.repository.js';
 import { IndexAdjustmentRepository } from './index-adjustment.repository.js';
 import { LeaseChargeRepository } from './lease-charge.repository.js';
 import { LeaseRepository, type LeaseListRow } from './lease.repository.js';
+
+/** Con qué origen entra en el recibo la multa por rescisión anticipada. */
+const PENALTY_SOURCE = 'multa_rescision';
+
+/**
+ * Qué pasó con la multa al rescindir. Se devuelve siempre —también cuando no se
+ * cobró— para que la pantalla pueda decirlo: una rescisión que calla qué hizo con la
+ * multa obliga a ir a buscarla al recibo.
+ */
+export type TerminationPenaltyResult =
+  | { charged: false; reason: string }
+  | { charged: true; where: 'recibo' | 'concepto'; period: string; amount: string; label: string };
 
 /**
  * Con qué origen entra en el recibo un arreglo que paga el inquilino.
@@ -53,6 +76,9 @@ import { LeaseRepository, type LeaseListRow } from './lease.repository.js';
  * permite preguntar «cuánto gasté» sin contar el recupero como si fuera otro gasto.
  */
 const TENANT_EXPENSE_SOURCE = 'gasto_a_cargo';
+
+/** Medio centavo: por debajo de eso el cargo está saldado y no cuenta como impago. */
+const SALDADO = 0.005;
 
 /**
  * La cobranza de los alquileres: los cargos de un período con el contrato al que
@@ -230,6 +256,8 @@ export interface TenantExpenseSweep {
   charged: Array<{ order: string; amount: string }>;
   /** Lo que se retiró de un recibo porque la orden dejó de estar a cargo del inquilino. */
   removed: string[];
+  /** Lo que ya estaba cobrado y se puso al día porque cambió el costo de la orden. */
+  updated: Array<{ order: string; from: string; to: string }>;
   /** Lo que NO entró, con el motivo de cada uno. */
   skipped: Array<{ order: string; reason: string }>;
   /** El resumen en una línea: es lo único que ve quien pidió el barrido. */
@@ -247,9 +275,11 @@ export interface TenantExpenseSweep {
 function sweepResult({
   charged,
   removed,
+  updated = [],
   skipped,
   sinCandidatos = false,
-}: Omit<TenantExpenseSweep, 'detail'> & { sinCandidatos?: boolean }): TenantExpenseSweep {
+}: Omit<TenantExpenseSweep, 'detail' | 'updated'> &
+  Partial<Pick<TenantExpenseSweep, 'updated'>> & { sinCandidatos?: boolean }): TenantExpenseSweep {
   const partes: string[] = [];
   if (charged.length) {
     partes.push(
@@ -275,13 +305,14 @@ function sweepResult({
     return {
       charged,
       removed,
+      updated,
       skipped,
       detail: sinCandidatos
         ? 'No hay arreglos a cargo de inquilinos esperando: no había nada que pasar.'
         : 'No hubo nada que pasar a los recibos.',
     };
   }
-  return { charged, removed, skipped, detail: `${partes.join('; ')}.` };
+  return { charged, removed, updated, skipped, detail: `${partes.join('; ')}.` };
 }
 
 /** `<leaseId>:<período>` — el id es todo lo anterior a los dos puntos finales. */
@@ -515,6 +546,12 @@ export class RentBillingRepository {
     const removed = await this.retirarGastosQueYaNoCorresponden(
       new Set(aCargoDelInquilino.map((o) => workOrderRef(o.id)))
     );
+    // Lo ya cobrado se pone al día con el costo de hoy. El egreso al proveedor SÍ se
+    // resincronizaba y el recupero al inquilino no: una orden presupuestada en $50.000
+    // que termina costando $65.000 se le pagaba entera al plomero y se le recuperaban
+    // $50.000 al inquilino. Los $15.000 los absorbía el propietario, que es justo lo
+    // contrario de lo que significa «a cargo del inquilino».
+    const updated = await this.sincronizarGastosCobrados(aCargoDelInquilino, hoy);
     const skipped: Array<{ order: string; reason: string }> = [];
     if (aCargoDelInquilino.length === 0) {
       return sweepResult({ charged: [], removed, skipped, sinCandidatos: true });
@@ -575,7 +612,7 @@ export class RentBillingRepository {
       charged.push({ order: orden.title, amount: gasto.amount });
     }
 
-    return sweepResult({ charged, removed, skipped });
+    return sweepResult({ charged, removed, updated, skipped });
   }
 
   /** Las órdenes que ya figuran en algún recibo, para no cobrarlas de nuevo. */
@@ -597,6 +634,69 @@ export class RentBillingRepository {
    * resuelve a mano —con una nota de crédito o devolviéndolo—, que es lo que
    * corresponde cuando la plata ya se movió.
    */
+  /**
+   * Pone al día lo que ya está en un recibo cuando cambió el costo de la orden.
+   *
+   * El egreso al proveedor ya se resincronizaba (`_syncExpense` en `maintenance`) y el
+   * recupero al inquilino no: una orden presupuestada en $50.000 que termina costando
+   * $65.000 se le pagaba entera al plomero y se le recuperaban $50.000 al inquilino. La
+   * diferencia la absorbía el propietario, que es lo contrario de «a cargo del inquilino».
+   *
+   * Un recibo que YA recibió un pago no se toca — el mismo criterio que usa el retiro, y
+   * por la misma razón: la otra persona pagó contra un total, y cambiárselo después le
+   * deja un saldo que nadie decidió. Ese caso se resuelve a mano.
+   */
+  private async sincronizarGastosCobrados(
+    ordenes: Array<{ id: string; title?: string | null }>,
+    hoy: string
+  ): Promise<Array<{ order: string; from: string; to: string }>> {
+    const esperado = new Map<string, { amount: string; title: string }>();
+    for (const orden of ordenes) {
+      const gasto = expenseForWorkOrder(orden as never, hoy);
+      if (gasto) {
+        esperado.set(workOrderRef(orden.id), {
+          amount: String(gasto.amount),
+          title: String(orden.title ?? ''),
+        });
+      }
+    }
+    if (esperado.size === 0) return [];
+
+    const filas = await this.db.ormQuery((tx) =>
+      tx
+        .select({
+          id: accountLineTable.id,
+          source_ref: accountLineTable.source_ref,
+          account_id: accountLineTable.account_id,
+          subtotal: accountLineTable.subtotal,
+        })
+        .from(accountLineTable)
+        .where(eq(accountLineTable.source_type, TENANT_EXPENSE_SOURCE))
+    );
+
+    const pagos = new PaymentRepository(this.db);
+    const lineas = new AccountLineRepository(this.db);
+    const actualizadas: Array<{ order: string; from: string; to: string }> = [];
+
+    for (const linea of filas ?? []) {
+      const destino = esperado.get(String(linea.source_ref ?? ''));
+      if (!destino) continue;
+      const antes = Number(linea.subtotal ?? 0);
+      const ahora = Number(destino.amount);
+      if (!Number.isFinite(ahora) || Math.abs(antes - ahora) <= SALDADO) continue;
+
+      const cobrado = await pagos.listByAccount({ accountId: String(linea.account_id) });
+      if (cobrado.length > 0) continue;
+
+      await lineas.update({
+        id: String(linea.id),
+        data: { unit_price: destino.amount, subtotal: destino.amount },
+      });
+      actualizadas.push({ order: destino.title, from: String(antes), to: destino.amount });
+    }
+    return actualizadas;
+  }
+
   private async retirarGastosQueYaNoCorresponden(vigentes: Set<string>): Promise<string[]> {
     const filas = await this.db.ormQuery((tx) =>
       tx
@@ -764,6 +864,147 @@ export class RentBillingRepository {
    * pidió la acción tiene que poder distinguir cuál de esos fue. Un «no cobré» sin
    * motivo se lee como una falla y manda a buscar el problema donde no está.
    */
+  /**
+   * Rescinde un contrato y, si se decidió cobrarla, emite su multa.
+   *
+   * Las dos cosas van juntas porque son un solo acto del negocio: hasta ahora la
+   * rescisión guardaba la fecha y la multa quedaba «para hablarlo», o sea, se cobraba
+   * por fuera del sistema o no se cobraba. El importe NO se decide acá: llega decidido
+   * desde la pantalla, que lo propone y deja que una persona lo confirme, lo negocie o
+   * lo condone.
+   */
+  async terminateLease({
+    id,
+    terminationDate,
+    notes,
+    penalty = 'eximir',
+    penaltyAmount,
+    usdHouse,
+  }: {
+    id: string;
+    terminationDate: string;
+    notes?: string | null;
+    /** Qué se hizo con la multa. Por defecto no se cobra: cobrar es la decisión. */
+    penalty?: PenaltyDecision;
+    /** El importe confirmado, en la moneda del contrato. Vacío = el que propone el contrato. */
+    penaltyAmount?: string | null;
+    usdHouse?: string;
+  }): Promise<{ terminated: true; penalty: TerminationPenaltyResult }> {
+    const contratos = new LeaseRepository(this.db);
+    const contrato = await contratos.getById({ id });
+    if (!contrato) throw new Error('El contrato no existe.');
+
+    await contratos.terminate({ id, terminationDate, notes });
+
+    if (penalty !== 'cobrar') {
+      return { terminated: true, penalty: { charged: false, reason: 'no se cobró multa' } };
+    }
+
+    const importe = String(penaltyAmount ?? '').trim() || proposedPenalty(contrato) || '';
+    if (!importe || Number(importe) <= 0) {
+      // Decidir cobrar sin importe no es cobrar cero: es que el contrato no pactó
+      // multa y nadie escribió cuánto. Se avisa en vez de emitir una línea en cero.
+      return {
+        terminated: true,
+        penalty: {
+          charged: false,
+          reason: 'el contrato no pactó multa y no se indicó un importe',
+        },
+      };
+    }
+
+    return {
+      terminated: true,
+      penalty: await this.emitirMulta({ contrato, importe, terminationDate, usdHouse }),
+    };
+  }
+
+  /**
+   * Pone la multa donde se pueda cobrar: en el recibo del mes si ya se emitió, o como
+   * concepto de ese mes si todavía no. Ver `penaltyDestination`.
+   */
+  private async emitirMulta({
+    contrato,
+    importe,
+    terminationDate,
+    usdHouse,
+  }: {
+    contrato: LeaseRow;
+    importe: string;
+    terminationDate: string;
+    usdHouse?: string;
+  }): Promise<TerminationPenaltyResult> {
+    const periodo = periodOf(terminationDate);
+    const etiqueta = penaltyLabel(contrato);
+    const recibos = await this.chargesForLease({ leaseId: contrato.id });
+    const destino = penaltyDestination({
+      period: periodo,
+      issuedPeriods: recibos.map((r) => r.period_key),
+    });
+
+    if (destino === 'concepto') {
+      // El mes todavía no se facturó: la multa entra sola cuando se emita. Vigencia de
+      // un solo período para que no se repita en un mes que este contrato ya no tiene.
+      await new LeaseChargeRepository(this.db).create({
+        data: {
+          lease_id: contrato.id,
+          type: 'otro',
+          label: etiqueta,
+          amount: importe,
+          valid_from: periodo,
+          valid_to: periodo,
+          notes: `Rescisión del ${terminationDate}.`,
+          // El insert tipado de drizzle se queda con las columnas obligatorias y deja
+          // afuera las opcionales; el resto del repositorio hace lo mismo.
+        } as unknown as NewLeaseChargeRow,
+      });
+      return {
+        charged: true,
+        where: 'concepto',
+        period: periodo,
+        amount: importe,
+        label: etiqueta,
+      };
+    }
+
+    const recibo = recibos.find((r) => r.period_key === periodo);
+    if (!recibo) return { charged: false, reason: 'no se encontró el recibo del mes' };
+
+    const { subtotal, detail } = await this.enPesosDelContrato({ contrato, importe, usdHouse });
+    await new AccountLineRepository(this.db).add({
+      accountId: recibo.id,
+      description: detail ? `${etiqueta} · ${detail}` : etiqueta,
+      unitPrice: subtotal,
+      sourceType: PENALTY_SOURCE,
+      sourceRef: `${contrato.id}:multa`,
+    });
+    return { charged: true, where: 'recibo', period: periodo, amount: subtotal, label: etiqueta };
+  }
+
+  /**
+   * El importe de la multa en la moneda en que se cobra, con el mismo criterio que el
+   * alquiler: lo pactado gana sobre el mercado.
+   */
+  private async enPesosDelContrato({
+    contrato,
+    importe,
+    usdHouse,
+  }: {
+    contrato: LeaseRow;
+    importe: string;
+    usdHouse?: string;
+  }): Promise<{ subtotal: string; detail: string }> {
+    if (!esMonedaExtranjera(contrato.currency)) return { subtotal: importe, detail: '' };
+    const pactada = cotizacionPactada(contrato);
+    if (pactada !== null) {
+      return {
+        subtotal: String(Math.round(Number(importe) * pactada)),
+        detail: `${contrato.currency} ${importe} × ${pactada} (pactada en el contrato)`,
+      };
+    }
+    return this.conversorDeMoneda(usdHouse)(importe, contrato.currency);
+  }
+
   async chargeLateFee({
     leaseId,
     accountId,
@@ -841,26 +1082,34 @@ export class RentBillingRepository {
         continue;
       }
 
-      const punitorio = proposeLateFee(
-        {
+      // Lo ya cobrado de punitorio en esta cuenta: `pendingLateFee` lo necesita para no
+      // volver a cobrar el interés que ya se cobró (ver su comentario).
+      const punitoriosPrevios = existentes
+        .filter((linea) => String(linea.source_type ?? '') === 'late_fee')
+        .reduce((total, linea) => total + Number(linea.subtotal ?? 0), 0);
+
+      const punitorio = pendingLateFee({
+        balance: String(cuenta.balance ?? '0'),
+        chargedSoFar: punitoriosPrevios,
+        cargo: {
           due_date: cuenta.due_date ?? null,
-          balance: String(cuenta.balance ?? '0'),
           status: String(cuenta.status ?? 'open'),
           late_fee_percent: contrato?.late_fee_percent ?? '0',
         },
-        politica
-      );
+        policy: politica,
+      });
       if (punitorio.amount === '0') continue;
+      const aCobrar = Number(punitorio.amount);
 
       await lineas.add({
         accountId: String(cuenta.id),
         description: `Punitorio — ${punitorio.detail}`,
         quantity: '1',
-        unitPrice: punitorio.amount,
+        unitPrice: String(aCobrar),
         sourceType: 'late_fee',
         sourceRef,
       });
-      total += Number(punitorio.amount);
+      total += aCobrar;
       cobrados.push(`${periodo}: ${punitorio.detail}`);
     }
 
@@ -910,7 +1159,11 @@ export class RentBillingRepository {
     ]);
 
     const unidades = units.length;
-    const ocupadas = units.filter((u) => u.status === 'ocupada').length;
+    // `occupancy` y no `status`: el primero es cómo está la unidad HOY según las fechas
+    // del contrato; el segundo, la marca que puso quien administra («no disponible», «en
+    // recambio»). Contando la columna, el panel decía 0 % de ocupación con el edificio
+    // lleno, porque una unidad alquilada no lleva nada escrito ahí.
+    const ocupadas = units.filter((u) => u.occupancy === 'ocupada').length;
     const activos = leases.filter((l) => l.state === 'vigente' || l.state === 'por_vencer');
     const t = periodTotals(cargos);
     const porContrato = new Map(leases.map((l) => [l.id, l]));
@@ -1040,7 +1293,10 @@ export class RentBillingRepository {
     let impagos = 0;
     for (const c of cargos) {
       saldo += Number(c.balance) || 0;
-      if (c.status !== 'paid') impagos += 1;
+      // Impago es deber algo: lo dice el saldo, no el `status` de la cuenta. `billing`
+      // escribe `open`, `closed` y `overdue` — «paid» no existe, así que esta condición
+      // era verdadera siempre y la ficha mostraba «saldo $0» al lado de «12 impagos».
+      if (Number(c.balance ?? 0) > SALDADO) impagos += 1;
     }
 
     return {
@@ -1103,7 +1359,7 @@ export class RentBillingRepository {
     for (const c of cargos) {
       facturado += Number(c.total_due) || 0;
       cobrado += Number(c.paid) || 0;
-      if (c.status !== 'paid') impagos += 1;
+      if (Number(c.balance ?? 0) > SALDADO) impagos += 1;
     }
 
     const inicios = contratos

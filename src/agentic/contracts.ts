@@ -3893,3 +3893,60 @@ export const unacknowledgeExpiries = defineAction({
     identifierKey: 'id',
   },
 });
+
+/**
+ * Rescindir cobrando (o condonando) la multa es UN acto, y por eso es una acción y no
+ * dos: separarlas deja el caso de la mitad —contrato rescindido, multa en el aire—
+ * que es exactamente el que se quiere evitar.
+ */
+export const terminateLease = defineAction({
+  id: 'leases.billing.terminateLease',
+  title: 'Rescindir un contrato y resolver su multa',
+  description:
+    'Da por terminado un contrato antes de su vencimiento y, si así se decide, emite la multa por rescisión anticipada. La multa NO se calcula sola: el importe llega decidido, porque en la práctica se negocia, se cobra en parte o se condona.',
+  effect: 'write',
+  confirmation: 'always',
+  tenantScope: 'required',
+  input: {
+    type: 'object',
+    properties: {
+      id: {
+        type: 'string',
+        description: 'El contrato que se rescinde.',
+        ref: { resource: 'leases.contracts' },
+      },
+      terminationDate: {
+        type: 'string',
+        format: 'date',
+        description:
+          'El día en que termina. Decide hasta cuándo se cobra y desde cuándo la unidad está disponible.',
+      },
+      notes: {
+        type: 'string',
+        description: 'Por qué se rescinde.',
+      },
+      penalty: {
+        type: 'string',
+        enum: ['cobrar', 'eximir'],
+        description:
+          'Qué se hace con la multa. Por defecto no se cobra: cobrarle una multa a alguien es la decisión, no el default.',
+      },
+      penaltyAmount: {
+        type: 'string',
+        description:
+          'El importe confirmado, en la moneda del contrato. Vacío usa el que el contrato prevé (meses pactados × alquiler vigente).',
+      },
+    },
+    required: ['id', 'terminationDate'],
+    additionalProperties: false,
+  },
+  output: {
+    kind: 'record',
+    fields: [
+      { key: 'penalty.charged', name: 'penaltyCharged', label: 'Multa emitida' },
+      { key: 'penalty.amount', name: 'penaltyAmount', label: 'Importe', format: 'money' },
+      { key: 'penalty.where', name: 'penaltyWhere', label: 'Dónde' },
+    ],
+    identifierKey: 'id',
+  },
+});

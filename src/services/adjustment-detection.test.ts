@@ -85,6 +85,26 @@ describe('actualizaciones pendientes', () => {
     expect(r.map((x) => x.effectiveDate)).toEqual(['2027-02-01']);
   });
 
+  /**
+   * Con una registrada en el medio, la base de las que quedan tiene que seguir siendo
+   * la actualización anterior del contrato — no la de dos períodos atrás.
+   *
+   * Es el caso que el bug rompía: la base salía de indexar el arreglo SIN filtrar con
+   * la posición del arreglo YA filtrado, así que el segundo pendiente comparaba el
+   * índice contra doce meses en vez de seis y proponía cobrar otra vez la inflación
+   * que la actualización anterior ya había cobrado.
+   */
+  it('con una ya registrada, las pendientes siguen encadenando contra la anterior', () => {
+    const r = pendingAdjustments({
+      lease: base,
+      today: '2027-03-01',
+      existing: ['2026-02-01'],
+    });
+    expect(r.map((x) => x.effectiveDate)).toEqual(['2026-08-01', '2027-02-01']);
+    expect(r[0].baseDate).toBe('2026-02-01');
+    expect(r[1].baseDate).toBe('2026-08-01');
+  });
+
   it('un borrador no genera actualizaciones', () => {
     expect(
       pendingAdjustments({ lease: { ...base, status: 'borrador' }, today: '2027-01-01' })
