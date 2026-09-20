@@ -144,6 +144,7 @@ export function useCobranzasFidelidadView() {
     { key: 'total_due', label: 'A pagar', display: 'mono', format: 'money' },
     { key: 'paid', label: 'Cobrado', display: 'mono', format: 'money' },
     { key: 'balance', label: 'Saldo', display: 'mono', format: 'money' },
+    { key: 'days_late', label: 'Atraso', display: 'mono', suffix: ' días', emptyLabel: '—' },
     {
       key: 'status',
       label: 'Estado',

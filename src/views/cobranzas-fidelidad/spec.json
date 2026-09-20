@@ -158,6 +158,13 @@
             "format": "money"
           },
           {
+            "key": "days_late",
+            "label": "Atraso",
+            "display": "mono",
+            "suffix": " días",
+            "emptyLabel": "—"
+          },
+          {
             "key": "status",
             "label": "Estado",
             "display": "pill",
