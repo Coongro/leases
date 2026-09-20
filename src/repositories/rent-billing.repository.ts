@@ -34,6 +34,7 @@ import type { ExpenseSettlement } from '../services/expenses.js';
 import { currentLateFeePolicy } from '../services/late-fee-policy.server.js';
 import { pendingLateFee, proposeLateFee, type LateFeePolicy } from '../services/late-fee.js';
 import type { LeaseCharge } from '../services/lease-charges.js';
+import { daysOverdue } from '../services/overdue.js';
 import { periodTotals, type PeriodTotals } from '../services/period-totals.js';
 import {
   propertyResults,
@@ -152,6 +153,13 @@ export interface RentChargeRow {
   late_fee_detail: string;
   /** `proponer` cuando hay algo para cobrar; vacío si no. Es lo que muestra la acción. */
   late_fee_state: string;
+  /**
+   * Días que hace que este cargo está impago, o `null` si está al día.
+   *
+   * No descuenta los días de gracia: ver `daysOverdue`. «Venció ayer» y «venció hace
+   * cuarenta días» son el mismo rojo en la pantalla, y no es la misma llamada.
+   */
+  days_late: number | null;
 }
 
 /** Un contrato que se acerca al final del plazo, como lo lista el panel. */
@@ -452,6 +460,11 @@ export class RentBillingRepository {
         late_fee: punitorio.amount === '0' ? '' : punitorio.amount,
         late_fee_detail: punitorio.detail,
         late_fee_state: punitorio.amount === '0' ? '' : 'proponer',
+        days_late: daysOverdue({
+          dueDate: fila.due_date,
+          balance: fila.balance,
+          asOf: new Date().toISOString().slice(0, 10),
+        }),
       };
     });
   }
