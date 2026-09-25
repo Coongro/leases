@@ -135,6 +135,13 @@ export function CoFirmanteDelContratoView() {
                     h(UI.SelectItem, { key: String(r.id), value: String(r.id) }, refLabel(r))
                   )
                 ),
+                h(
+                  'div',
+                  {
+                    style: { fontSize: '12px', color: 'var(--cg-text-tertiary)', marginTop: '4px' },
+                  },
+                  'Tiene que existir como contacto. Si es la primera vez, cargala primero en Contactos.'
+                ),
                 errors['contactId']
                   ? h(
                       'div',

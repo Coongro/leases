@@ -242,6 +242,13 @@ export function RescindirContratoView() {
                     'No cobrarla'
                   )
                 ),
+                h(
+                  'div',
+                  {
+                    style: { fontSize: '12px', color: 'var(--cg-text-tertiary)', marginTop: '4px' },
+                  },
+                  'Se propone lo que pactó el contrato. Es negociable: se cobra entera, se cobra una parte o se condona.'
+                ),
                 errors['penalty']
                   ? h(
                       'div',
@@ -291,6 +298,13 @@ export function RescindirContratoView() {
                       ),
                     style: { paddingLeft: '22px', textAlign: 'right' as const },
                   })
+                ),
+                h(
+                  'div',
+                  {
+                    style: { fontSize: '12px', color: 'var(--cg-text-tertiary)', marginTop: '4px' },
+                  },
+                  'Se propone lo que pactó el contrato. Si elegís no cobrarla, este importe no se usa.'
                 ),
                 errors['penaltyAmount']
                   ? h(

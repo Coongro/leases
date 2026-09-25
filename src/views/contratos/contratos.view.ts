@@ -4,7 +4,7 @@
  * ⚠️ ARCHIVO REGENERABLE: se reescribe al guardar el diseño en el Builder.
  * La lógica custom va en `handlers.ts` (nunca se pisa). Diseño: `spec.json`.
  */
-import { getHostReact, getHostUI, useIsMobile, views } from '@coongro/plugin-sdk';
+import { getHostReact, getHostUI, useAccess, useIsMobile, views } from '@coongro/plugin-sdk';
 
 import { useContratosView } from './use-contratos.js';
 
@@ -15,6 +15,7 @@ const h = React.createElement;
 const UI = getHostUI() as any;
 
 export function ContratosView() {
+  const access = useAccess();
   const isMobile = useIsMobile();
   const {
     loading,
@@ -199,6 +200,7 @@ export function ContratosView() {
         views.open('leases.renovar-contrato.open', { record: row }, { mode: 'sheet' });
       },
       hidden: (row: any) =>
+        !access.canOpen('leases.renovar-contrato.open') ||
         !['vigente', 'por_vencer', 'terminado'].includes(String(row?.['state'] ?? '')),
     },
     {
@@ -209,6 +211,7 @@ export function ContratosView() {
         views.open('leases.rescindir-contrato.open', { record: row }, { mode: 'sheet' });
       },
       hidden: (row: any) =>
+        !access.canOpen('leases.rescindir-contrato.open') ||
         !['vigente', 'por_vencer', 'por_comenzar'].includes(String(row?.['state'] ?? '')),
     },
     {
@@ -218,6 +221,7 @@ export function ContratosView() {
       onClick: (row: any) => {
         void removeRow(row);
       },
+      hidden: () => !access.canRun('leases.contracts.delete'),
     },
   ];
   const renderTable = () =>
@@ -452,16 +456,18 @@ export function ContratosView() {
           h(UI.PageHeader, {
             title: 'Contratos',
             subtitle: 'Plazos, valores y ajustes de cada locación.',
-            action: h(
-              UI.Button,
-              {
-                variant: 'default',
-                onClick: () => {
-                  views.open('leases.contrato.open', undefined, { mode: 'dialog' });
-                },
-              },
-              'Nuevo contrato'
-            ),
+            action: access.canOpen('leases.contrato.open')
+              ? h(
+                  UI.Button,
+                  {
+                    variant: 'default',
+                    onClick: () => {
+                      views.open('leases.contrato.open', undefined, { mode: 'dialog' });
+                    },
+                  },
+                  'Nuevo contrato'
+                )
+              : null,
           })
         )
       ),

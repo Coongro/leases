@@ -147,6 +147,17 @@ export function ConceptoDelContratoView() {
                       'Otro'
                     )
                   ),
+                  h(
+                    'div',
+                    {
+                      style: {
+                        fontSize: '12px',
+                        color: 'var(--cg-text-tertiary)',
+                        marginTop: '4px',
+                      },
+                    },
+                    '«Descuento» resta del total en vez de sumar: es la forma de cargar una bonificación.'
+                  ),
                   errors['type']
                     ? h(
                         'div',
@@ -227,6 +238,13 @@ export function ConceptoDelContratoView() {
                       setField('amount', e.target.value === '' ? null : Number(e.target.value)),
                     style: { paddingLeft: '22px', textAlign: 'right' as const },
                   })
+                ),
+                h(
+                  'div',
+                  {
+                    style: { fontSize: '12px', color: 'var(--cg-text-tertiary)', marginTop: '4px' },
+                  },
+                  'Es el importe de CADA período en que corresponda, no el total.'
                 ),
                 errors['amount']
                   ? h(

@@ -4,7 +4,7 @@
  * ⚠️ ARCHIVO REGENERABLE: se reescribe al guardar el diseño en el Builder.
  * La lógica custom va en `handlers.ts` (nunca se pisa). Diseño: `spec.json`.
  */
-import { getHostReact, getHostUI, useIsMobile, usePlugin } from '@coongro/plugin-sdk';
+import { getHostReact, getHostUI, useAccess, useIsMobile, usePlugin } from '@coongro/plugin-sdk';
 
 import { useActualizacionesView } from './use-actualizaciones.js';
 
@@ -15,6 +15,7 @@ const h = React.createElement;
 const UI = getHostUI() as any;
 
 export function ActualizacionesView() {
+  const access = useAccess();
   const isMobile = useIsMobile();
   const { toast } = usePlugin();
   const {
@@ -217,7 +218,9 @@ export function ActualizacionesView() {
           }
         );
       },
-      hidden: (row: any) => !['pending'].includes(String(row?.['status'] ?? '')),
+      hidden: (row: any) =>
+        !access.canRun('leases.billing.applyAdjustment') ||
+        !['pending'].includes(String(row?.['status'] ?? '')),
     },
     {
       label: 'Cobrar diferencia',
@@ -237,7 +240,9 @@ export function ActualizacionesView() {
           }
         );
       },
-      hidden: (row: any) => !['applied'].includes(String(row?.['status'] ?? '')),
+      hidden: (row: any) =>
+        !access.canRun('leases.billing.chargeRetroactive') ||
+        !['applied'].includes(String(row?.['status'] ?? '')),
     },
     {
       label: 'Cancelar',
@@ -258,7 +263,9 @@ export function ActualizacionesView() {
           }
         );
       },
-      hidden: (row: any) => !['pending', 'applied'].includes(String(row?.['status'] ?? '')),
+      hidden: (row: any) =>
+        !access.canRun('leases.adjustments.cancel') ||
+        !['pending', 'applied'].includes(String(row?.['status'] ?? '')),
     },
     {
       label: 'Eliminar',
@@ -267,7 +274,9 @@ export function ActualizacionesView() {
       onClick: (row: any) => {
         void removeRow(row);
       },
-      hidden: (row: any) => !['pending', 'cancelled'].includes(String(row?.['status'] ?? '')),
+      hidden: (row: any) =>
+        !access.canRun('leases.adjustments.delete') ||
+        !['pending', 'cancelled'].includes(String(row?.['status'] ?? '')),
     },
   ];
   const renderTable = () =>
@@ -500,16 +509,18 @@ export function ActualizacionesView() {
           h(UI.PageHeader, {
             title: 'Actualizaciones',
             subtitle: 'Los aumentos por índice que el sistema calcula y vos confirmás.',
-            action: h(
-              UI.Button,
-              {
-                variant: 'default',
-                onClick: () => {
-                  void runServerAction('leases.adjustments.detect');
-                },
-              },
-              'Buscar actualizaciones'
-            ),
+            action: access.canRun('leases.adjustments.detect')
+              ? h(
+                  UI.Button,
+                  {
+                    variant: 'default',
+                    onClick: () => {
+                      void runServerAction('leases.adjustments.detect');
+                    },
+                  },
+                  'Buscar actualizaciones'
+                )
+              : null,
           })
         )
       ),
