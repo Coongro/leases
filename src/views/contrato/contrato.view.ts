@@ -433,6 +433,17 @@ export function ContratoView() {
                     onChange: (e: any) =>
                       setField('fx_rate', e.target.value === '' ? null : Number(e.target.value)),
                   }),
+                  h(
+                    'div',
+                    {
+                      style: {
+                        fontSize: '12px',
+                        color: 'var(--cg-text-tertiary)',
+                        marginTop: '4px',
+                      },
+                    },
+                    'Si el contrato en dólares fijó por escrito a qué valor se paga, va acá y gana sobre la cotización del día. En un contrato en pesos se deja vacío.'
+                  ),
                   errors['fx_rate']
                     ? h(
                         'div',
@@ -585,6 +596,17 @@ export function ContratoView() {
                         e.target.value === '' ? null : Number(e.target.value)
                       ),
                   }),
+                  h(
+                    'div',
+                    {
+                      style: {
+                        fontSize: '12px',
+                        color: 'var(--cg-text-tertiary)',
+                        marginTop: '4px',
+                      },
+                    },
+                    'Qué porcentaje del alquiler le queda a la administración. Es un dato del contrato: si no se carga acá, después no hay con qué liquidarle al propietario.'
+                  ),
                   errors['admin_fee_percent']
                     ? h(
                         'div',

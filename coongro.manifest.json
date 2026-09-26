@@ -4102,7 +4102,284 @@
     "copilotCatalogFingerprint": "992e9d1d1c0168b38b377ea7ca9c7e40",
     "copilotCatalogContentFingerprint": "2ed7594b7f55797070e38ef3a185fa51",
     "actionContracts": "./dist/agentic/contracts.js",
-    "copilotCatalogRuntimeFingerprint": "f5ec1db98b489b77c921a71938590f65"
+    "copilotCatalogRuntimeFingerprint": "f5ec1db98b489b77c921a71938590f65",
+    "permissions": [
+      {
+        "id": "leases.adjustments.manage",
+        "label": "Gestionar actualizaciones",
+        "effect": "write",
+        "grants": {
+          "actions": [
+            "leases.adjustments.apply",
+            "leases.adjustments.cancel",
+            "leases.adjustments.create",
+            "leases.adjustments.detect",
+            "leases.adjustments.update"
+          ]
+        },
+        "requires": ["leases.adjustments.read"],
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.adjustments.delete",
+        "label": "Eliminar actualizaciones",
+        "effect": "destructive",
+        "grants": { "actions": ["leases.adjustments.delete"] },
+        "requires": ["leases.adjustments.read"],
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.adjustments.read",
+        "label": "Ver actualizaciones",
+        "effect": "read",
+        "grants": {
+          "actions": [
+            "leases.adjustments.forLease",
+            "leases.adjustments.getById",
+            "leases.adjustments.list",
+            "leases.adjustments.listDetailed",
+            "leases.adjustments.overview"
+          ],
+          "views": ["leases.actualizaciones.open"]
+        },
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.billing.manage",
+        "label": "Cobrar alquileres",
+        "effect": "write",
+        "grants": {
+          "actions": [
+            "leases.billing.applyAdjustment",
+            "leases.billing.chargeLateFee",
+            "leases.billing.chargeRetroactive",
+            "leases.billing.chargeTenantWorkOrders",
+            "leases.billing.generateForPeriod"
+          ]
+        },
+        "requires": ["leases.billing.read"]
+      },
+      {
+        "id": "leases.billing.read",
+        "label": "Ver cobranzas",
+        "effect": "read",
+        "grants": {
+          "actions": [
+            "leases.billing.chargesForLease",
+            "leases.billing.chargesForPeriod",
+            "leases.billing.contractFile",
+            "leases.billing.dashboard",
+            "leases.billing.periodSummary",
+            "leases.billing.propertyResults",
+            "leases.billing.tenantFile",
+            "leases.billing.yearSeries"
+          ],
+          "views": [
+            "leases.cobranzas-fidelidad.open",
+            "leases.dashboard-alquileres-fidelidad.open",
+            "leases.ficha-de-inquilino.open",
+            "leases.resultado.open"
+          ]
+        },
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.charges.manage",
+        "label": "Gestionar conceptos pactados",
+        "effect": "write",
+        "grants": {
+          "actions": ["leases.charges.create", "leases.charges.update"],
+          "views": ["leases.concepto-del-contrato.open"]
+        },
+        "requires": ["leases.charges.read", "leases.contracts.read"],
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.charges.delete",
+        "label": "Eliminar conceptos pactados",
+        "effect": "destructive",
+        "grants": { "actions": ["leases.charges.delete"] },
+        "requires": ["leases.charges.read"],
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.charges.read",
+        "label": "Ver conceptos pactados",
+        "effect": "read",
+        "grants": {
+          "actions": [
+            "leases.charges.forLease",
+            "leases.charges.getById",
+            "leases.charges.list"
+          ]
+        },
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.coTenants.manage",
+        "label": "Gestionar co-inquilinos",
+        "effect": "write",
+        "grants": {
+          "actions": [
+            "leases.coTenants.create",
+            "leases.coTenants.restore",
+            "leases.coTenants.save",
+            "leases.coTenants.update"
+          ],
+          "views": ["leases.co-firmante-del-contrato.open"]
+        },
+        "requires": [
+          "contacts.read",
+          "leases.coTenants.read",
+          "leases.contracts.read"
+        ],
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.coTenants.delete",
+        "label": "Eliminar co-inquilinos",
+        "effect": "destructive",
+        "grants": { "actions": ["leases.coTenants.delete"] },
+        "requires": ["leases.coTenants.read"],
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.coTenants.read",
+        "label": "Ver co-inquilinos",
+        "effect": "read",
+        "grants": {
+          "actions": [
+            "leases.coTenants.forLease",
+            "leases.coTenants.getById",
+            "leases.coTenants.list"
+          ]
+        },
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.contracts.manage",
+        "label": "Gestionar contratos",
+        "effect": "write",
+        "grants": {
+          "actions": [
+            "leases.billing.terminateLease",
+            "leases.contracts.create",
+            "leases.contracts.renew",
+            "leases.contracts.restore",
+            "leases.contracts.save",
+            "leases.contracts.saveTenant",
+            "leases.contracts.terminate",
+            "leases.contracts.update"
+          ],
+          "views": [
+            "leases.contrato.open",
+            "leases.inquilino.open",
+            "leases.renovar-contrato.open",
+            "leases.rescindir-contrato.open"
+          ]
+        },
+        "requires": [
+          "contacts.read",
+          "leases.contracts.read",
+          "properties.units.read"
+        ]
+      },
+      {
+        "id": "leases.contracts.delete",
+        "label": "Eliminar contratos",
+        "effect": "destructive",
+        "grants": {
+          "actions": [
+            "leases.contracts.delete",
+            "leases.contracts.deleteTenant"
+          ]
+        },
+        "requires": ["leases.contracts.read"],
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.contracts.read",
+        "label": "Ver contratos",
+        "effect": "read",
+        "grants": {
+          "actions": [
+            "leases.contracts.getById",
+            "leases.contracts.getDetail",
+            "leases.contracts.getTenant",
+            "leases.contracts.list",
+            "leases.contracts.listTenants"
+          ],
+          "views": [
+            "leases.contratos.open",
+            "leases.ficha-de-contrato.open",
+            "leases.inquilinos.open"
+          ]
+        },
+        "requires": [
+          "leases.adjustments.read",
+          "leases.billing.read",
+          "leases.charges.read",
+          "leases.coTenants.read"
+        ],
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.expiries.manage",
+        "label": "Gestionar vencimientos",
+        "effect": "write",
+        "grants": {
+          "actions": [
+            "leases.expiries.acknowledge",
+            "leases.expiries.scan",
+            "leases.expiries.unacknowledge"
+          ]
+        },
+        "requires": ["leases.expiries.read"],
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.expiries.read",
+        "label": "Ver vencimientos",
+        "effect": "read",
+        "grants": {
+          "actions": ["leases.expiries.list", "leases.expiries.pendingCount"],
+          "views": ["leases.vencimientos.open"]
+        },
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.guarantees.manage",
+        "label": "Gestionar garantías",
+        "effect": "write",
+        "grants": {
+          "actions": [
+            "leases.guarantees.create",
+            "leases.guarantees.forLease",
+            "leases.guarantees.restore",
+            "leases.guarantees.update"
+          ]
+        },
+        "requires": ["leases.guarantees.read"],
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.guarantees.delete",
+        "label": "Eliminar garantías",
+        "effect": "destructive",
+        "grants": { "actions": ["leases.guarantees.delete"] },
+        "requires": ["leases.guarantees.read"],
+        "generatedBy": "builder"
+      },
+      {
+        "id": "leases.guarantees.read",
+        "label": "Ver garantías",
+        "effect": "read",
+        "grants": {
+          "actions": ["leases.guarantees.getById", "leases.guarantees.list"]
+        },
+        "generatedBy": "builder"
+      }
+    ]
   },
   "initView": "leases.dashboard-alquileres-fidelidad.open",
   "entry": "./dist/server.js"

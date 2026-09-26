@@ -48,6 +48,7 @@ export function useConceptoDelContratoView() {
       },
       editingId,
       record: initialRecord,
+      parentRecord,
     })
       .then((initial) => {
         if (!initial || !mounted.current) return;
@@ -66,6 +67,10 @@ export function useConceptoDelContratoView() {
   // record con el que se abrió la vista (views.open(id, { record })), si hubo — lo
   // reciben los handlers en onSubmit (ej. una acción de fila que necesita el id).
   const initialRecord = ((views.params as any)?.record ?? null) as Record<string, any> | null;
+  // Contexto padre (views.open(id, { parentRecord })): el registro DESDE el que
+  // se abrió — «Nueva unidad» desde la ficha del edificio. A diferencia de
+  // { record }, NUNCA activa el modo edición ni el prefill general de campos.
+  const parentRecord = ((views.params as any)?.parentRecord ?? null) as Record<string, any> | null;
   // Abierta con { record } → modo edición: guardar actualiza, no crea
   const [editingId, setEditingId] = useState<string | null>(
     initialRecord?.id !== null && initialRecord?.id !== undefined ? String(initialRecord.id) : null
@@ -83,6 +88,18 @@ export function useConceptoDelContratoView() {
       }
       return next;
     });
+    // deps intencionalmente fijas: el efecto corre una sola vez
+  }, []);
+  // entidad del padre → campo ref que lo referencia (solo matches únicos)
+  const PARENT_REF_FIELD: Record<string, string> = { 'leases.contracts': 'lease_id' };
+  useEffect(() => {
+    const parentEntity = ((views.params as any)?.parentEntity ?? null) as string | null;
+    const linkField = parentEntity ? PARENT_REF_FIELD[parentEntity] : undefined;
+    if (!linkField || !parentRecord || parentRecord.id === null || parentRecord.id === undefined)
+      return;
+    setValues((prev: any) =>
+      prev[linkField] ? prev : { ...prev, [linkField]: String(parentRecord.id) }
+    );
     // deps intencionalmente fijas: el efecto corre una sola vez
   }, []);
   const [refOptions, setRefOptions] = useState<Record<string, any[]>>({});
@@ -150,6 +167,7 @@ export function useConceptoDelContratoView() {
           toast,
           editingId,
           record: initialRecord,
+          parentRecord,
         };
         await customHandlers.onSubmit(values, ctx);
       } else if (editingId) {
