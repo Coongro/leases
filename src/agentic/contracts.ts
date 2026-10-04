@@ -18,25 +18,13 @@ import { defineAction, none } from '@coongro/plugin-sdk/agentic';
  */
 export const listAdjustments = defineAction({
   id: 'leases.adjustments.list',
-  title: 'Listar Actualizaciones',
-  description: 'Obtiene Actualizaciones disponibles para el cliente actual.',
+  title: 'Listar actualizaciones de alquiler',
+  description:
+    'Todas las actualizaciones de alquiler registradas, con el contrato al que pertenecen, el índice aplicado y el monto que dejaron vigente.',
   effect: 'read',
   confirmation: 'never',
   tenantScope: 'required',
-  input: {
-    type: 'object',
-    properties: {
-      limit: {
-        type: 'integer',
-        description: 'Cantidad de resultados a devolver. Default 20; máximo 50.',
-      },
-      offset: {
-        type: 'integer',
-        description: 'Cantidad de resultados a saltear para pedir la página siguiente.',
-      },
-    },
-    additionalProperties: false,
-  },
+  input: none(),
   output: {
     kind: 'collection',
     fields: [
@@ -280,25 +268,13 @@ export const getByIdAdjustments = defineAction({
  */
 export const listCharges = defineAction({
   id: 'leases.charges.list',
-  title: 'Listar Concepto del contrato',
-  description: 'Obtiene Concepto del contrato disponibles para el cliente actual.',
+  title: 'Listar conceptos pactados',
+  description:
+    'Los conceptos que cada contrato suma o descuenta todos los meses además del alquiler —expensas, ABL, agua, bonificaciones—, con su importe.',
   effect: 'read',
   confirmation: 'never',
   tenantScope: 'required',
-  input: {
-    type: 'object',
-    properties: {
-      limit: {
-        type: 'integer',
-        description: 'Cantidad de resultados a devolver. Default 20; máximo 50.',
-      },
-      offset: {
-        type: 'integer',
-        description: 'Cantidad de resultados a saltear para pedir la página siguiente.',
-      },
-    },
-    additionalProperties: false,
-  },
+  input: none(),
   output: {
     kind: 'collection',
     fields: [
@@ -687,25 +663,13 @@ export const updateCharges = defineAction({
  */
 export const listContracts = defineAction({
   id: 'leases.contracts.list',
-  title: 'Listar Contrato',
-  description: 'Obtiene Contrato disponibles para el cliente actual.',
+  title: 'Listar contratos de alquiler',
+  description:
+    'Todos los contratos con su unidad, su propiedad, su inquilino y en qué estado están: vigente, por vencer, vencido o rescindido.',
   effect: 'read',
   confirmation: 'never',
   tenantScope: 'required',
-  input: {
-    type: 'object',
-    properties: {
-      limit: {
-        type: 'integer',
-        description: 'Cantidad de resultados a devolver. Default 20; máximo 50.',
-      },
-      offset: {
-        type: 'integer',
-        description: 'Cantidad de resultados a saltear para pedir la página siguiente.',
-      },
-    },
-    additionalProperties: false,
-  },
+  input: none(),
   output: {
     kind: 'collection',
     fields: [
@@ -943,21 +907,27 @@ export const getByIdContracts = defineAction({
  */
 export const listExpiries = defineAction({
   id: 'leases.expiries.list',
-  title: 'Listar Vencimientos',
-  description: 'Obtiene Vencimientos disponibles para el cliente actual.',
+  title: 'Listar avisos de vencimiento',
+  description:
+    'Lo que está por vencer y todavía nadie resolvió: contratos que terminan, actualizaciones que tocan y garantías que caducan, de lo más urgente a lo que falta más. Lo ya marcado como visto no aparece salvo que se pida.',
   effect: 'read',
   confirmation: 'never',
   tenantScope: 'required',
   input: {
     type: 'object',
     properties: {
-      limit: {
-        type: 'integer',
-        description: 'Cantidad de resultados a devolver. Default 20; máximo 50.',
+      level: {
+        type: 'string',
+        description: 'Dejar solo los de esta urgencia. Sin esto vienen todos.',
       },
-      offset: {
-        type: 'integer',
-        description: 'Cantidad de resultados a saltear para pedir la página siguiente.',
+      kind: {
+        type: 'string',
+        description: 'Dejar solo los de este tipo de aviso. Sin esto vienen todos.',
+      },
+      includeAcknowledged: {
+        type: 'boolean',
+        description:
+          'Incluir también los que alguien ya marcó como vistos. Por defecto se omiten, porque la lista es lo que queda por hacer.',
       },
     },
     additionalProperties: false,
@@ -1632,21 +1602,29 @@ export const generateForPeriodBilling = defineAction({
  */
 export const chargeLateFeeBilling = defineAction({
   id: 'leases.billing.chargeLateFee',
-  title: 'Cobrar punitorio',
-  description: 'Ejecuta Cobrar punitorio para el cliente.',
+  title: 'Cobrar la mora de un contrato',
+  description:
+    'Le suma al alquiler impago el punitorio que corresponde por los días de atraso, según el porcentaje pactado en el contrato y los días de gracia configurados. Cobra sobre todos los cargos vencidos con saldo, salvo que se acote a un mes. El monto lo calcula el servidor: no se puede elegir cuánto. Cobrarlo dos veces el mismo día no lo duplica.',
   effect: 'write',
   confirmation: 'always',
   tenantScope: 'required',
   input: {
     type: 'object',
     properties: {
-      id: {
+      leaseId: {
         type: 'string',
         format: 'uuid',
-        description: 'ID del registro.',
+        description: 'El contrato al que se le cobra la mora.',
+        ref: { resource: 'leases.contracts' },
+      },
+      period: {
+        type: 'string',
+        pattern: '^\\d{4}-\\d{2}$',
+        description:
+          'Acota el cobro a un mes (AAAA-MM). Si se omite, alcanza a todos los cargos vencidos con saldo.',
       },
     },
-    required: ['id'],
+    required: ['leaseId'],
     additionalProperties: false,
   },
   output: {
@@ -1654,23 +1632,24 @@ export const chargeLateFeeBilling = defineAction({
     fields: [
       { key: 'charged', name: 'charged', label: 'Se cobró', format: 'text' },
       { key: 'amount', name: 'amount', label: 'Punitorio', format: 'money' },
+      // Cuando NO se cobró, este campo dice por qué (al día, dentro de la gracia,
+      // sin punitorio pactado). Nunca vuelve vacío: un «no cobré» mudo se lee como
+      // una falla y manda a buscar el problema donde no está.
       { key: 'detail', name: 'detail', label: 'Cómo se calculó', format: 'text' },
     ],
   },
 });
 
 /**
- * REVISAR: generado desde un borrador de confianza desconocida.
- *
- * El borrador describe lo que la pantalla envía hoy. El contrato tiene que
- * describir lo que ESTE handler exige — incluidos los valores que la UI
- * resuelve por contexto de apertura y que en el formulario no se ven.
+ * Solo consulta. La emisión del mes es `leases.billing.generateForPeriod`: estuvo
+ * un tiempo acá detrás de un `generateIfMissing`, y esa comodidad publicaba una
+ * escritura bajo un contrato que declaraba lectura.
  */
 export const chargesForPeriodBilling = defineAction({
   id: 'leases.billing.chargesForPeriod',
   title: 'Cobranza de un mes',
   description:
-    'Los cargos de alquiler de un mes con lo facturado, lo cobrado y lo que quedó vencido. Si el mes todavía no tiene ningún cargo emitido, puede emitirlo en el mismo pedido.',
+    'Los cargos de alquiler de un mes con lo facturado, lo cobrado y lo que quedó vencido. Solo consulta: un mes que todavía no se emitió vuelve vacío, y emitirlo es otra operación.',
   effect: 'read',
   confirmation: 'never',
   tenantScope: 'required',
@@ -1681,11 +1660,6 @@ export const chargesForPeriodBilling = defineAction({
         type: 'string',
         pattern: '^\\d{4}-\\d{2}$',
         description: 'El mes, en formato AAAA-MM.',
-      },
-      generateIfMissing: {
-        type: 'boolean',
-        description:
-          'Si el mes todavía no tiene ningún cargo emitido, emitirlo en el mismo pedido. Sin esto, un mes sin emitir devuelve vacío.',
       },
       graceDays: {
         type: 'integer',
@@ -3603,19 +3577,104 @@ export const listCoTenants = defineAction({
   effect: 'read',
   confirmation: 'never',
   tenantScope: 'required',
+  input: none(),
+});
+
+/**
+ * REVISAR: generado desde un borrador de confianza alta.
+ *
+ * El borrador describe lo que la pantalla envía hoy. El contrato tiene que
+ * describir lo que ESTE handler exige — incluidos los valores que la UI
+ * resuelve por contexto de apertura y que en el formulario no se ven.
+ */
+export const forLeaseCoTenants = defineAction({
+  id: 'leases.coTenants.forLease',
+  title: 'Ver quiénes más firman un contrato',
+  description:
+    'Los co-firmantes de un contrato con su nombre y su vínculo. El inquilino principal no aparece acá: está en el contrato mismo.',
+  effect: 'read',
+  confirmation: 'never',
+  tenantScope: 'required',
   input: {
     type: 'object',
     properties: {
-      limit: {
-        type: 'integer',
-        description: 'Cantidad de resultados.',
-      },
-      offset: {
-        type: 'integer',
-        description: 'Resultados a saltear.',
+      leaseId: {
+        type: 'string',
+        format: 'uuid',
+        description: 'El contrato del que se quieren saber los firmantes.',
+        ref: { resource: 'leases.contracts' },
       },
     },
+    required: ['leaseId'],
     additionalProperties: false,
+  },
+  output: {
+    kind: 'collection',
+    fields: [
+      { key: 'name', name: 'name', label: 'Nombre', format: 'text' },
+      { key: 'role', name: 'role', label: 'Vínculo', format: 'text' },
+      { key: 'notes', name: 'notes', label: 'Notas', format: 'text' },
+    ],
+    identifierKey: 'id',
+  },
+});
+
+export const saveCoTenant = defineAction({
+  id: 'leases.coTenants.save',
+  title: 'Sumar a alguien que firma el contrato',
+  description:
+    'Registra a otra persona como firmante del contrato junto al inquilino principal —cónyuge, conviviente, cotitular, fiador solidario—, o corrige el vínculo de una ya registrada. Se niega si el contrato está cerrado, si la persona ya es el inquilino principal o si ya figura como firmante. No modifica los datos de la persona: eso se hace en su ficha de contacto.',
+  effect: 'write',
+  confirmation: 'always',
+  tenantScope: 'required',
+  input: {
+    type: 'object',
+    properties: {
+      id: {
+        type: 'string',
+        format: 'uuid',
+        description: 'Solo para corregir uno ya registrado. Sin esto se da de alta uno nuevo.',
+        ref: { resource: 'leases.coTenants' },
+      },
+      leaseId: {
+        type: 'string',
+        format: 'uuid',
+        description: 'El contrato que la persona firma.',
+        ref: { resource: 'leases.contracts' },
+      },
+      contactId: {
+        type: 'string',
+        format: 'uuid',
+        description: 'La persona que firma. Tiene que existir como contacto.',
+        ref: { resource: 'contacts' },
+      },
+      role: {
+        type: 'string',
+        description: 'Con qué carácter firma: cotitular, conviviente, cónyuge o fiador solidario.',
+      },
+      notes: {
+        type: 'string',
+        description: 'Aclaración sobre el vínculo, si hace falta.',
+      },
+    },
+    required: ['leaseId', 'contactId'],
+    additionalProperties: false,
+  },
+  // Devuelve el vínculo entero, no solo su id: quien lo pidió tiene que poder leer qué
+  // quedó guardado sin volver a preguntar, y una respuesta que solo confirma «listo» no
+  // se puede contrastar contra lo que se mandó.
+  output: {
+    kind: 'record',
+    fields: [
+      { key: 'id', name: 'id', label: 'Co-firmante', format: 'text' },
+      // Distingue el alta de la corrección: quien pidió «agregá a la esposa» tiene que
+      // poder saber si se sumó o si se actualizó una que ya estaba.
+      { key: 'created', name: 'created', label: 'Se dio de alta', format: 'text' },
+      { key: 'leaseId', name: 'leaseId', label: 'Contrato', format: 'text' },
+      { key: 'contactId', name: 'contactId', label: 'Persona', format: 'text' },
+      { key: 'role', name: 'role', label: 'Vínculo', format: 'text' },
+      { key: 'notes', name: 'notes', label: 'Aclaración', format: 'text' },
+    ],
   },
 });
 
@@ -3661,20 +3720,7 @@ export const listGuarantees = defineAction({
   effect: 'read',
   confirmation: 'never',
   tenantScope: 'required',
-  input: {
-    type: 'object',
-    properties: {
-      limit: {
-        type: 'integer',
-        description: 'Cantidad de resultados.',
-      },
-      offset: {
-        type: 'integer',
-        description: 'Resultados a saltear.',
-      },
-    },
-    additionalProperties: false,
-  },
+  input: none(),
 });
 
 /**
@@ -3802,8 +3848,12 @@ export const chargeTenantWorkOrdersBilling = defineAction({
   output: {
     kind: 'record',
     fields: [
+      // El resumen va PRIMERO: cuando el barrido no hizo nada, es lo único que explica
+      // por qué, y sin él «no pasó nada» se lee igual que «algo falló».
+      { key: 'detail', name: 'detail', label: 'Qué pasó', format: 'text' },
       { key: 'charged', name: 'charged', label: 'Arreglos pasados al recibo', format: 'text' },
       { key: 'removed', name: 'removed', label: 'Arreglos retirados', format: 'text' },
+      { key: 'skipped', name: 'skipped', label: 'Sin pasar, y por qué', format: 'text' },
     ],
   },
 });
@@ -3839,6 +3889,140 @@ export const unacknowledgeExpiries = defineAction({
     kind: 'record',
     fields: [
       { key: 'acknowledged_at', name: 'acknowledgedAt', label: 'Acusado el', format: 'date' },
+    ],
+    identifierKey: 'id',
+  },
+});
+
+/**
+ * Rescindir cobrando (o condonando) la multa es UN acto, y por eso es una acción y no
+ * dos: separarlas deja el caso de la mitad —contrato rescindido, multa en el aire—
+ * que es exactamente el que se quiere evitar.
+ */
+export const terminateLease = defineAction({
+  id: 'leases.billing.terminateLease',
+  title: 'Rescindir un contrato y resolver su multa',
+  description:
+    'Da por terminado un contrato antes de su vencimiento y, si así se decide, emite la multa por rescisión anticipada. La multa NO se calcula sola: el importe llega decidido, porque en la práctica se negocia, se cobra en parte o se condona.',
+  effect: 'write',
+  confirmation: 'always',
+  tenantScope: 'required',
+  input: {
+    type: 'object',
+    properties: {
+      id: {
+        type: 'string',
+        description: 'El contrato que se rescinde.',
+        ref: { resource: 'leases.contracts' },
+      },
+      terminationDate: {
+        type: 'string',
+        format: 'date',
+        description:
+          'El día en que termina. Decide hasta cuándo se cobra y desde cuándo la unidad está disponible.',
+      },
+      notes: {
+        type: 'string',
+        description: 'Por qué se rescinde.',
+      },
+      penalty: {
+        type: 'string',
+        enum: ['cobrar', 'eximir'],
+        description:
+          'Qué se hace con la multa. Por defecto no se cobra: cobrarle una multa a alguien es la decisión, no el default.',
+      },
+      penaltyAmount: {
+        type: 'string',
+        description:
+          'El importe confirmado, en la moneda del contrato. Vacío usa el que el contrato prevé (meses pactados × alquiler vigente).',
+      },
+    },
+    required: ['id', 'terminationDate'],
+    additionalProperties: false,
+  },
+  output: {
+    kind: 'record',
+    fields: [
+      { key: 'penalty.charged', name: 'penaltyCharged', label: 'Multa emitida' },
+      { key: 'penalty.amount', name: 'penaltyAmount', label: 'Importe', format: 'money' },
+      { key: 'penalty.where', name: 'penaltyWhere', label: 'Dónde' },
+    ],
+    identifierKey: 'id',
+  },
+});
+
+/**
+ * Aplicar una actualización y resolver su diferencia son UN acto: el alquiler nuevo
+ * rige desde su fecha, y los meses que ya se facturaron al precio anterior quedan mal
+ * facturados en el mismo instante. Separarlos deja el estado de la mitad.
+ */
+export const applyAdjustmentBilling = defineAction({
+  id: 'leases.billing.applyAdjustment',
+  title: 'Aplicar una actualización y resolver su diferencia',
+  description:
+    'Confirma una actualización por índice: el alquiler del contrato pasa al valor nuevo desde su fecha de vigencia. Si esa fecha cae en meses que YA se facturaron al precio anterior, informa la diferencia. No la cobra sola salvo que la configuración del tenant lo diga: cobrar meses hacia atrás es de las pocas cosas que el inquilino no ve venir. Nunca modifica un recibo emitido.',
+  effect: 'write',
+  confirmation: 'always',
+  tenantScope: 'required',
+  input: {
+    type: 'object',
+    properties: {
+      id: {
+        type: 'string',
+        description: 'La actualización pendiente que se confirma.',
+        ref: { resource: 'leases.adjustments' },
+      },
+      retroactive: {
+        type: 'string',
+        enum: ['ask', 'auto', 'off'],
+        description:
+          'Pisa la configuración del tenant sólo para esta corrida. `ask` informa la diferencia sin cobrarla, `auto` la cobra, `off` la ignora. Sin esto se usa lo configurado, que por defecto es informar.',
+      },
+    },
+    required: ['id'],
+    additionalProperties: false,
+  },
+  output: {
+    kind: 'record',
+    fields: [
+      { key: 'retroactive.status', name: 'retroactiveStatus', label: 'Diferencia' },
+      { key: 'retroactive.amount', name: 'retroactiveAmount', label: 'Importe', format: 'money' },
+      { key: 'retroactive.label', name: 'retroactiveLabel', label: 'Concepto' },
+    ],
+    identifierKey: 'id',
+  },
+});
+
+/**
+ * La contraparte de `applyAdjustment` cuando la política es informar: alguien miró la
+ * diferencia y decidió cobrarla.
+ */
+export const chargeRetroactiveBilling = defineAction({
+  id: 'leases.billing.chargeRetroactive',
+  title: 'Cobrar la diferencia de una actualización',
+  description:
+    'Emite la diferencia de los meses que se facturaron al alquiler anterior, para una actualización YA aplicada. La diferencia entra en el primer recibo posterior que siga impago, o como concepto del mes siguiente si todavía no hay ninguno: un recibo emitido —y menos uno cobrado— no se reescribe. Es idempotente: cobrarla dos veces no duplica el cargo.',
+  effect: 'write',
+  confirmation: 'always',
+  tenantScope: 'required',
+  input: {
+    type: 'object',
+    properties: {
+      id: {
+        type: 'string',
+        description: 'La actualización ya aplicada cuya diferencia se cobra.',
+        ref: { resource: 'leases.adjustments' },
+      },
+    },
+    required: ['id'],
+    additionalProperties: false,
+  },
+  output: {
+    kind: 'record',
+    fields: [
+      { key: 'status', name: 'status', label: 'Resultado' },
+      { key: 'where', name: 'where', label: 'Dónde' },
+      { key: 'amount', name: 'amount', label: 'Importe', format: 'money' },
     ],
     identifierKey: 'id',
   },

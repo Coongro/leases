@@ -13,9 +13,10 @@ import {
 /**
  * Contrato de alquiler: el vínculo entre una unidad y quien la alquila.
  *
- * El precio vive acá y NO cambia con cada actualización por índice: cada ajuste es
- * un registro propio con su período de vigencia (F4). Así queda auditable por qué
- * cambió el alquiler y cuándo, en vez de pisar el número y perder la historia.
+ * `rent_amount` es el alquiler VIGENTE: confirmar un ajuste lo actualiza. La historia
+ * no se pierde igual, porque cada ajuste es además un registro propio con su período
+ * de vigencia (F4) — ahí queda auditable por qué cambió y cuándo. Lo que se lee acá es
+ * lo que se cobra hoy; lo que se lee en `index_adjustments` es cómo se llegó a eso.
  *
  * Lo que se cobra tampoco vive acá: los cargos y su cobranza son de `billing`.
  * Este plugin dice cuánto y cuándo hay que cobrar; billing registra si se cobró.
@@ -46,6 +47,16 @@ export const leaseTable = pgTable(
     expenses_amount: numeric('expenses_amount'),
     /** ARS o USD: el contrato bimoneda es corriente acá y ninguna de las fuentes lo contempla. */
     currency: text('currency').notNull(),
+    /**
+     * Cotización pactada por escrito, cuando el contrato fijó una. Vacío = la del mercado.
+     *
+     * Desde que la ley de alquileres quedó derogada, las partes pactan libremente, y en
+     * los contratos en dólares es habitual dejar escrito a qué valor se paga: uno fijo,
+     * el de una casa puntual, o el del día anterior. La casa de cambio ya se elige por
+     * configuración, pero eso es del tenant — y dos contratos del mismo administrador
+     * pueden haber pactado dólares distintos. Este número, si está, gana sobre el mercado.
+     */
+    fx_rate: numeric('fx_rate'),
     /** Día de vencimiento del alquiler. */
     due_day: integer('due_day').notNull(),
     /** `fixed` = ese día del mes; `business` = el N-ésimo día hábil (feriados incluidos). */

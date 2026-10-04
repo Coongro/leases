@@ -160,7 +160,29 @@
           {
             "key": "deposit_status",
             "label": "Estado del depósito",
-            "visible": false
+            "visible": false,
+            "display": "pill",
+            "emptyLabel": "Sin registrar",
+            "values": [
+              {
+                "value": "pendiente",
+                "label": "Pendiente",
+                "tone": "warning",
+                "icon": "Clock"
+              },
+              {
+                "value": "retenido",
+                "label": "Retenido",
+                "tone": "neutral",
+                "icon": "Lock"
+              },
+              {
+                "value": "devuelto",
+                "label": "Devuelto",
+                "tone": "success",
+                "icon": "CircleCheck"
+              }
+            ]
           }
         ],
         "cells": [

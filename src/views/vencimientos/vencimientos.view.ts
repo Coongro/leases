@@ -4,7 +4,7 @@
  * ⚠️ ARCHIVO REGENERABLE: se reescribe al guardar el diseño en el Builder.
  * La lógica custom va en `handlers.ts` (nunca se pisa). Diseño: `spec.json`.
  */
-import { getHostReact, getHostUI, useIsMobile } from '@coongro/plugin-sdk';
+import { getHostReact, getHostUI, useAccess, useIsMobile } from '@coongro/plugin-sdk';
 
 import { useVencimientosView } from './use-vencimientos.js';
 
@@ -15,8 +15,13 @@ const h = React.createElement;
 const UI = getHostUI() as any;
 
 export function VencimientosView() {
+  const access = useAccess();
   const isMobile = useIsMobile();
   const {
+    pendingConfirm,
+    askConfirm,
+    cancelConfirm,
+    runConfirmed,
     loading,
     visibleRows,
     COLUMNS,
@@ -170,6 +175,7 @@ export function VencimientosView() {
       onClick: (row: any) => {
         void runServerAction('leases.expiries.acknowledge', { id: row.id }, row);
       },
+      hidden: () => !access.canRun('leases.expiries.acknowledge'),
     },
   ];
   const renderTable = () =>
@@ -371,24 +377,27 @@ export function VencimientosView() {
             title: 'Vencimientos',
             subtitle:
               'Lo que hay que renovar: certificados del inmueble, contratos que terminan y pólizas de caución.',
-            action: h(
-              UI.Button,
-              {
-                variant: 'default',
-                onClick: () => {
-                  if (
-                    !window.confirm(
-                      'Se revisa toda la cartera y se actualiza la lista. No modifica ningún certificado ni contrato: solo mira fechas.'
-                    )
-                  )
-                    return;
-                  (() => {
-                    void runServerAction('leases.expiries.scan');
-                  })();
-                },
-              },
-              'Revisar vencimientos'
-            ),
+            action: access.canRun('leases.expiries.scan')
+              ? h(
+                  UI.Button,
+                  {
+                    variant: 'default',
+                    onClick: () => {
+                      askConfirm(
+                        'Revisar vencimientos',
+                        'Se revisa toda la cartera y se actualiza la lista. No modifica ningún certificado ni contrato: solo mira fechas.',
+                        'Revisar vencimientos',
+                        () => {
+                          (() => {
+                            void runServerAction('leases.expiries.scan');
+                          })();
+                        }
+                      );
+                    },
+                  },
+                  'Revisar vencimientos'
+                )
+              : null,
           })
         )
       ),
@@ -662,6 +671,18 @@ export function VencimientosView() {
         )
       ),
       h('div', { 'data-cg-block-id': 'tbl', style: { display: 'contents' } }, renderTable())
-    )
+    ),
+    h(UI.ConfirmDialog, {
+      open: !!pendingConfirm,
+      onOpenChange: (o: boolean) => {
+        if (!o) cancelConfirm();
+      },
+      title: pendingConfirm?.title ?? '',
+      description: pendingConfirm?.message ?? '',
+      confirmLabel: pendingConfirm?.confirmLabel ?? 'Confirmar',
+      onConfirm: () => {
+        runConfirmed();
+      },
+    })
   );
 }

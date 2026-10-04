@@ -97,7 +97,8 @@
       "props": {
         "granularity": "month",
         "resettable": true
-      }
+      },
+      "align": "left"
     },
     {
       "id": "row_charts",

@@ -36,6 +36,26 @@
           "validations": [
             "required"
           ]
+        },
+        {
+          "id": "f_status",
+          "kind": "field",
+          "name": "status",
+          "fieldType": "enum",
+          "label": "Estado del contrato",
+          "validations": [],
+          "options": [
+            {
+              "value": "vigente",
+              "label": "Firmado · empieza a facturar",
+              "icon": "FileCheck"
+            },
+            {
+              "value": "borrador",
+              "label": "Borrador · todavía no se firma",
+              "icon": "FilePen"
+            }
+          ]
         }
       ]
     },
@@ -153,6 +173,17 @@
           ]
         },
         {
+          "id": "f_fx",
+          "kind": "field",
+          "name": "fx_rate",
+          "fieldType": "number",
+          "label": "Cotización pactada (contratos en dólares)",
+          "width": "half",
+          "validations": [],
+          "placeholder": "Ej: 1450 — vacío usa la del mercado",
+          "help": "Si el contrato en dólares fijó por escrito a qué valor se paga, va acá y gana sobre la cotización del día. En un contrato en pesos se deja vacío."
+        },
+        {
           "id": "f_rent",
           "kind": "field",
           "name": "rent_amount",
@@ -192,9 +223,7 @@
           "fieldType": "enum",
           "label": "Índice de actualización",
           "width": "half",
-          "validations": [
-            "required"
-          ],
+          "validations": [],
           "options": [
             {
               "value": "ICL",
@@ -216,7 +245,8 @@
               "value": "otro",
               "label": "Otro"
             }
-          ]
+          ],
+          "placeholder": "Sin actualización — el precio no cambia solo"
         },
         {
           "id": "f_period",
@@ -225,9 +255,7 @@
           "fieldType": "enum",
           "label": "Se actualiza cada",
           "width": "half",
-          "validations": [
-            "required"
-          ],
+          "validations": [],
           "options": [
             {
               "value": "3",
@@ -245,7 +273,17 @@
               "value": "12",
               "label": "12 meses"
             }
-          ]
+          ],
+          "showWhen": {
+            "column": "adjustment_index",
+            "values": [
+              "ICL",
+              "IPC",
+              "casa_propia",
+              "fijo",
+              "otro"
+            ]
+          }
         }
       ]
     },

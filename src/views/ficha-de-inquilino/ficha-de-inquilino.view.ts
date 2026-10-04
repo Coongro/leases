@@ -4,7 +4,7 @@
  * ⚠️ ARCHIVO REGENERABLE: se reescribe al guardar el diseño en el Builder.
  * La lógica custom va en `handlers.ts` (nunca se pisa). Diseño: `spec.json`.
  */
-import { getHostReact, getHostUI, useIsMobile, views } from '@coongro/plugin-sdk';
+import { getHostReact, getHostUI, useAccess, useIsMobile, views } from '@coongro/plugin-sdk';
 
 import { useFichaDeInquilinoView } from './use-ficha-de-inquilino.js';
 
@@ -15,6 +15,7 @@ const h = React.createElement;
 const UI = getHostUI() as any;
 
 export function FichaDeInquilinoView() {
+  const access = useAccess();
   const isMobile = useIsMobile();
   // Tono del badge: el que devuelven los datos, y si no el del diseño.
   // ⚠️ MISMO mapa que el TONE_VARIANT de las tablas: el mismo estado tiene
@@ -470,9 +471,6 @@ export function FichaDeInquilinoView() {
           onSortChange,
           pagination: { page, pageSize: 20, total: visibleRows.length },
           onPageChange: setPage,
-          onRowClick: (row: any) => {
-            views.open('leases.inquilino.open', { record: row }, { mode: 'dialog' });
-          },
           density: 'compact' as const,
           mobileRender: (row: any) =>
             h(
@@ -625,20 +623,22 @@ export function FichaDeInquilinoView() {
           h(
             'div',
             { style: { display: 'flex', gap: '9px', flexShrink: 0 } },
-            h(
-              UI.Button,
-              {
-                variant: 'secondary',
-                onClick: () => {
-                  views.open(
-                    'leases.inquilino.open',
-                    { record: (views.params as any)?.record ?? null },
-                    { mode: 'dialog' }
-                  );
-                },
-              },
-              'Editar datos'
-            )
+            access.canOpen('leases.inquilino.open')
+              ? h(
+                  UI.Button,
+                  {
+                    variant: 'secondary',
+                    onClick: () => {
+                      views.open(
+                        'leases.inquilino.open',
+                        { record: (views.params as any)?.record ?? null },
+                        { mode: 'dialog' }
+                      );
+                    },
+                  },
+                  'Editar datos'
+                )
+              : null
           )
         )
       ),
@@ -1090,13 +1090,7 @@ export function FichaDeInquilinoView() {
                     { 'data-cg-block-id': 'kv_datos', style: { display: 'contents' } },
                     h(
                       'div',
-                      {
-                        style: {
-                          display: 'grid',
-                          gridTemplateColumns: 'auto 1fr',
-                          columnGap: '18px',
-                        },
-                      },
+                      { style: { display: 'grid', gridTemplateColumns: 'auto 1fr' } },
                       h(
                         React.Fragment,
                         { key: 'Documento' },
@@ -1110,7 +1104,7 @@ export function FichaDeInquilinoView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1125,7 +1119,9 @@ export function FichaDeInquilinoView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1145,7 +1141,7 @@ export function FichaDeInquilinoView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1160,7 +1156,9 @@ export function FichaDeInquilinoView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1180,7 +1178,7 @@ export function FichaDeInquilinoView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1195,7 +1193,9 @@ export function FichaDeInquilinoView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1215,8 +1215,7 @@ export function FichaDeInquilinoView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
-                              borderBottom: '1px solid var(--cg-border-light)',
+                              padding: '8px 18px 8px 0',
                             },
                           },
                           h(UI.DynamicIcon, { icon: 'MapPin', size: 14 }),
@@ -1230,8 +1229,9 @@ export function FichaDeInquilinoView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
-                              borderBottom: '1px solid var(--cg-border-light)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                             },
                           },
                           metric('kv_datos.Domicilio', 'value', 'Belgrano 1240, 1°B')
@@ -1263,13 +1263,7 @@ export function FichaDeInquilinoView() {
                     { 'data-cg-block-id': 'kv_hist', style: { display: 'contents' } },
                     h(
                       'div',
-                      {
-                        style: {
-                          display: 'grid',
-                          gridTemplateColumns: 'auto 1fr',
-                          columnGap: '18px',
-                        },
-                      },
+                      { style: { display: 'grid', gridTemplateColumns: 'auto 1fr' } },
                       h(
                         React.Fragment,
                         { key: 'Contratos firmados' },
@@ -1283,7 +1277,7 @@ export function FichaDeInquilinoView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1298,7 +1292,9 @@ export function FichaDeInquilinoView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1318,7 +1314,7 @@ export function FichaDeInquilinoView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1333,7 +1329,9 @@ export function FichaDeInquilinoView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1353,8 +1351,7 @@ export function FichaDeInquilinoView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
-                              borderBottom: '1px solid var(--cg-border-light)',
+                              padding: '8px 18px 8px 0',
                             },
                           },
                           h(UI.DynamicIcon, { icon: 'ReceiptText', size: 14 }),
@@ -1368,8 +1365,9 @@ export function FichaDeInquilinoView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
-                              borderBottom: '1px solid var(--cg-border-light)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                             },
                           },
                           metric('kv_hist.Cargos emitidos', 'value', '2')
@@ -1388,9 +1386,8 @@ export function FichaDeInquilinoView() {
                               fontSize: '13.5px',
                               fontWeight: 600,
                               color: 'var(--cg-text)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderTop: '1px solid var(--cg-border)',
-                              borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
                           h(UI.DynamicIcon, { icon: 'CircleCheck', size: 14 }),
@@ -1405,9 +1402,10 @@ export function FichaDeInquilinoView() {
                               color: 'var(--cg-text)',
                               fontFamily: 'var(--cg-font-serif)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderTop: '1px solid var(--cg-border)',
-                              borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
                           metric('kv_hist.Total cobrado', 'value', '$0')
