@@ -58,6 +58,27 @@ export function useCobranzasFidelidadView() {
     },
     [metrics]
   );
+
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    title: string;
+    message: string;
+    confirmLabel: string;
+    run: () => void;
+  } | null>(null);
+  const askConfirm = useCallback(
+    (title: string, message: string, confirmLabel: string, run: () => void) => {
+      setPendingConfirm({ title, message, confirmLabel, run });
+    },
+    []
+  );
+  const cancelConfirm = useCallback(() => {
+    setPendingConfirm(null);
+  }, []);
+  const runConfirmed = useCallback(() => {
+    const pend = pendingConfirm;
+    setPendingConfirm(null);
+    pend?.run();
+  }, [pendingConfirm]);
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -123,15 +144,15 @@ export function useCobranzasFidelidadView() {
     { key: 'total_due', label: 'A pagar', display: 'mono', format: 'money' },
     { key: 'paid', label: 'Cobrado', display: 'mono', format: 'money' },
     { key: 'balance', label: 'Saldo', display: 'mono', format: 'money' },
+    { key: 'days_late', label: 'Atraso', display: 'mono', suffix: ' días', emptyLabel: '—' },
     {
       key: 'status',
       label: 'Estado',
       display: 'pill',
       values: [
-        { value: 'open', label: 'Emitido', tone: 'outline', icon: 'FileText' },
-        { value: 'partial', label: 'Parcial', tone: 'warning', icon: 'CirclePercent' },
-        { value: 'paid', label: 'Pagado', tone: 'success', icon: 'CircleCheck' },
-        { value: 'overdue', label: 'Vencido', tone: 'danger', icon: 'TriangleAlert' },
+        { value: 'open', label: 'Emitido', tone: 'outline' },
+        { value: 'overdue', label: 'Vencido', tone: 'danger' },
+        { value: 'closed', label: 'Cerrado', tone: 'success' },
       ],
     },
   ];
@@ -294,6 +315,10 @@ export function useCobranzasFidelidadView() {
   return {
     metric,
     reloadMetrics,
+    pendingConfirm,
+    askConfirm,
+    cancelConfirm,
+    runConfirmed,
     sort,
     onSortChange,
     filters,

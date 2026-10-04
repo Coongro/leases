@@ -121,3 +121,41 @@ export function proposeLateFee(
   });
   return { amount: r.amount, detail: r.detail, daysLate: r.daysLate };
 }
+
+/**
+ * Lo que falta cobrar de punitorio hoy, descontando lo que ya se cobró antes.
+ *
+ * `calcLateFee` devuelve el interés ACUMULADO desde el vencimiento, no el del día. Y el
+ * saldo de la cuenta incluye los punitorios ya cargados. Cobrando el acumulado entero
+ * contra ese saldo, cada barrido recalculaba todo el período sobre una base que el
+ * barrido anterior había inflado: al día 5 se cobraban $13.000 sobre una deuda de
+ * $520.000, y al día 10 otros $26.650 sobre $533.000, cuando los diez días son $26.000.
+ * Un 52 % de más, que se acelera con cada corrida.
+ *
+ * Por eso la cuenta se hace en dos pasos: la DEUDA es el saldo sin los punitorios, y de
+ * lo acumulado sobre esa deuda se descuenta lo ya cobrado.
+ */
+export function pendingLateFee({
+  balance,
+  chargedSoFar,
+  cargo,
+  policy,
+  asOf,
+}: {
+  /** Saldo de la cuenta, con los punitorios ya cargados adentro. */
+  balance: string;
+  /** Suma de los punitorios ya cobrados en esta cuenta. */
+  chargedSoFar: number;
+  cargo: { due_date?: string | null; status: string; late_fee_percent?: string | null };
+  policy: LateFeePolicy;
+  asOf?: string;
+}): Punitorio {
+  const deuda = Number(balance || 0) - chargedSoFar;
+  if (!Number.isFinite(deuda) || deuda <= 0) return { amount: '0', detail: '', daysLate: 0 };
+
+  const acumulado = proposeLateFee({ ...cargo, balance: String(deuda) }, policy, asOf);
+  const aCobrar = Math.round(Number(acumulado.amount) - chargedSoFar);
+  if (aCobrar <= 0) return { amount: '0', detail: acumulado.detail, daysLate: acumulado.daysLate };
+
+  return { amount: String(aCobrar), detail: acumulado.detail, daysLate: acumulado.daysLate };
+}

@@ -325,10 +325,9 @@ export function useFichaDeInquilinoView() {
         label: 'Estado',
         display: 'pill',
         values: [
-          { value: 'open', label: 'Emitido', tone: 'outline', icon: 'FileText' },
-          { value: 'partial', label: 'Parcial', tone: 'warning', icon: 'CirclePercent' },
-          { value: 'paid', label: 'Pagado', tone: 'success', icon: 'CircleCheck' },
-          { value: 'overdue', label: 'Vencido', tone: 'danger', icon: 'TriangleAlert' },
+          { value: 'open', label: 'Emitido', tone: 'outline' },
+          { value: 'overdue', label: 'Vencido', tone: 'danger' },
+          { value: 'closed', label: 'Cerrado', tone: 'success' },
         ],
       },
     ];
@@ -454,5 +453,10 @@ export function useFichaDeInquilinoView() {
   };
   const t2 = useTable2();
 
-  return { metric, reloadMetrics, t1, t2 };
+  const reloadTables = useCallback(() => {
+    void t1.load();
+    void t2.load();
+  }, [t1, t2]);
+
+  return { metric, reloadMetrics, t1, t2, reloadTables };
 }

@@ -4,7 +4,7 @@
  * ⚠️ ARCHIVO REGENERABLE: se reescribe al guardar el diseño en el Builder.
  * La lógica custom va en `handlers.ts` (nunca se pisa). Diseño: `spec.json`.
  */
-import { getHostReact, getHostUI, useIsMobile, views } from '@coongro/plugin-sdk';
+import { getHostReact, getHostUI, useAccess, useIsMobile, views } from '@coongro/plugin-sdk';
 
 import { useInquilinosView } from './use-inquilinos.js';
 
@@ -15,6 +15,7 @@ const h = React.createElement;
 const UI = getHostUI() as any;
 
 export function InquilinosView() {
+  const access = useAccess();
   const isMobile = useIsMobile();
   const {
     pendingConfirm,
@@ -178,6 +179,7 @@ export function InquilinosView() {
       onClick: (row: any) => {
         views.open('leases.inquilino.open', { record: row }, { mode: 'dialog' });
       },
+      hidden: () => !access.canOpen('leases.inquilino.open'),
     },
     {
       label: 'Eliminar',
@@ -195,6 +197,7 @@ export function InquilinosView() {
           }
         );
       },
+      hidden: () => !access.canRun('leases.contracts.deleteTenant'),
     },
   ];
   const renderTable = () =>
@@ -418,16 +421,18 @@ export function InquilinosView() {
           h(UI.PageHeader, {
             title: 'Inquilinos',
             subtitle: 'Quiénes alquilan hoy y quiénes alquilaron antes.',
-            action: h(
-              UI.Button,
-              {
-                variant: 'default',
-                onClick: () => {
-                  views.open('leases.inquilino.open', undefined, { mode: 'dialog' });
-                },
-              },
-              'Nuevo inquilino'
-            ),
+            action: access.canOpen('leases.inquilino.open')
+              ? h(
+                  UI.Button,
+                  {
+                    variant: 'default',
+                    onClick: () => {
+                      views.open('leases.inquilino.open', undefined, { mode: 'dialog' });
+                    },
+                  },
+                  'Nuevo inquilino'
+                )
+              : null,
           })
         )
       ),

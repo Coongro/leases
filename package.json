@@ -1,6 +1,6 @@
 {
   "name": "@coongro/leases",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "description": "Contratos de alquiler: plazo, precio y periodicidad de actualización, inquilinos y garantías. Registra el vínculo entre una unidad y quien la alquila, con su depósito, su día de vencimiento y las renovaciones.",
   "main": "dist/index.js",
@@ -34,6 +34,7 @@
     "quality": "npm run typecheck && npm run format:check && npm run lint && npm run test",
     "quality:fix": "npm run format && npm run lint:fix",
     "sync-version": "node scripts/sync-version.cjs",
+    "version-packages": "node ../../scripts/version-packages.mjs",
     "version": "npm run sync-version && git add coongro.manifest.json",
     "prepublishOnly": "npm run quality && npm run build",
     "build": "npm run build:css && npm run copy:fontawesome && tsc",

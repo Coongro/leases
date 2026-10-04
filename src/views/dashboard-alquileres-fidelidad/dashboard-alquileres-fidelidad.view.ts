@@ -948,20 +948,24 @@ export function DashboardAlquileresFidelidadView() {
       h(
         'div',
         { 'data-cg-block-id': 'periodo', style: { display: 'contents' } },
-        h(UI.PeriodPicker, {
-          value: periodValue,
-          onChange: (period: string) => {
-            setPeriodValue(period);
-            customHandlers.onPeriodChange?.({
-              period,
-              reload: () => {
-                void t1.load();
-                void t2.load();
-                reloadMetrics();
-              },
-            });
-          },
-        })
+        h(
+          'div',
+          { style: { display: 'flex', justifyContent: 'flex-start' } },
+          h(UI.PeriodPicker, {
+            value: periodValue,
+            onChange: (period: string) => {
+              setPeriodValue(period);
+              customHandlers.onPeriodChange?.({
+                period,
+                reload: () => {
+                  void t1.load();
+                  void t2.load();
+                  reloadMetrics();
+                },
+              });
+            },
+          })
+        )
       ),
       h(
         'div',
@@ -1249,13 +1253,7 @@ export function DashboardAlquileresFidelidadView() {
                     { 'data-cg-block-id': 'kv_mes', style: { display: 'contents' } },
                     h(
                       'div',
-                      {
-                        style: {
-                          display: 'grid',
-                          gridTemplateColumns: 'auto 1fr',
-                          columnGap: '18px',
-                        },
-                      },
+                      { style: { display: 'grid', gridTemplateColumns: 'auto 1fr' } },
                       h(
                         React.Fragment,
                         { key: 'Facturado' },
@@ -1269,7 +1267,7 @@ export function DashboardAlquileresFidelidadView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1284,7 +1282,9 @@ export function DashboardAlquileresFidelidadView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1304,7 +1304,7 @@ export function DashboardAlquileresFidelidadView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1319,7 +1319,9 @@ export function DashboardAlquileresFidelidadView() {
                               fontWeight: 500,
                               color: 'var(--cg-success)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1339,8 +1341,7 @@ export function DashboardAlquileresFidelidadView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
-                              borderBottom: '1px solid var(--cg-border-light)',
+                              padding: '8px 18px 8px 0',
                             },
                           },
                           h(UI.DynamicIcon, { icon: 'Clock', size: 14 }),
@@ -1354,8 +1355,9 @@ export function DashboardAlquileresFidelidadView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
-                              borderBottom: '1px solid var(--cg-border-light)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                             },
                           },
                           metric('kv_mes.Por cobrar', 'value', '$780.000')
@@ -1374,9 +1376,8 @@ export function DashboardAlquileresFidelidadView() {
                               fontSize: '13.5px',
                               fontWeight: 600,
                               color: 'var(--cg-text)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderTop: '1px solid var(--cg-border)',
-                              borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
                           h(UI.DynamicIcon, { icon: 'Wallet', size: 14 }),
@@ -1391,9 +1392,10 @@ export function DashboardAlquileresFidelidadView() {
                               color: 'var(--cg-text)',
                               fontFamily: 'var(--cg-font-serif)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderTop: '1px solid var(--cg-border)',
-                              borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
                           metric('kv_mes.Saldo del mes', 'value', '$1.285.000')
@@ -1437,13 +1439,7 @@ export function DashboardAlquileresFidelidadView() {
                     { 'data-cg-block-id': 'kv_cartera', style: { display: 'contents' } },
                     h(
                       'div',
-                      {
-                        style: {
-                          display: 'grid',
-                          gridTemplateColumns: 'auto 1fr',
-                          columnGap: '18px',
-                        },
-                      },
+                      { style: { display: 'grid', gridTemplateColumns: 'auto 1fr' } },
                       h(
                         React.Fragment,
                         { key: 'Propiedades' },
@@ -1457,7 +1453,7 @@ export function DashboardAlquileresFidelidadView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1472,7 +1468,9 @@ export function DashboardAlquileresFidelidadView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1492,7 +1490,7 @@ export function DashboardAlquileresFidelidadView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1507,7 +1505,9 @@ export function DashboardAlquileresFidelidadView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1527,7 +1527,7 @@ export function DashboardAlquileresFidelidadView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1542,7 +1542,9 @@ export function DashboardAlquileresFidelidadView() {
                               fontWeight: 500,
                               color: 'var(--cg-success)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1562,8 +1564,7 @@ export function DashboardAlquileresFidelidadView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
-                              borderBottom: '1px solid var(--cg-border-light)',
+                              padding: '8px 18px 8px 0',
                             },
                           },
                           h(UI.DynamicIcon, { icon: 'DoorOpen', size: 14 }),
@@ -1577,8 +1578,9 @@ export function DashboardAlquileresFidelidadView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
-                              borderBottom: '1px solid var(--cg-border-light)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                             },
                           },
                           metric('kv_cartera.Vacantes', 'value', '2')

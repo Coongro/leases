@@ -1,0 +1,1 @@
+ALTER TABLE "module_leases_leases" ADD COLUMN "fx_rate" numeric;

@@ -4,7 +4,7 @@
  * ⚠️ ARCHIVO REGENERABLE: se reescribe al guardar el diseño en el Builder.
  * La lógica custom va en `handlers.ts` (nunca se pisa). Diseño: `spec.json`.
  */
-import { getHostReact, getHostUI, useIsMobile } from '@coongro/plugin-sdk';
+import { getHostReact, getHostUI, useAccess, useIsMobile } from '@coongro/plugin-sdk';
 
 import { customHandlers } from './handlers.js';
 import { useCobranzasFidelidadView } from './use-cobranzas-fidelidad.js';
@@ -17,6 +17,7 @@ const h = React.createElement;
 const UI = getHostUI() as any;
 
 export function CobranzasFidelidadView() {
+  const access = useAccess();
   const isMobile = useIsMobile();
   // Mes elegido en el selector. Vive acá y no dentro del componente porque
   // recargar los datos re-renderiza la vista: con el estado adentro, el
@@ -26,6 +27,10 @@ export function CobranzasFidelidadView() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   });
   const {
+    pendingConfirm,
+    askConfirm,
+    cancelConfirm,
+    runConfirmed,
     loading,
     visibleRows,
     COLUMNS,
@@ -206,7 +211,9 @@ export function CobranzasFidelidadView() {
       onClick: (row: any) => {
         void runServerAction('leases.billing.chargeLateFee', { id: row.id }, row);
       },
-      hidden: (row: any) => !['proponer'].includes(String(row?.['late_fee_state'] ?? '')),
+      hidden: (row: any) =>
+        !access.canRun('leases.billing.chargeLateFee') ||
+        !['proponer'].includes(String(row?.['late_fee_state'] ?? '')),
     },
   ];
   const renderTable = () =>
@@ -426,24 +433,27 @@ export function CobranzasFidelidadView() {
           h(UI.PageHeader, {
             title: 'Cobranzas',
             subtitle: 'Los cargos del período y cómo viene la cobranza.',
-            action: h(
-              UI.Button,
-              {
-                variant: 'default',
-                onClick: () => {
-                  if (
-                    !window.confirm(
-                      'Se generan los cargos de todos los contratos vigentes del período. Si ya estaban generados, no se duplican.'
-                    )
-                  )
-                    return;
-                  (() => {
-                    void runServerAction('leases.billing.generateForPeriod');
-                  })();
-                },
-              },
-              'Generar cargos del mes'
-            ),
+            action: access.canRun('leases.billing.generateForPeriod')
+              ? h(
+                  UI.Button,
+                  {
+                    variant: 'default',
+                    onClick: () => {
+                      askConfirm(
+                        'Generar cargos del mes',
+                        'Se generan los cargos de todos los contratos vigentes del período. Si ya estaban generados, no se duplican.',
+                        'Generar cargos del mes',
+                        () => {
+                          (() => {
+                            void runServerAction('leases.billing.generateForPeriod');
+                          })();
+                        }
+                      );
+                    },
+                  },
+                  'Generar cargos del mes'
+                )
+              : null,
           })
         )
       ),
@@ -803,21 +813,37 @@ export function CobranzasFidelidadView() {
       h(
         'div',
         { 'data-cg-block-id': 'periodo', style: { display: 'contents' } },
-        h(UI.PeriodPicker, {
-          value: periodValue,
-          onChange: (period: string) => {
-            setPeriodValue(period);
-            customHandlers.onPeriodChange?.({
-              period,
-              reload: () => {
-                void load();
-                reloadMetrics();
-              },
-            });
-          },
-        })
+        h(
+          'div',
+          { style: { display: 'flex', justifyContent: 'flex-start' } },
+          h(UI.PeriodPicker, {
+            value: periodValue,
+            onChange: (period: string) => {
+              setPeriodValue(period);
+              customHandlers.onPeriodChange?.({
+                period,
+                reload: () => {
+                  void load();
+                  reloadMetrics();
+                },
+              });
+            },
+          })
+        )
       ),
       h('div', { 'data-cg-block-id': 'tbl', style: { display: 'contents' } }, renderTable())
-    )
+    ),
+    h(UI.ConfirmDialog, {
+      open: !!pendingConfirm,
+      onOpenChange: (o: boolean) => {
+        if (!o) cancelConfirm();
+      },
+      title: pendingConfirm?.title ?? '',
+      description: pendingConfirm?.message ?? '',
+      confirmLabel: pendingConfirm?.confirmLabel ?? 'Confirmar',
+      onConfirm: () => {
+        runConfirmed();
+      },
+    })
   );
 }

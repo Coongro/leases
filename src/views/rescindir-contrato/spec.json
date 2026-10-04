@@ -65,7 +65,47 @@
           "fieldType": "text",
           "label": "Detalle",
           "validations": [],
-          "placeholder": "Ej: entregó las llaves el 20/07, se descuenta la multa del depósito"
+          "placeholder": "Ej: entregó las llaves el 20/07, quedó a deber el mes de julio"
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "kind": "container",
+      "ctype": "card",
+      "label": "Multa por rescisión anticipada",
+      "icon": "Gavel",
+      "children": [
+        {
+          "id": "f_penalty",
+          "kind": "field",
+          "name": "penalty",
+          "fieldType": "enum",
+          "label": "Qué se hace con la multa",
+          "validations": [],
+          "options": [
+            {
+              "value": "cobrar",
+              "label": "Cobrarla",
+              "icon": "ReceiptText"
+            },
+            {
+              "value": "eximir",
+              "label": "No cobrarla",
+              "icon": "HandHeart"
+            }
+          ],
+          "help": "Se propone lo que pactó el contrato. Es negociable: se cobra entera, se cobra una parte o se condona."
+        },
+        {
+          "id": "f_penalty_amount",
+          "kind": "field",
+          "name": "penaltyAmount",
+          "fieldType": "money",
+          "label": "Importe",
+          "validations": [],
+          "placeholder": "Ej: 1560000",
+          "help": "Se propone lo que pactó el contrato. Si elegís no cobrarla, este importe no se usa."
         }
       ]
     }
@@ -80,17 +120,18 @@
       {
         "hook": "onInit",
         "mode": "uiOnly",
-        "reason": "Propone la fecha de rescisión a partir del contrato abierto; no consulta ni modifica datos."
+        "reason": "Propone la fecha de rescisión y el importe de la multa a partir del contrato abierto; no consulta ni modifica datos."
       },
       {
         "hook": "onSubmit",
         "mode": "command",
-        "action": "leases.contracts.terminate",
+        "action": "leases.billing.terminateLease",
         "effect": "write",
         "confirmation": "always",
         "preconditions": [
           "El contrato no puede estar ya rescindido.",
-          "La fecha no puede ser anterior al inicio del contrato."
+          "La fecha no puede ser anterior al inicio del contrato.",
+          "La multa sólo se emite si se eligió cobrarla."
         ]
       }
     ]

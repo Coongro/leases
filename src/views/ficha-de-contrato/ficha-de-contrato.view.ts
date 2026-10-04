@@ -4,7 +4,7 @@
  * ⚠️ ARCHIVO REGENERABLE: se reescribe al guardar el diseño en el Builder.
  * La lógica custom va en `handlers.ts` (nunca se pisa). Diseño: `spec.json`.
  */
-import { getHostReact, getHostUI, useIsMobile, views } from '@coongro/plugin-sdk';
+import { getHostReact, getHostUI, useAccess, useIsMobile, views } from '@coongro/plugin-sdk';
 
 import { useFichaDeContratoView } from './use-ficha-de-contrato.js';
 
@@ -15,6 +15,7 @@ const h = React.createElement;
 const UI = getHostUI() as any;
 
 export function FichaDeContratoView() {
+  const access = useAccess();
   const isMobile = useIsMobile();
   // Tono del badge: el que devuelven los datos, y si no el del diseño.
   // ⚠️ MISMO mapa que el TONE_VARIANT de las tablas: el mismo estado tiene
@@ -36,11 +37,12 @@ export function FichaDeContratoView() {
     t1,
     t2,
     t3,
+    t4,
     runServerAction,
     metric,
   } = useFichaDeContratoView();
 
-  // ── tabla 1: render propio sobre su estado t1 ──
+  // ── tabla 1 — leases.contracts: render propio sobre su estado t1 ──
   const renderTable1 = (() => {
     const {
       loading,
@@ -270,7 +272,7 @@ export function FichaDeContratoView() {
       );
     return renderTable;
   })();
-  // ── tabla 2: render propio sobre su estado t2 ──
+  // ── tabla 2 — leases.contracts: render propio sobre su estado t2 ──
   const renderTable2 = (() => {
     const {
       loading,
@@ -500,7 +502,7 @@ export function FichaDeContratoView() {
       );
     return renderTable;
   })();
-  // ── tabla 3: render propio sobre su estado t3 ──
+  // ── tabla 3 — leases.contracts: render propio sobre su estado t3 ──
   const renderTable3 = (() => {
     const {
       loading,
@@ -664,6 +666,7 @@ export function FichaDeContratoView() {
             }
           );
         },
+        hidden: () => !access.canRun('leases.charges.delete'),
       },
     ];
     // eslint-disable-next-line sonarjs/prefer-immediate-return
@@ -825,6 +828,329 @@ export function FichaDeContratoView() {
       );
     return renderTable;
   })();
+  // ── tabla 4 — leases.contracts: render propio sobre su estado t4 ──
+  const renderTable4 = (() => {
+    const {
+      loading,
+      visibleRows,
+      sort,
+      onSortChange,
+      cellValue,
+      search,
+      setSearch,
+      clearFilters,
+      page,
+      setPage,
+      pagedRows,
+      SUB_COL,
+      ITEM_COLS,
+    } = t4;
+    const cellText = (row: any, c: any) => {
+      const v = cellValue(row, c);
+      return v === null || v === undefined
+        ? ''
+        : typeof v === 'object'
+          ? JSON.stringify(v)
+          : String(v);
+    };
+    const TONE_VARIANT: Record<string, string> = {
+      neutral: 'neutral-soft',
+      success: 'success-soft',
+      warning: 'warning-soft',
+      danger: 'danger-soft',
+      outline: 'outline',
+    };
+    const enumVal = (c: any, raw: string) => (c.values ?? []).find((e: any) => e.value === raw);
+    const renderCell = (row: any, c: any) => {
+      const raw = cellText(row, c);
+      if (raw === '' && c.emptyLabel) {
+        return h(
+          'span',
+          {
+            style: {
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: 'var(--cg-text-muted)',
+            },
+          },
+          c.emptyIcon ? h(UI.DynamicIcon, { icon: c.emptyIcon, size: 15 }) : null,
+          c.emptyLabel
+        );
+      }
+      const ev = enumVal(c, raw);
+      const label = ev?.label ?? raw;
+      const shown = raw !== '' ? (c.prefix ?? '') + label + (c.suffix ?? '') : label;
+      if (c.display === 'avatar') {
+        const initial = (String(raw).trim().charAt(0) || '?').toUpperCase();
+        return h(
+          'span',
+          { style: { display: 'inline-flex', alignItems: 'center', gap: '8px', minWidth: 0 } },
+          h(
+            'span',
+            {
+              style: {
+                width: '26px',
+                height: '26px',
+                borderRadius: '50%',
+                flexShrink: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'var(--cg-gold-soft)',
+                border: '1px solid var(--cg-gold-lt)',
+                color: 'var(--cg-gold-deep)',
+                fontWeight: 700,
+                fontSize: '11px',
+              },
+            },
+            initial
+          ),
+          h('span', null, shown)
+        );
+      }
+      const iconName = ev?.icon;
+      const icon = iconName ? h(UI.DynamicIcon, { icon: iconName, size: 16 }) : null;
+      if (c.display === 'pill') {
+        return label
+          ? h(
+              UI.Badge,
+              {
+                variant: TONE_VARIANT[ev?.tone ?? c.tone ?? 'neutral'] ?? 'neutral-soft',
+                size: 'compact',
+                icon,
+              },
+              label
+            )
+          : '';
+      }
+      if (c.display === 'progress') {
+        const n = Math.max(0, Math.min(100, Number(cellValue(row, c)) || 0));
+        return h(
+          'div',
+          { style: { display: 'flex', alignItems: 'center', gap: '8px', minWidth: '90px' } },
+          h(
+            'div',
+            {
+              style: {
+                flex: '1 1 0',
+                height: '6px',
+                borderRadius: '999px',
+                background: 'var(--cg-bg-secondary)',
+                overflow: 'hidden',
+              },
+            },
+            h('div', {
+              style: {
+                width: n + '%',
+                height: '100%',
+                borderRadius: '999px',
+                background: 'var(--cg-gold)',
+              },
+            })
+          ),
+          h(
+            'span',
+            { style: { fontSize: '12px', color: 'var(--cg-text-muted)' } },
+            Math.round(n) + '%'
+          )
+        );
+      }
+      if (c.display === 'mono')
+        return h(
+          'span',
+          { style: { fontFamily: 'ui-monospace, monospace', fontSize: '12px' } },
+          shown
+        );
+      return icon
+        ? h(
+            'span',
+            { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
+            icon,
+            shown
+          )
+        : shown;
+    };
+    const ROW_ACTIONS = [
+      {
+        label: 'Quitar',
+        variant: 'destructive' as const,
+        icon: 'Trash2',
+        onClick: (row: any) => {
+          askConfirm(
+            'Quitar',
+            'Deja de figurar como firmante del contrato. El contrato y el inquilino principal no cambian.',
+            'Quitar',
+            () => {
+              ((row: any) => {
+                void runServerAction('leases.coTenants.delete', { id: row.id }, row);
+              })(row);
+            }
+          );
+        },
+        hidden: () => !access.canRun('leases.coTenants.delete'),
+      },
+    ];
+    // eslint-disable-next-line sonarjs/prefer-immediate-return
+    const renderTable = () =>
+      h(
+        'div',
+        {
+          style: {
+            background: 'var(--cg-bg)',
+            border: '1px solid var(--cg-border)',
+            borderRadius: '14px',
+            padding: '20px',
+          },
+        },
+        h(UI.DataTable, {
+          data: pagedRows,
+          rowKey: (row: any) => String(row.id ?? JSON.stringify(row)),
+          loading,
+          columns: ITEM_COLS.map((c, ci) => ({
+            key: c.key,
+            header: c.label,
+            sortable: true,
+            render: (row: any) =>
+              ci === 0 && SUB_COL
+                ? h(
+                    'div',
+                    { style: { display: 'flex', flexDirection: 'column' as const, gap: '2px' } },
+                    h('div', null, renderCell(row, c)),
+                    h(
+                      'div',
+                      { style: { fontSize: '12px', color: 'var(--cg-text-muted)' } },
+                      renderCell(row, SUB_COL)
+                    )
+                  )
+                : renderCell(row, c),
+          })),
+          searchPlaceholder: 'Buscar…',
+          searchValue: search,
+          onSearchChange: setSearch,
+          sortKey: sort?.k ?? null,
+          sortDirection: sort ? (sort.d > 0 ? 'asc' : 'desc') : null,
+          onSortChange,
+          pagination: { page, pageSize: 10, total: visibleRows.length },
+          onPageChange: setPage,
+          onRowClick: (row: any) => {
+            views.open('leases.co-firmante-del-contrato.open', { record: row }, { mode: 'sheet' });
+          },
+          actions: ROW_ACTIONS,
+          view: 'list' as const,
+          renderItem: (row: any) =>
+            h(
+              'div',
+              { style: { display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 } },
+              h(
+                'div',
+                {
+                  style: {
+                    minWidth: 0,
+                    flex: '1 1 auto',
+                    display: 'flex',
+                    flexDirection: 'column' as const,
+                    gap: '2px',
+                  },
+                },
+                h(
+                  'div',
+                  null,
+                  h(
+                    'div',
+                    { style: { fontSize: '14px', fontWeight: 600, color: 'var(--cg-text)' } },
+                    renderCell(row, ITEM_COLS[0])
+                  ),
+                  SUB_COL
+                    ? h(
+                        'div',
+                        {
+                          style: {
+                            fontSize: '12px',
+                            color: 'var(--cg-text-muted)',
+                            marginTop: '1px',
+                          },
+                        },
+                        renderCell(row, SUB_COL)
+                      )
+                    : null
+                ),
+                ITEM_COLS.length > 2
+                  ? h(
+                      'div',
+                      {
+                        style: {
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          flexWrap: 'wrap' as const,
+                          fontSize: '12.5px',
+                          color: 'var(--cg-text-muted)',
+                        },
+                      },
+                      ...ITEM_COLS.slice(1, ITEM_COLS.length - 1).map((c) =>
+                        h(
+                          'span',
+                          { key: c.key, style: { display: 'inline-flex', minWidth: 0 } },
+                          renderCell(row, c)
+                        )
+                      )
+                    )
+                  : null
+              ),
+              ITEM_COLS.length > 1
+                ? h(
+                    'div',
+                    { style: { flexShrink: 0, display: 'flex', alignItems: 'center' } },
+                    renderCell(row, ITEM_COLS[ITEM_COLS.length - 1])
+                  )
+                : null,
+              h(
+                'div',
+                {
+                  style: {
+                    display: 'flex',
+                    gap: '4px',
+                    justifyContent: 'flex-end',
+                    borderTop: '1px solid var(--cg-border-light)',
+                    paddingTop: '8px',
+                    marginTop: '2px',
+                  },
+                },
+                ...ROW_ACTIONS.filter((a2: any) => !a2.hidden?.(row)).map((a2: any) =>
+                  h(
+                    UI.Button,
+                    {
+                      key: a2.label,
+                      size: 'sm' as const,
+                      variant:
+                        a2.variant === 'destructive'
+                          ? ('destructive' as const)
+                          : ('ghost' as const),
+                      onClick: (e: any) => {
+                        e.stopPropagation();
+                        a2.onClick(row);
+                      },
+                    },
+                    a2.label
+                  )
+                )
+              )
+            ),
+          onClearFilters: () => {
+            clearFilters();
+          },
+          emptyState: {
+            title: 'Firma solo el inquilino principal',
+            description:
+              'Sumá al cónyuge, un cotitular o un fiador solidario si responden junto con él.',
+            filteredTitle: 'Sin resultados',
+            filteredDescription: 'Probá con otros términos o ajustá los filtros.',
+          },
+        })
+      );
+    return renderTable;
+  })();
 
   return h(
     'div',
@@ -924,34 +1250,54 @@ export function FichaDeContratoView() {
           h(
             'div',
             { style: { display: 'flex', gap: '9px', flexShrink: 0 } },
-            h(
-              UI.Button,
-              {
-                variant: 'secondary',
-                onClick: () => {
-                  views.open(
-                    'leases.renovar-contrato.open',
-                    { record: (views.params as any)?.record ?? null },
-                    { mode: 'sheet' }
-                  );
-                },
-              },
-              'Renovar'
-            ),
-            h(
-              UI.Button,
-              {
-                variant: 'secondary',
-                onClick: () => {
-                  views.open(
-                    'leases.rescindir-contrato.open',
-                    { record: (views.params as any)?.record ?? null },
-                    { mode: 'sheet' }
-                  );
-                },
-              },
-              'Rescindir'
-            )
+            access.canOpen('leases.contrato.open')
+              ? h(
+                  UI.Button,
+                  {
+                    variant: 'secondary',
+                    onClick: () => {
+                      views.open(
+                        'leases.contrato.open',
+                        { record: (views.params as any)?.record ?? null },
+                        { mode: 'dialog' }
+                      );
+                    },
+                  },
+                  'Editar contrato'
+                )
+              : null,
+            access.canOpen('leases.renovar-contrato.open')
+              ? h(
+                  UI.Button,
+                  {
+                    variant: 'secondary',
+                    onClick: () => {
+                      views.open(
+                        'leases.renovar-contrato.open',
+                        { record: (views.params as any)?.record ?? null },
+                        { mode: 'sheet' }
+                      );
+                    },
+                  },
+                  'Renovar'
+                )
+              : null,
+            access.canOpen('leases.rescindir-contrato.open')
+              ? h(
+                  UI.Button,
+                  {
+                    variant: 'secondary',
+                    onClick: () => {
+                      views.open(
+                        'leases.rescindir-contrato.open',
+                        { record: (views.params as any)?.record ?? null },
+                        { mode: 'sheet' }
+                      );
+                    },
+                  },
+                  'Rescindir'
+                )
+              : null
           )
         )
       ),
@@ -1513,18 +1859,25 @@ export function FichaDeContratoView() {
                     h(
                       'div',
                       { style: { display: 'flex', justifyContent: 'flex-end' } },
-                      h(
-                        UI.Button,
-                        {
-                          variant: 'secondary',
-                          onClick: () => {
-                            views.open('leases.concepto-del-contrato.open', undefined, {
-                              mode: 'dialog',
-                            });
-                          },
-                        },
-                        'Agregar concepto'
-                      )
+                      access.canOpen('leases.concepto-del-contrato.open')
+                        ? h(
+                            UI.Button,
+                            {
+                              variant: 'secondary',
+                              onClick: () => {
+                                views.open(
+                                  'leases.concepto-del-contrato.open',
+                                  {
+                                    parentRecord: (views.params as any)?.record ?? null,
+                                    parentEntity: 'leases.contracts',
+                                  },
+                                  { mode: 'dialog' }
+                                );
+                              },
+                            },
+                            'Agregar concepto'
+                          )
+                        : null
                     )
                   ),
                   h(
@@ -1568,13 +1921,7 @@ export function FichaDeContratoView() {
                     { 'data-cg-block-id': 'kv_cond', style: { display: 'contents' } },
                     h(
                       'div',
-                      {
-                        style: {
-                          display: 'grid',
-                          gridTemplateColumns: 'auto 1fr',
-                          columnGap: '18px',
-                        },
-                      },
+                      { style: { display: 'grid', gridTemplateColumns: 'auto 1fr' } },
                       h(
                         React.Fragment,
                         { key: 'Moneda' },
@@ -1588,7 +1935,7 @@ export function FichaDeContratoView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1602,7 +1949,9 @@ export function FichaDeContratoView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1622,7 +1971,7 @@ export function FichaDeContratoView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1636,7 +1985,9 @@ export function FichaDeContratoView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1656,7 +2007,7 @@ export function FichaDeContratoView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1670,7 +2021,9 @@ export function FichaDeContratoView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1690,7 +2043,7 @@ export function FichaDeContratoView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1704,7 +2057,9 @@ export function FichaDeContratoView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1724,7 +2079,7 @@ export function FichaDeContratoView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1738,7 +2093,9 @@ export function FichaDeContratoView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1758,8 +2115,7 @@ export function FichaDeContratoView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
-                              borderBottom: '1px solid var(--cg-border-light)',
+                              padding: '8px 18px 8px 0',
                             },
                           },
                           h('span', null, 'Multa rescisión')
@@ -1772,8 +2128,9 @@ export function FichaDeContratoView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
-                              borderBottom: '1px solid var(--cg-border-light)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                             },
                           },
                           metric('kv_cond.Multa rescisión', 'value', '1,5 meses')
@@ -1805,13 +2162,7 @@ export function FichaDeContratoView() {
                     { 'data-cg-block-id': 'kv_gar', style: { display: 'contents' } },
                     h(
                       'div',
-                      {
-                        style: {
-                          display: 'grid',
-                          gridTemplateColumns: 'auto 1fr',
-                          columnGap: '18px',
-                        },
-                      },
+                      { style: { display: 'grid', gridTemplateColumns: 'auto 1fr' } },
                       h(
                         React.Fragment,
                         { key: 'Tipo' },
@@ -1825,7 +2176,7 @@ export function FichaDeContratoView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1839,7 +2190,9 @@ export function FichaDeContratoView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1859,7 +2212,7 @@ export function FichaDeContratoView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1873,7 +2226,9 @@ export function FichaDeContratoView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1893,7 +2248,7 @@ export function FichaDeContratoView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
+                              padding: '8px 18px 8px 0',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1907,7 +2262,9 @@ export function FichaDeContratoView() {
                               fontWeight: 500,
                               color: 'var(--cg-text)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                               borderBottom: '1px solid var(--cg-border-light)',
                             },
                           },
@@ -1927,8 +2284,7 @@ export function FichaDeContratoView() {
                               fontSize: '12.5px',
                               fontWeight: 400,
                               color: 'var(--cg-text-muted)',
-                              padding: '8px 0',
-                              borderBottom: '1px solid var(--cg-border-light)',
+                              padding: '8px 18px 8px 0',
                             },
                           },
                           h('span', null, 'Estado')
@@ -1941,14 +2297,61 @@ export function FichaDeContratoView() {
                               fontWeight: 500,
                               color: 'var(--cg-success)',
                               padding: '8px 0',
-                              textAlign: 'right' as const,
-                              borderBottom: '1px solid var(--cg-border-light)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
                             },
                           },
                           metric('kv_gar.Estado', 'value', 'Recibido')
                         )
                       )
                     )
+                  )
+                )
+              )
+            ),
+            h(
+              'div',
+              { 'data-cg-block-id': 'c_firmantes', style: { display: 'contents' } },
+              h(
+                UI.FormSection,
+                { icon: 'Users', title: 'Quiénes firman' },
+                h(
+                  'div',
+                  {
+                    style: {
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '16px',
+                      alignItems: 'stretch',
+                    },
+                  },
+                  h(
+                    'div',
+                    { 'data-cg-block-id': 'btn_firmante', style: { display: 'contents' } },
+                    h(
+                      'div',
+                      { style: { display: 'flex', justifyContent: 'flex-end' } },
+                      access.canOpen('leases.co-firmante-del-contrato.open')
+                        ? h(
+                            UI.Button,
+                            {
+                              variant: 'secondary',
+                              onClick: () => {
+                                views.open('leases.co-firmante-del-contrato.open', undefined, {
+                                  mode: 'sheet',
+                                });
+                              },
+                            },
+                            'Sumar co-firmante'
+                          )
+                        : null
+                    )
+                  ),
+                  h(
+                    'div',
+                    { 'data-cg-block-id': 'tbl_firmantes', style: { display: 'contents' } },
+                    renderTable4()
                   )
                 )
               )

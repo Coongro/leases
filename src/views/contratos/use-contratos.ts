@@ -136,7 +136,17 @@ export function useContratosView() {
     { key: 'currency', label: 'Moneda' },
     { key: 'adjustment_months', label: 'Ajusta cada (meses)' },
     { key: 'deposit_amount', label: 'Depósito', display: 'mono', format: 'money' },
-    { key: 'deposit_status', label: 'Estado del depósito' },
+    {
+      key: 'deposit_status',
+      label: 'Estado del depósito',
+      display: 'pill',
+      values: [
+        { value: 'pendiente', label: 'Pendiente', tone: 'warning', icon: 'Clock' },
+        { value: 'retenido', label: 'Retenido', tone: 'neutral', icon: 'Lock' },
+        { value: 'devuelto', label: 'Devuelto', tone: 'success', icon: 'CircleCheck' },
+      ],
+      emptyLabel: 'Sin registrar',
+    },
   ];
   // el subtítulo se muda bajo el título: fuera de las columnas propias
   const SUB_COL = COLUMNS.find((c) => c.key === 'property');
